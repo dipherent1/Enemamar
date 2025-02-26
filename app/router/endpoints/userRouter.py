@@ -1,0 +1,60 @@
+from fastapi import APIRouter, HTTPException, Request
+from app.domain.schema.authSchema import signUp,login,editUser
+from fastapi import Depends, Header
+from app.service.userService import UserService, get_user_service
+from app.utils.middleware.dependancies import is_admin
+
+
+userRouter = APIRouter(
+    prefix="/users",
+    tags=["users"],
+    dependencies=[Depends(is_admin)]
+)
+
+#get all users
+@userRouter.get("/")
+async def get_all_users(user_service: UserService = Depends(get_user_service)):
+    return user_service.get_all_users()
+
+#get user by id
+@userRouter.get("/{user_id}")
+async def get_user_by_id(user_id: int, user_service: UserService = Depends(get_user_service)):
+    return user_service.get_user_by_id(user_id)
+
+#deactivate user
+@userRouter.put("/deactivate/{user_id}")
+async def deactivate_user(user_id: int, user_service: UserService = Depends(get_user_service)):
+    return user_service.deactivate_user(user_id)
+
+#activate user
+@userRouter.put("/activate/{user_id}")
+async def activate_user(user_id: int, user_service: UserService = Depends(get_user_service)):
+    return user_service.activate_user(user_id)
+
+#delete user
+@userRouter.delete("/{user_id}")
+async def delete_user(user_id: int, user_service: UserService = Depends(get_user_service)):
+    return user_service.delete_user(user_id)
+
+#update role
+@userRouter.put("/role/{user_id}")
+async def update_role(user_id: int, role: str, user_service: UserService = Depends(get_user_service)):
+    return user_service.update_role(user_id, role)
+
+rootRouter = APIRouter()
+
+@rootRouter.get("/me")
+async def read_users_me(authorization: str = Header(None), user_service: UserService = Depends(get_user_service)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header not provided")
+    
+    return user_service.get_user_by_token(authorization)
+
+#edit me
+@rootRouter.put("/me")
+async def edit_me(edit_user: editUser, authorization: str = Header(None), user_service: UserService = Depends(get_user_service)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header not provided")
+    
+    return user_service.edit_user_by_token(authorization,edit_user)
+

@@ -1,0 +1,84 @@
+from sqlalchemy.orm import Session
+from app.domain.model.user import User, RefreshToken
+from app.domain.schema.authSchema import tokenLoginData, editUser
+from app.utils.security.jwt_handler import create_access_token, create_refresh_token
+
+class UserRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create_user(self, user: User):
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+    
+    def get_all_users(self):
+        return self.db.query(User).all()
+    
+    def get_user_by_id(self, user_id: int):
+        return self.db.query(User).filter(User.id == user_id).first()
+    
+
+    def get_user_by_email(self, email: str):
+        return self.db.query(User).filter(User.email == email).first()
+
+    def get_user_by_phone(self, phone_number: str):
+        return self.db.query(User).filter(User.phone_number == phone_number).first()
+    
+    def deactivate_user(self, user_id: int):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        user.is_active = False
+        self.db.commit()
+        return user
+    
+    def activate_user(self, user_id: int):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        user.is_active = True
+        self.db.commit()
+        return user
+    
+    def delete_user(self, user_id: int):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise ValueError("User with this id does not exist")
+        self.db.delete(user)
+        self.db.commit()
+        return 
+
+    #update the role of the user
+    def update_role(self, user_id: int, role: str):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return None
+        user.role = role
+        self.db.commit()
+        return user
+    
+    def update_user(self,id:int, edit_user: editUser):
+        user = self.db.query(User).filter(User.id == id).first()
+        if not user:
+            return None
+        # print(edit_user.model_dump())
+        for key, value in edit_user.model_dump().items():
+            if value:
+                setattr(user, key, value)
+        self.db.commit()
+        return user
+
+    
+    def login(self, login_data: tokenLoginData):
+        accesToken = create_access_token(login_data.model_dump())
+        refreshToken = create_refresh_token(login_data.model_dump())
+
+        #store refresh token in database
+        self.db.add(RefreshToken(user_id=login_data.id, token=refreshToken))
+        self.db.commit()
+        return accesToken, refreshToken
+
+    def getRefreshToken(self, user_id: int):
+        return self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
