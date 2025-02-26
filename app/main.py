@@ -3,6 +3,7 @@ from app.router.routers import routers
 from app.core.config.database import Base, engine
 
 
+print("initializing app")
 class AppCreator():
     def __init__(self):
         self.app = FastAPI()

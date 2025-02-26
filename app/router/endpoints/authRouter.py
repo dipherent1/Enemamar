@@ -13,7 +13,7 @@ authRouter = APIRouter(
 
 
 
-@authRouter.post("/signup", dependencies=[Depends(is_admin)])
+@authRouter.post("/signup")
 async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_auth_service)):
     userResponse = auth_service.signUp(sign_up_info)
     return userResponse
