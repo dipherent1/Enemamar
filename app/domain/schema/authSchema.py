@@ -1,13 +1,16 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from uuid import UUID
 from app.domain.model.user import User
+from datetime import datetime
 
 
 class signUp(BaseModel):
     email: Optional[str] = None
     username: Optional[str] = None
     password: str
-    full_name: str
+    first_name: str
+    last_name: str
     phone_number: str
     role: str
 
@@ -25,13 +28,17 @@ class login(BaseModel):
             raise ValueError("Provide only one of email or phone_number, not both.")
 
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     username: Optional[str] = None
     email: Optional[str] = None
-    full_name: str
+    first_name: str
+    last_name: str
     phone_number: str
     role: str
     is_active: bool
+    profile_picture: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 #edit user schema
 class editUser(BaseModel):

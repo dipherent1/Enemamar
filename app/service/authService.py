@@ -48,7 +48,8 @@ class AuthService:
         user_response = UserResponse(
             id=user.id,
             username=user.username,
-            full_name=user.full_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             email=user.email,
             phone_number=user.phone_number,
             role=user.role,

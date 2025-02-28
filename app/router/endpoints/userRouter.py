@@ -41,6 +41,7 @@ async def delete_user(user_id: int, user_service: UserService = Depends(get_user
 async def update_role(user_id: int, role: str, user_service: UserService = Depends(get_user_service)):
     return user_service.update_role(user_id, role)
 
+#user profile router
 rootRouter = APIRouter()
 
 @rootRouter.get("/me")
