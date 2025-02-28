@@ -9,7 +9,7 @@ class AppCreator():
         self.app = FastAPI()
         self.app.include_router(routers)
 
-# Base.metadata.drop_all(bind=engine) 
+Base.metadata.drop_all(bind=engine) 
 Base.metadata.create_all(bind=engine)
 
 app = AppCreator().app
