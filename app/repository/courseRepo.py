@@ -21,6 +21,11 @@ class CourseRepository:
             raise NotFoundError(detail="Course not found")
         return course
     
+    #get all courses
+    def get_courses(self):
+        return self.db.query(Course
+        ).all()
+    
     #enroll course by using user id and and course id 
     def enroll_course(self, user_id: str, course_id: str):
         course = self.db.query(Course).filter(Course.id == course_id).first()

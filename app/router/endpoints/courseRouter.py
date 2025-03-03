@@ -19,6 +19,23 @@ async def add_course(
     courseResponse = course_service.addCourse(course_info)
     return courseResponse
 
+#get course by using course id
+@courseRouter.get("/{course_id}")
+async def get_course(
+    course_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    courseResponse = course_service.getCourse(course_id)
+    return courseResponse
+
+#get all courses
+@courseRouter.get("/")
+async def get_courses(
+    course_service: CourseService = Depends(get_course_service)
+):
+    courses = course_service.getCourses()
+    return courses
+
 #enroll course only for logged in user
 @courseRouter.post("/{course_id}/enroll")
 async def enroll_course(
