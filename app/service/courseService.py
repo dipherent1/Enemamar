@@ -115,13 +115,13 @@ class CourseService:
         return response
     
     #get all courses enrolled by user
-    def getCoursesByUser(self, user_id: str, page: int = 1, page_size: int = 10):
+    def getCoursesByUser(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         # Validate user_id
         if not user_id:
             raise ValidationError(detail="User ID is required")
         
         # Get paginated courses
-        enrollments = self.course_repo.get_courses_by_user(user_id, page, page_size)
+        enrollments = self.course_repo.get_courses_by_user(user_id, page, page_size, search)
         
         # Extract and convert courses
         courses_response = [
@@ -136,7 +136,7 @@ class CourseService:
             "pagination": {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_user_courses_count(user_id)
+                "total_items": self.course_repo.get_user_courses_count(user_id, search)
             }
         }
 def get_course_service(db: Session = Depends(get_db)):

@@ -22,7 +22,7 @@ async def add_course(
 #get all courses enrolled by user
 @courseRouter.get("/enrolled")
 async def get_courses_by_user(
-    pagination: PaginationParams = Depends(),
+    search_params: CourseSearchParams = Depends(),
     decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
@@ -30,8 +30,9 @@ async def get_courses_by_user(
     user_id = UUID(user_id)
     enrollments = course_service.getCoursesByUser(
         user_id=user_id,
-        page=pagination.page,
-        page_size=pagination.page_size
+        page=search_params.page,
+        page_size=search_params.page_size,
+        search=search_params.search
     )
     return enrollments
 

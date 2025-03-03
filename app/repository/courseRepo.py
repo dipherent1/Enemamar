@@ -59,22 +59,46 @@ class CourseRepository:
         return enrollment 
     
     #get all courses enrolled by user
-    def get_courses_by_user(self, user_id: str, page: int = 1, page_size: int = 10):
-        return (
+    def get_courses_by_user(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+        query = (
             self.db.query(Enrollment)
             .options(joinedload(Enrollment.course))
             .filter(Enrollment.user_id == user_id)
+        )
+        
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Course.title.ilike(search_term),
+                    Course.description.ilike(search_term)
+                )
+            )
+        
+        return (
+            query
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
         )
 
-    def get_user_courses_count(self, user_id: str):
-        return (
+    def get_user_courses_count(self, user_id: str, search: Optional[str] = None):
+        query = (
             self.db.query(Enrollment)
+            .join(Course)
             .filter(Enrollment.user_id == user_id)
-            .count()
         )
+        
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Course.title.ilike(search_term),
+                    Course.description.ilike(search_term)
+                )
+            )
+        
+        return query.count()
 
     def get_total_courses_count(self, search: Optional[str] = None):
         query = self.db.query(Course)
