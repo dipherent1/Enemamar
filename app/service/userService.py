@@ -21,15 +21,8 @@ class UserService:
         print("get_all_users")
         users = self.user_repo.get_all_users()
         #convert the users to response model
-        users_response = [UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        ) for user in users]
+        
+        users_response = [UserResponse.model_validate(user) for user in users]
         #return the response
         response = {"detail": "Users retrieved successfully", "users": users_response}
         return response
@@ -41,15 +34,17 @@ class UserService:
         if not user:
             raise NotFoundError(detail="User with this id does not exist")
         #convert the user to response model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        user_response = UserResponse.model_validate(user)
+
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     full_name=user.full_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
         #return the response
         response = {"detail": "User retrieved successfully", "user": user_response}
         return response
@@ -61,15 +56,17 @@ class UserService:
         if not user:
             raise NotFoundError(detail="User with this id does not exist")
         #convert the user to response model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        user_response = UserResponse.model_validate(user)
+
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     full_name=user.full_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
         #return the response
         response = {"detail": "User deactivated successfully", "user": user_response}
         return response
@@ -81,15 +78,17 @@ class UserService:
         if not user:
             raise NotFoundError(detail="User with this id does not exist")
         #convert the user to response model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        user_response = UserResponse.model_validate(user)
+
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     full_name=user.full_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
         #return the response
         response = {"detail": "User activated successfully", "user": user_response}
         return response
@@ -113,57 +112,49 @@ class UserService:
         if not user:
             raise NotFoundError(detail="User with this id does not exist")
         #convert the user to response model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        user_response = UserResponse.model_validate(user)
+
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     full_name=user.full_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
         #return the response
         response = {"detail": "User role updated successfully", "user": user_response}
         return response
     
     #get user by token
-    def get_user_by_token(self, authorization: str):
+    def get_user_by_token(self, user_id):
         #split the token
-        authorization = authorization.split(" ")[1]
-        try:
-            payload = verify_access_token(authorization)
-        except Exception as e:
-            raise ValidationError(detail="Invalid token")
-        
-        user = self.user_repo.get_user_by_id(payload.get("id"))
+        user = self.user_repo.get_user_by_id(user_id)
         #check if user exists
         if not user:
             raise NotFoundError(detail="User with this id does not exist")
         #convert the user to response model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        user_response = UserResponse.model_validate(user)
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     full_name=user.full_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
         #return the response
         response = {"detail": "User retrieved successfully", "user": user_response}
         return response
     
     #edit user by token
-    def edit_user_by_token(self, authorization: str, edit_data: editUser):
+    def edit_user_by_token(self, user_id, edit_data: editUser):
         #split the token
-        authorization = authorization.split(" ")[1]
+        
         try:
-            payload = verify_access_token(authorization)
-        except Exception as e:
-            raise ValidationError(detail="Invalid token")        
-        #update the user details
-        try:
-            user = self.user_repo.update_user(payload.get("id"), edit_data)
+            user = self.user_repo.update_user(user_id, edit_data)
         except IntegrityError as e:
             if "duplicate key" in str(e).lower():
                 raise DuplicatedError(detail="User with this information already exists")
@@ -172,15 +163,17 @@ class UserService:
         if not user:
             raise NotFoundError(detail="User with this id does not exist")
         #convert the user to response model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            full_name=user.full_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        user_response = UserResponse.model_validate(user)
+        
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     full_name=user.full_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
         #return the response
         response = {"detail": "User updated successfully", "user": user_response}
         return response

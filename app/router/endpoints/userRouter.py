@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Request
 from app.domain.schema.authSchema import signUp,login,editUser
 from fastapi import Depends, Header
 from app.service.userService import UserService, get_user_service
-from app.utils.middleware.dependancies import is_admin
+from app.utils.middleware.dependancies import is_admin, is_logged_in
+from uuid import UUID
 
 
 userRouter = APIRouter(
@@ -45,17 +46,25 @@ async def update_role(user_id: int, role: str, user_service: UserService = Depen
 rootRouter = APIRouter()
 
 @rootRouter.get("/me")
-async def read_users_me(authorization: str = Header(None), user_service: UserService = Depends(get_user_service)):
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header not provided")
+async def read_users_me(
+    decoded_token: dict = Depends(is_logged_in),
+    user_service: UserService = Depends(get_user_service)
+):
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
+    print("/me")
     
-    return user_service.get_user_by_token(authorization)
+    return user_service.get_user_by_token(user_id)
 
 #edit me
 @rootRouter.put("/me")
-async def edit_me(edit_user: editUser, authorization: str = Header(None), user_service: UserService = Depends(get_user_service)):
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header not provided")
+async def edit_me(
+    edit_user: editUser, 
+    decoded_token: dict = Depends(is_logged_in),
+    user_service: UserService = Depends(get_user_service)
+):
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
     
-    return user_service.edit_user_by_token(authorization,edit_user)
+    return user_service.edit_user_by_token(user_id,edit_user)
 

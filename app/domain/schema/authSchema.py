@@ -13,6 +13,8 @@ class signUp(BaseModel):
     last_name: str
     phone_number: str
     role: str
+    class Config:
+        from_attributes = True 
 
 class login(BaseModel):
     email: Optional[str] = None
@@ -26,6 +28,8 @@ class login(BaseModel):
             raise ValueError("Either email or phone_number must be provided.")
         if self.email and self.phone_number:
             raise ValueError("Provide only one of email or phone_number, not both.")
+    class Config:
+        from_attributes = True 
 
 class UserResponse(BaseModel):
     id: UUID
@@ -39,6 +43,8 @@ class UserResponse(BaseModel):
     profile_picture: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True 
 
 #edit user schema
 class editUser(BaseModel):
@@ -46,6 +52,8 @@ class editUser(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
     phone_number: Optional[str] = None
+    class Config:
+        from_attributes = True 
 
 class signUpResponse(BaseModel):
     detail: str

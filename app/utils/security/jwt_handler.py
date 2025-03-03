@@ -41,8 +41,10 @@ def verify_access_token(token: str) -> Optional[dict]:
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
+    
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+    
 
 def verify_refresh_token(token: str) -> Optional[dict]:
     """Verify refresh token and return payload."""
