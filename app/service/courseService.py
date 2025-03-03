@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
+from typing import Optional
 
 class CourseService:
     def __init__(self, db):
@@ -65,9 +66,9 @@ class CourseService:
         return {"detail": "course fetched successfully","course": course_response}
     
     #get all courses
-    def getCourses(self, page: int = 1, page_size: int = 10):
+    def getCourses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         # Get paginated courses
-        courses = self.course_repo.get_courses(page, page_size)
+        courses = self.course_repo.get_courses(page, page_size, search)
         
         # Convert to Pydantic models
         courses_response = [
@@ -82,7 +83,7 @@ class CourseService:
             "pagination": {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_total_courses_count()
+                "total_items": self.course_repo.get_total_courses_count(search)
             }
         }
     

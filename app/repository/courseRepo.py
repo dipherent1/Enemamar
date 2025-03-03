@@ -3,6 +3,8 @@ from app.domain.model.course import Course, Enrollment
 from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse, PaginationParams
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
 from app.utils.security.jwt_handler import create_access_token, create_refresh_token
+from sqlalchemy import or_, func
+from typing import Optional
 
 class CourseRepository:
     def __init__(self, db: Session):
@@ -22,12 +24,23 @@ class CourseRepository:
         return course
     
     #get all courses
-    def get_courses(self, page: int = 1, page_size: int = 10):
-        #return the course and pagination data 
+    def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+        query = self.db.query(Course)
+        
+        if search:
+            # Fuzzy search using ILIKE for case-insensitive matching
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Course.title.ilike(search_term),
+                    Course.description.ilike(search_term)
+                )
+            )
+        
         return (
-            self.db.query(Course)
-            .limit(page_size)
+            query
             .offset((page - 1) * page_size)
+            .limit(page_size)
             .all()
         )
     
@@ -63,7 +76,18 @@ class CourseRepository:
             .count()
         )
 
-    def get_total_courses_count(self):
-        return self.db.query(Course).count()
+    def get_total_courses_count(self, search: Optional[str] = None):
+        query = self.db.query(Course)
+        
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Course.title.ilike(search_term),
+                    Course.description.ilike(search_term)
+                )
+            )
+        
+        return query.count()
 
     

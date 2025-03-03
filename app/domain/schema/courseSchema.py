@@ -40,5 +40,11 @@ class PaginationParams(BaseModel):
     page: int = Field(default=1, ge=1, description="Page number (1-based)")
     page_size: int = Field(default=10, ge=1, le=100, description="Number of items per page")
 
+class CourseSearchParams(PaginationParams):
+    search: Optional[str] = Field(
+        default=None,
+        description="Fuzzy search term for course title and description"
+    )
+
 
 

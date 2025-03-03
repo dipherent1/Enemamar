@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse, PaginationParams
+from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse, PaginationParams, CourseSearchParams
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
 from app.service.courseService import get_course_service
@@ -47,12 +47,13 @@ async def get_course(
 #get all courses
 @courseRouter.get("/")
 async def get_courses(
-    pagination: PaginationParams = Depends(),
+    search_params: CourseSearchParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.getCourses(
-        page=pagination.page,
-        page_size=pagination.page_size
+        page=search_params.page,
+        page_size=search_params.page_size,
+        search=search_params.search
     )
 
 #enroll course only for logged in user
