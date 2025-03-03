@@ -1,3 +1,4 @@
+from app.utils.exceptions.exceptions import HTTPException
 import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -39,9 +40,9 @@ def verify_access_token(token: str) -> Optional[dict]:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
-        return None  # Token has expired
+        raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
-        return None  # Invalid token
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 def verify_refresh_token(token: str) -> Optional[dict]:
     """Verify refresh token and return payload."""
@@ -49,6 +50,7 @@ def verify_refresh_token(token: str) -> Optional[dict]:
         payload = jwt.decode(token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
-        return None  # Token has expired
+        raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
-        return None  # Invalid token
+        raise HTTPException(status_code=401, detail="Invalid token")
+

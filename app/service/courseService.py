@@ -40,6 +40,30 @@ class CourseService:
         response = CreateCourseResponse(detail="Course created successfully", course=course_response)
         return response
     
+    def enrollCourse(self, user_id: str, course_id: str):
+        # Validate user_id
+        if not user_id:
+            raise ValidationError(detail="User ID is required")
+        
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        # Enroll course
+        enrollment = self.course_repo.enroll_course(user_id, course_id)
+        
+        # Convert SQLAlchemy Enrollment object to Pydantic Response Model
+        enrollment_response = EnrollmentResponse(
+            id=enrollment.id,
+            user_id=enrollment.user_id,
+            course_id=enrollment.course_id,
+            # enrolled_at=enrollment.enrolled_at
+        )
+
+        # Return response
+        response = EnrollResponse(detail="Course enrolled successfully", enrollment=enrollment_response)
+        return response
+    
 
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)
