@@ -62,5 +62,5 @@ class TokenResponse(BaseModel):
     refresh_token: str
 
 class tokenLoginData(BaseModel):
-    id: int
+    id: UUID
     role: str
