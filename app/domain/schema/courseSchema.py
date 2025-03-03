@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from uuid import UUID
 from app.domain.model.user import User
@@ -35,6 +35,10 @@ class EnrollmentResponse(BaseModel):
 class EnrollResponse(BaseModel):
     detail: str
     enrollment: EnrollmentResponse
+
+class PaginationParams(BaseModel):
+    page: int = Field(default=1, ge=1, description="Page number (1-based)")
+    page_size: int = Field(default=10, ge=1, le=100, description="Number of items per page")
 
 
 

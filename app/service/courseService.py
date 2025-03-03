@@ -65,23 +65,26 @@ class CourseService:
         return {"detail": "course fetched successfully","course": course_response}
     
     #get all courses
-    def getCourses(self):
-        # Get courses
-        courses = self.course_repo.get_courses()
+    def getCourses(self, page: int = 1, page_size: int = 10):
+        # Get paginated courses
+        courses = self.course_repo.get_courses(page, page_size)
         
-        # Convert SQLAlchemy Course objects to Pydantic Response Model
-        courses_response = []
-        for course in courses:
-            course_response = CourseResponse(
-                id=course.id,
-                title=course.title,
-                price=course.price,
-                description=course.description
-            )
-            courses_response.append(course_response)
+        # Convert to Pydantic models
+        courses_response = [
+            CourseResponse.model_validate(course)
+            for course in courses
+        ]
 
-        # Return response
-        return {"detail": "courses fetched successfully","courses": courses_response}
+        # Return response with pagination metadata
+        return {
+            "detail": "Courses fetched successfully",
+            "courses": courses_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_total_courses_count()
+            }
+        }
     
     #enroll course by using user id and and course id
     def enrollCourse(self, user_id: str, course_id: str):
@@ -111,27 +114,29 @@ class CourseService:
         return response
     
     #get all courses enrolled by user
-    def getCoursesByUser(self, user_id: str):
+    def getCoursesByUser(self, user_id: str, page: int = 1, page_size: int = 10):
         # Validate user_id
         if not user_id:
             raise ValidationError(detail="User ID is required")
         
-        # Get enrollments with courses
-        enrollments = self.course_repo.get_courses_by_user(user_id)
+        # Get paginated courses
+        enrollments = self.course_repo.get_courses_by_user(user_id, page, page_size)
         
-        # Extract and convert courses to Pydantic Response Model
-        courses_response = []
-        for enrollment in enrollments:
-            course = enrollment.course
-            course_response = CourseResponse(
-                id=course.id,
-                title=course.title,
-                price=course.price,
-                description=course.description
-            )
-            courses_response.append(course_response)
+        # Extract and convert courses
+        courses_response = [
+            CourseResponse.model_validate(enrollment.course)
+            for enrollment in enrollments
+        ]
 
-        # Return response
-        return {"detail": "courses fetched successfully","courses": courses_response}
+        # Return response with pagination metadata
+        return {
+            "detail": "User courses fetched successfully",
+            "courses": courses_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_user_courses_count(user_id)
+            }
+        }
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)
