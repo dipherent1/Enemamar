@@ -17,3 +17,19 @@ def is_admin(authorization: str = Header(None)):
         raise HTTPException(status_code=403, detail="Only admins can access this resource")
 
     return decoded_token  # ✅ Return the decoded user data if admin
+
+#is logged in 
+def is_logged_in(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid or missing access token")
+    
+    # ✅ Decode the token to get user details
+    token = authorization.split("Bearer ")[1]
+    decoded_token = verify_access_token(token)
+
+    if not decoded_token:
+        raise HTTPException(status_code=401, detail="Invalid access token")
+    
+    return decoded_token  # ✅ Return the decoded user data if logged in
+
+    
