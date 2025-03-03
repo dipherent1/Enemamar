@@ -29,12 +29,14 @@ class CourseService:
             raise DuplicatedError(detail="Course with this name already exists")
 
         # Convert SQLAlchemy Course object to Pydantic Response Model
-        course_response = CourseResponse(
-            id=course.id,
-            title=course.title,
-            price=course.price,
-            description=course.description
-        )
+        course_response = CourseResponse.model_validate(course)
+        
+        # course_response = CourseResponse(
+        #     id=course.id,
+        #     title=course.title,
+        #     price=course.price,
+        #     description=course.description
+        # )
 
         # Return response
         response = CreateCourseResponse(detail="Course created successfully", course=course_response)
@@ -50,12 +52,14 @@ class CourseService:
         course = self.course_repo.get_course(course_id)
         
         # Convert SQLAlchemy Course object to Pydantic Response Model
-        course_response = CourseResponse(
-            id=course.id,
-            title=course.title,
-            price=course.price,
-            description=course.description
-        )
+        course_response = CourseResponse.model_validate(course)
+        
+        # course_response = CourseResponse(
+        #     id=course.id,
+        #     title=course.title,
+        #     price=course.price,
+        #     description=course.description
+        # )
 
         # Return response
         return {"detail": "course fetched successfully","course": course_response}
@@ -93,12 +97,14 @@ class CourseService:
         enrollment = self.course_repo.enroll_course(user_id, course_id)
         
         # Convert SQLAlchemy Enrollment object to Pydantic Response Model
-        enrollment_response = EnrollmentResponse(
-            id=enrollment.id,
-            user_id=enrollment.user_id,
-            course_id=enrollment.course_id,
-            # enrolled_at=enrollment.enrolled_at
-        )
+        enrollment_response = EnrollmentResponse.model_validate(enrollment)
+        
+        # enrollment_response = EnrollmentResponse(
+        #     id=enrollment.id,
+        #     user_id=enrollment.user_id,
+        #     course_id=enrollment.course_id,
+        #     # enrolled_at=enrollment.enrolled_at
+        # )
 
         # Return response
         response = EnrollResponse(detail="Course enrolled successfully", enrollment=enrollment_response)

@@ -17,6 +17,8 @@ class CourseResponse(BaseModel):
     description: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True 
 
 class CreateCourseResponse(BaseModel):
     detail: str
@@ -27,6 +29,8 @@ class EnrollmentResponse(BaseModel):
     user_id: UUID
     course_id: UUID
     enrolled_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True 
 
 class EnrollResponse(BaseModel):
     detail: str
