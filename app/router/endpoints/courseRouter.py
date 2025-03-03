@@ -33,3 +33,14 @@ async def enroll_course(
    
     enrollResponse = course_service.enrollCourse(user_id, course_id)
     return enrollResponse
+
+# get all courses enrolled by user
+@courseRouter.get("/enrolled")
+async def get_courses_by_user(
+    decoded_token: dict = Depends(is_logged_in),
+    course_service: CourseService = Depends(get_course_service)
+):
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
+    enrollments = course_service.getCoursesByUser(user_id)
+    return enrollments

@@ -64,6 +64,28 @@ class CourseService:
         response = EnrollResponse(detail="Course enrolled successfully", enrollment=enrollment_response)
         return response
     
+    #get all courses enrolled by user
+    def getCoursesByUser(self, user_id: str):
+        # Validate user_id
+        if not user_id:
+            raise ValidationError(detail="User ID is required")
+        
+        # Get enrollments with courses
+        enrollments = self.course_repo.get_courses_by_user(user_id)
+        
+        # Extract and convert courses to Pydantic Response Model
+        courses_response = []
+        for enrollment in enrollments:
+            course = enrollment.course
+            course_response = CourseResponse(
+                id=course.id,
+                title=course.title,
+                price=course.price,
+                description=course.description
+            )
+            courses_response.append(course_response)
 
+        # Return response
+        return {"detail": "courses fetched successfully","courses": courses_response}
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)
