@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.domain.model.course import Course, Enrollment
 from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
@@ -20,6 +20,7 @@ class CourseRepository:
         if not course:
             raise NotFoundError(detail="Course not found")
         return course
+    
     #enroll course by using user id and and course id 
     def enroll_course(self, user_id: str, course_id: str):
         course = self.db.query(Course).filter(Course.id == course_id).first()
@@ -33,3 +34,14 @@ class CourseRepository:
 
         
         return enrollment 
+    
+    #get all courses enrolled by user
+    def get_courses_by_user(self, user_id: str):
+        return (
+            self.db.query(Enrollment)
+            .options(joinedload(Enrollment.course))  # Eager load course data
+            .filter(Enrollment.user_id == user_id)
+            .all()
+        )
+
+    
