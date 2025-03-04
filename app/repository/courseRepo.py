@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from app.domain.model.course import Course, Enrollment, Module, Lesson
+from app.domain.model.course import Course, Enrollment, Lesson
 from app.domain.schema.courseSchema import (
     CourseInput,
     CourseResponse,
@@ -91,81 +91,51 @@ class CourseRepository:
             .limit(page_size)
             .all()
         )
+
     
-    #add module to course
-    def add_module(self, course_id: str, module: Module):
+    #add lesson to course
+    def add_lesson(self, course_id: str, lesson: Lesson):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
         
-        module.course_id = course_id
-        self.db.add(module)
-        self.db.commit()
-        self.db.refresh(module)
-        return module
-    
-    #get all modules of course
-    def get_modules(self, course_id: str, page: int = 1, page_size: int = 10):
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
-        
-        return (
-            self.db.query(Module)
-            .filter(Module.course_id == course_id)
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
-    
-    #get module by using module id
-    def get_module(self, course_id: str, module_id: str):
-        module = (
-            self.db.query(Module)
-            .filter(
-                Module.id == module_id,
-                Module.course_id == course_id
-            )
-            .first()
-        )
-        if not module:
-            raise NotFoundError(detail="Module not found in this course")
-        return module
-    
-    #add lesson to module
-    def add_lesson(self, module_id: str, lesson: Lesson):
-        # Verify module exists and belongs to course
-        module = self.db.query(Module).filter(Module.id == module_id).first()
-        if not module:
-            raise NotFoundError(detail="Module not found")
-        
-        # Add lesson
-        lesson.module_id = module_id
+        lesson.course_id = course_id
         self.db.add(lesson)
         self.db.commit()
         self.db.refresh(lesson)
         return lesson
     
-    #get all lessons of module
-    def get_lessons(self, module_id: str, page: int = 1, page_size: int = 10):
-        # Verify module exists
-        module = self.db.query(Module).filter(Module.id == module_id).first()
-        if not module:
-            raise NotFoundError(detail="Module not found")
+    #get all lessons of course
+    def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
         
         return (
             self.db.query(Lesson)
-            .filter(Lesson.module_id == module_id)
-            .order_by(Lesson.created_at.asc())  # Order by creation date
+            .filter(Lesson.course_id == course_id)
+            .order_by(Lesson.created_at.asc())
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
         )
+    
+    #get lesson by id
+    def get_lesson_by_id(self, course_id: str, lesson_id: str):
+        lesson = (
+            self.db.query(Lesson)
+            .filter(Lesson.course_id == course_id)
+            .filter(Lesson.id == lesson_id)
+            .first()
+        )
+        if not lesson:
+            raise NotFoundError(detail="Lesson not found")
+        return lesson
 
-    def get_lessons_count(self, module_id: str) -> int:
+    def get_lessons_count(self, course_id: str) -> int:
         return (
             self.db.query(Lesson)
-            .filter(Lesson.module_id == module_id)
+            .filter(Lesson.course_id == course_id)
             .count()
         )
 
@@ -201,6 +171,4 @@ class CourseRepository:
         
         return query.count()
 
-    def get_total_modules_count(self, course_id: str):
-        return self.db.query(Module).filter(Module.course_id == course_id).count()
     
