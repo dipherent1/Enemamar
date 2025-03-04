@@ -24,7 +24,7 @@ class UserService:
         
         users_response = [UserResponse.model_validate(user) for user in users]
         #return the response
-        response = {"detail": "Users retrieved successfully", "users": users_response}
+        response = {"detail": "Users retrieved successfully", "data": users_response}
         return response
 
     #get user by id
@@ -46,7 +46,7 @@ class UserService:
         #     is_active=user.is_active
         # )
         #return the response
-        response = {"detail": "User retrieved successfully", "user": user_response}
+        response = {"detail": "User retrieved successfully", "data": user_response}
         return response
     
     #deactivate user
@@ -68,7 +68,7 @@ class UserService:
         #     is_active=user.is_active
         # )
         #return the response
-        response = {"detail": "User deactivated successfully", "user": user_response}
+        response = {"detail": "User deactivated successfully", "data": user_response}
         return response
         
     #activate user
@@ -90,7 +90,7 @@ class UserService:
         #     is_active=user.is_active
         # )
         #return the response
-        response = {"detail": "User activated successfully", "user": user_response}
+        response = {"detail": "User activated successfully", "data": user_response}
         return response
     
     #delete user
@@ -106,7 +106,7 @@ class UserService:
         return response
     
     #update role
-    def update_role(self, user_id: int, role: str):
+    def update_role(self, user_id: str, role: str):
         user = self.user_repo.update_role(user_id, role)
         #check if user exists
         if not user:
@@ -124,7 +124,7 @@ class UserService:
         #     is_active=user.is_active
         # )
         #return the response
-        response = {"detail": "User role updated successfully", "user": user_response}
+        response = {"detail": "User role updated successfully", "data": user_response}
         return response
     
     #get user by token
@@ -146,7 +146,7 @@ class UserService:
         #     is_active=user.is_active
         # )
         #return the response
-        response = {"detail": "User retrieved successfully", "user": user_response}
+        response = {"detail": "User retrieved successfully", "data": user_response}
         return response
     
     #edit user by token
@@ -175,7 +175,7 @@ class UserService:
         #     is_active=user.is_active
         # )
         #return the response
-        response = {"detail": "User updated successfully", "user": user_response}
+        response = {"detail": "User updated successfully", "data": user_response}
         return response
 
 
