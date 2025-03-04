@@ -2,23 +2,29 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from uuid import UUID
 from app.domain.model.user import User
+from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
 
 
 class CourseInput(BaseModel):
-    title: str
-    price: float
-    description: str
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str = Field(..., min_length=1)
+    price: float = Field(..., ge=0)
+    instructor_id: UUID = Field(..., description="UUID of the instructor")
 
 class CourseResponse(BaseModel):
     id: UUID
     title: str
-    price: float
     description: str
+    price: float
+    instructor_id: UUID
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    class Config:
-        from_attributes = True 
+    instructor: Optional[UserResponse] = None
+
+    model_config = {
+        "from_attributes": True
+    }
 
 class CreateCourseResponse(BaseModel):
     detail: str

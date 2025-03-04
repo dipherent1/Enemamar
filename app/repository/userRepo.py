@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.domain.model.user import User, RefreshToken
 from app.domain.schema.authSchema import tokenLoginData, editUser
 from app.utils.security.jwt_handler import create_access_token, create_refresh_token
+from sqlalchemy.exc import DataError
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -16,8 +17,11 @@ class UserRepository:
     def get_all_users(self):
         return self.db.query(User).all()
     
-    def get_user_by_id(self, user_id: int):
-        return self.db.query(User).filter(User.id == user_id).first()
+    def get_user_by_id(self, user_id: str):
+        try:
+            return self.db.query(User).filter(User.id == user_id).first()
+        except DataError:
+            return None
     
 
     def get_user_by_email(self, email: str):

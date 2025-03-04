@@ -28,10 +28,10 @@ courseRouter = APIRouter(
 @courseRouter.post("/add")
 async def add_course(
     course_info: CourseInput,
-    course_service: CourseService = Depends(get_course_service)
+    course_service: CourseService = Depends(get_course_service),
+    # _: dict = Depends(is_admin)  # Only admins can create courses
 ):
-    courseResponse = course_service.addCourse(course_info)
-    return courseResponse
+    return course_service.addCourse(course_info)
 
 #get all courses enrolled by user
 @courseRouter.get("/enrolled")

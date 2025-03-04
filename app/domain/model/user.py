@@ -6,6 +6,7 @@ from app.core.config.database import Base
 from sqlalchemy.dialects.postgresql import UUID  # For PostgreSQL
 from app.domain.model.course import Enrollment, Course
 import uuid
+from typing import List
 
 
 class User(Base):
@@ -40,6 +41,12 @@ class User(Base):
     enrollments = relationship("Enrollment", back_populates="user")
 
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(back_populates="user")
+
+    courses_taught: Mapped[List["Course"]] = relationship(
+        "Course", 
+        back_populates="instructor",
+        foreign_keys="Course.instructor_id"
+    )
 
     def deactivate(self) -> None:
         """Deactivate the user."""

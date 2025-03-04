@@ -5,7 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.config.database import Base
 import uuid
 from sqlalchemy.dialects.postgresql import UUID  # For PostgreSQL
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.domain.model import User
 
 class Course(Base):
     __tablename__ = "courses"
@@ -18,10 +21,16 @@ class Course(Base):
     title = Column(String)
     price = Column(Float)
     description = Column(String)
+    instructor_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
 
     # Relationships
     enrollments = relationship("Enrollment", back_populates="course")
     lessons = relationship("Lesson", back_populates="course")  # Changed from modules to lessons
+    instructor: Mapped["User"] = relationship(
+        "User", 
+        back_populates="courses_taught",
+        foreign_keys=[instructor_id]
+    )
 
 
 class Enrollment(Base):
