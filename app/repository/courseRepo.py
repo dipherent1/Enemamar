@@ -183,4 +183,6 @@ class CourseRepository:
         
         return query.count()
 
+    def get_total_modules_count(self, course_id: str):
+        return self.db.query(Module).filter(Module.course_id == course_id).count()
     

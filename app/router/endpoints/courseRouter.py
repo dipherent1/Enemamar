@@ -56,6 +56,15 @@ async def add_module(
     moduleResponse = course_service.addModule(course_id, module_info)
     return moduleResponse
 
+#get all modules of course
+@courseRouter.get("/{course_id}/modules")
+async def get_modules(
+    course_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    modules = course_service.getModules(course_id)
+    return modules
+
 #get course by using course id
 @courseRouter.get("/{course_id}")
 async def get_course(
