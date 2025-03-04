@@ -11,7 +11,8 @@ from app.domain.schema.courseSchema import (
     ModuleInput,
     ModuleResponse,
     LessonInput,
-    LessonResponse
+    LessonResponse,
+    UserResponse
 )
 from app.domain.model.course import Course, Enrollment, Lesson
 from app.repository.courseRepo import CourseRepository
@@ -21,38 +22,30 @@ from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
 from typing import Optional
+from app.repository.userRepo import UserRepository
 
 class CourseService:
     def __init__(self, db):
         self.course_repo = CourseRepository(db)
+        self.user_repo = UserRepository(db)
     
     def addCourse(self, course_info: CourseInput):
-        # Validate course name
-        if not course_info.title:
-            raise ValidationError(detail="Course name is required")
+        # Validate instructor exists and has correct role
+        instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
+        if not instructor or instructor.role != "instructor":
+            raise ValidationError(detail="Invalid instructor ID or not an instructor")
         
-        # Convert course_info to Course ORM object
+        # Create course with instructor relationship
         course = Course(**course_info.model_dump(exclude_none=True))
-
-        # Check for duplicate entry using database constraints
-        try:
-            course = self.course_repo.create_course(course)
-        # Handle duplicate entry
-        except IntegrityError:
-            raise DuplicatedError(detail="Course with this name already exists")
-
-        # Convert SQLAlchemy Course object to Pydantic Response Model
-        course_response = CourseResponse.model_validate(course)
         
-        # course_response = CourseResponse(
-        #     id=course.id,
-        #     title=course.title,
-        #     price=course.price,
-        #     description=course.description
-        # )
-
-        # Return response
-        return {"detail": "Course added successfully", "data": course_response}
+        created_course = self.course_repo.create_course(course)
+        course_response = CourseResponse.model_validate(created_course)
+        course_response.instructor = UserResponse.model_validate(instructor)
+        
+        return {
+            "detail": "Course created successfully",
+            "course": course_response
+        }
     
     #get course by using course id
     def getCourse(self, course_id: str):

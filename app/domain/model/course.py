@@ -18,10 +18,16 @@ class Course(Base):
     title = Column(String)
     price = Column(Float)
     description = Column(String)
+    instructor_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
 
     # Relationships
     enrollments = relationship("Enrollment", back_populates="course")
     lessons = relationship("Lesson", back_populates="course")  # Changed from modules to lessons
+    instructor: Mapped["User"] = relationship(
+        "User", 
+        back_populates="courses_taught",
+        foreign_keys=[instructor_id]
+    )
 
 
 class Enrollment(Base):
