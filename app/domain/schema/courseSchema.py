@@ -96,3 +96,27 @@ class LessonResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class MultipleLessonInput(BaseModel):
+    lessons: List[LessonInput]
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "lessons": [
+                    {
+                        "title": "Introduction to Python",
+                        "description": "Learn the basics of Python programming",
+                        "duration": 30,
+                        "video_url": "https://example.com/video1.mp4"
+                    },
+                    {
+                        "title": "Advanced Python",
+                        "description": "Learn advanced Python concepts",
+                        "duration": 45,
+                        "video_url": "https://example.com/video2.mp4"
+                    }
+                ]
+            }
+        }
+    }

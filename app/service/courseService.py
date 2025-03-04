@@ -12,7 +12,8 @@ from app.domain.schema.courseSchema import (
     ModuleResponse,
     LessonInput,
     LessonResponse,
-    UserResponse
+    UserResponse,
+    MultipleLessonInput
 )
 from app.domain.model.course import Course, Enrollment, Lesson
 from app.repository.courseRepo import CourseRepository
@@ -196,5 +197,22 @@ class CourseService:
             "data": lesson_response
         }
     
+    def addMultipleLessons(self, course_id: str, lessons_input: MultipleLessonInput):
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        lessons = [Lesson(**lesson.model_dump()) for lesson in lessons_input.lessons]
+        
+        created_lessons = self.course_repo.add_multiple_lessons(course_id, lessons)
+        lessons_response = [
+            LessonResponse.model_validate(lesson)
+            for lesson in created_lessons
+        ]
+        
+        return {
+            "detail": "Lessons added successfully",
+            "data": lessons_response
+        }
+
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)
