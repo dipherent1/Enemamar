@@ -72,3 +72,6 @@ class TokenResponse(BaseModel):
 class tokenLoginData(BaseModel):
     id: UUID
     role: str
+
+class UpdateRoleRequest(BaseModel):
+    role: str
