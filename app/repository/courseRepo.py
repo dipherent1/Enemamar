@@ -171,4 +171,16 @@ class CourseRepository:
         
         return query.count()
 
+    def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        for lesson in lessons:
+            lesson.course_id = course_id
+            self.db.add(lesson)
+        
+        self.db.commit()
+        return lessons
+
     

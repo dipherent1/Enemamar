@@ -10,7 +10,8 @@ from app.domain.schema.courseSchema import (
     ModuleInput,
     ModuleResponse,
     LessonInput,
-    LessonResponse
+    LessonResponse,
+    MultipleLessonInput
 )
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
@@ -60,6 +61,15 @@ async def add_lesson(
     # course_id = UUID(course_id)
     
     return course_service.addLesson(course_id, lesson)
+
+#add multiple lessons to course
+@courseRouter.post("/{course_id}/lessons")
+async def add_multiple_lessons(
+    course_id: str,
+    lessons_input: MultipleLessonInput,  # Change the parameter name to be more clear
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.addMultipleLessons(course_id, lessons_input)
 
 #get all lessons of course
 @courseRouter.get("/{course_id}/lessons")
@@ -118,3 +128,4 @@ async def enroll_course(
    
     enrollResponse = course_service.enrollCourse(user_id, course_id)
     return enrollResponse
+
