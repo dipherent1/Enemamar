@@ -50,64 +50,38 @@ async def get_courses_by_user(
     )
     return enrollments
 
-#add module to course
-@courseRouter.post("/{course_id}/module")
-async def add_module(
-    course_id: str,
-    module_info: ModuleInput,
-    course_service: CourseService = Depends(get_course_service)
-):
-    moduleResponse = course_service.addModule(course_id, module_info)
-    return moduleResponse
-
-#get all modules of course
-@courseRouter.get("/{course_id}/modules")
-async def get_modules(
-    course_id: str,
-    course_service: CourseService = Depends(get_course_service)
-):
-    modules = course_service.getModules(course_id)
-    return modules
-
-#get module by using module id
-@courseRouter.get("/{course_id}/module/{module_id}")
-async def get_module(
-    course_id: str,
-    module_id: str,
-    course_service: CourseService = Depends(get_course_service)
-):
-    module = course_service.getModule(course_id, module_id)
-    return module
-
-#add lesson to module
-@courseRouter.post(
-    "/{course_id}/module/{module_id}/lesson",
-    response_model=dict[str, Union[str, LessonResponse]]
-)
+#add lesson to course
+@courseRouter.post("/{course_id}/lesson")
 async def add_lesson(
     course_id: str,
-    module_id: str,
     lesson: LessonInput,
     course_service: CourseService = Depends(get_course_service)
 ):
-    return course_service.addLesson(module_id, lesson)
+    # course_id = UUID(course_id)
+    
+    return course_service.addLesson(course_id, lesson)
 
-#get all lessons of module
-@courseRouter.get(
-    "/{course_id}/module/{module_id}/lessons",
-    response_model=dict[str, Union[str, List[LessonResponse], dict]]
-)
+#get all lessons of course
+@courseRouter.get("/{course_id}/lessons")
 async def get_lessons(
     course_id: str,
-    module_id: str,
     search_params: PaginationParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.getLessons(
-        module_id,
+        course_id,
         search_params.page,
         search_params.page_size
     )
+
+#get lesson by id
+@courseRouter.get("/{course_id}/lesson/{lesson_id}")
+async def get_lesson_by_id(
+    course_id: str,
+    lesson_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getLessonById(course_id, lesson_id)
 
 #get course by using course id
 @courseRouter.get("/{course_id}")

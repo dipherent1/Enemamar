@@ -21,7 +21,7 @@ class Course(Base):
 
     # Relationships
     enrollments = relationship("Enrollment", back_populates="course")
-    modules = relationship("Module", back_populates="course")  # 1:N (Course ↔ Modules)
+    lessons = relationship("Lesson", back_populates="course")  # Changed from modules to lessons
 
 
 class Enrollment(Base):
@@ -39,22 +39,6 @@ class Enrollment(Base):
     user = relationship("User", back_populates="enrollments")  # M:N (Student ↔ Courses)
     course = relationship("Course", back_populates="enrollments")  # M:N
 
-class Module(Base):
-    __tablename__ = "modules"
-    id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
-        default=uuid.uuid4
-    )
-    title: Mapped[str]
-    description: Mapped[Optional[str]]
-    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
-    is_published: Mapped[bool] = mapped_column(default=False)
-    
-    # Relationships
-    course = relationship("Course", back_populates="modules")
-    lessons = relationship("Lesson", back_populates="module")
-
 class Lesson(Base):
     __tablename__ = "lessons"
     id: Mapped[UUID] = mapped_column(
@@ -63,12 +47,16 @@ class Lesson(Base):
         default=uuid.uuid4
     )
     title: Mapped[str]
-    content: Mapped[str]
-    module_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("modules.id"))
+    description: Mapped[str]
+    duration: Mapped[int]
+    video_url: Mapped[Optional[str]]
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
-    module = relationship("Module", back_populates="lessons")
-    videos = relationship("Video", back_populates="lesson")
+    course = relationship("Course", back_populates="lessons")
+    videos = relationship("Video", back_populates="lesson")  # 1:N (Lesson ↔ Videos)
 
 class Video(Base):
     __tablename__ = "videos"
