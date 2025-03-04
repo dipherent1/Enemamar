@@ -32,7 +32,7 @@ class CourseService:
     def addCourse(self, course_info: CourseInput):
         # Validate instructor exists and has correct role
         instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
-        if not instructor or instructor.role != "instructor":
+        if not instructor:
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
         
         # Create course with instructor relationship

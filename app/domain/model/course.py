@@ -5,7 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.config.database import Base
 import uuid
 from sqlalchemy.dialects.postgresql import UUID  # For PostgreSQL
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.domain.model import User
 
 class Course(Base):
     __tablename__ = "courses"
