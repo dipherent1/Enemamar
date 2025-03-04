@@ -65,6 +65,16 @@ async def get_modules(
     modules = course_service.getModules(course_id)
     return modules
 
+#get module by using module id
+@courseRouter.get("/{course_id}/module/{module_id}")
+async def get_module(
+    course_id: str,
+    module_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    module = course_service.getModule(course_id, module_id)
+    return module
+
 #get course by using course id
 @courseRouter.get("/{course_id}")
 async def get_course(

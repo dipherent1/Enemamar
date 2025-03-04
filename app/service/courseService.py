@@ -204,5 +204,25 @@ class CourseService:
                 "total_items": self.course_repo.get_total_modules_count(course_id)
             }
         }
+    
+    #get module by using module id
+    def getModule(self, course_id: str, module_id: str):
+        # Validate IDs
+        if not module_id:
+            raise ValidationError(detail="Module ID is required")
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        # Get module with course validation
+        module = self.course_repo.get_module(course_id, module_id)
+        
+        # Convert to response model
+        module_response = ModuleResponse.model_validate(module)
+
+        return {
+            "detail": "Module fetched successfully",
+            "module": module_response
+        }
+    
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)

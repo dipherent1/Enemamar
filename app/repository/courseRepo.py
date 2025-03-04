@@ -119,10 +119,17 @@ class CourseRepository:
         )
     
     #get module by using module id
-    def get_module(self, module_id: str):
-        module = self.db.query(Module).filter(Module.id == module_id).first()
+    def get_module(self, course_id: str, module_id: str):
+        module = (
+            self.db.query(Module)
+            .filter(
+                Module.id == module_id,
+                Module.course_id == course_id
+            )
+            .first()
+        )
         if not module:
-            raise NotFoundError(detail="Module not found")
+            raise NotFoundError(detail="Module not found in this course")
         return module
     
     #add lesson to module
