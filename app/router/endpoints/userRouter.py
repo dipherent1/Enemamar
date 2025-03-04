@@ -47,6 +47,18 @@ async def update_role(
 ):
     return user_service.update_role(user_id, role_data.role)
 
+#get all instructors
+@userRouter.get("/instructors")
+async def get_all_instructors(user_service: UserService = Depends(get_user_service)):
+    print("get_all_instructors")
+    return user_service.get_all_instructors()
+
+#get instructor by id
+@userRouter.get("/instructor/{instructor_id}")
+async def get_instructor_by_id(instructor_id: str, user_service: UserService = Depends(get_user_service)):
+    print("get_instructor_by_id")
+    return user_service.get_instructor_by_id(instructor_id)
+
 #user profile router
 rootRouter = APIRouter()
 
@@ -73,3 +85,20 @@ async def edit_me(
     
     return user_service.edit_user_by_token(user_id,edit_user)
 
+#create router for instructor 
+instructorRouter = APIRouter(
+    prefix="/instructors",
+    tags=["instructor"],
+    dependencies=[Depends(is_admin)]
+)
+#get all instructors
+@instructorRouter.get("/")
+async def get_all_instructors(user_service: UserService = Depends(get_user_service)):
+    print("get_all_instructors")
+    return user_service.get_all_instructors()
+
+#get instructor by id
+@instructorRouter.get("/{instructor_id}")
+async def get_instructor_by_id(instructor_id: str, user_service: UserService = Depends(get_user_service)):
+    print("get_instructor_by_id")
+    return user_service.get_instructor_by_id(instructor_id)

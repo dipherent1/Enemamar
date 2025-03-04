@@ -178,8 +178,21 @@ class UserService:
         response = {"detail": "User updated successfully", "data": user_response}
         return response
 
+    #get all instructors
+    def get_all_instructors(self):
+        users = self.user_repo.get_all_instructors()
+        users_response = [UserResponse.model_validate(user) for user in users]
+        response = {"detail": "Instructors retrieved successfully", "data": users_response}
+        return response
 
+    #get instructor by id
+    def get_instructor_by_id(self, instructor_id: str):
+        user = self.user_repo.get_instructor_by_id(instructor_id)
+        if not user:
+            raise NotFoundError(detail="Instructor with this id does not exist")
+        user_response = UserResponse.model_validate(user)
+        response = {"detail": "Instructor retrieved successfully", "data": user_response}
+        return response
 
-    
 def get_user_service(db: Session = Depends(get_db)):
     return UserService(db)

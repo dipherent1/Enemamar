@@ -86,3 +86,12 @@ class UserRepository:
 
     def getRefreshToken(self, user_id: int):
         return self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
+
+    def get_all_instructors(self):
+        return self.db.query(User).filter(User.role == "inst").all()
+    
+    def get_instructor_by_id(self, instructor_id: str):
+        try:
+            return self.db.query(User).filter(User.id == instructor_id, User.role == "instructor").first()
+        except DataError:
+            return None
