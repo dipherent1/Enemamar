@@ -9,7 +9,9 @@ from app.domain.schema.courseSchema import (
     PaginationParams,
     CourseSearchParams,
     ModuleInput,
-    ModuleResponse
+    ModuleResponse,
+    LessonInput,
+    LessonResponse
 )
 from app.domain.model.course import Course, Enrollment, Module, Lesson
 from app.repository.courseRepo import CourseRepository
@@ -222,6 +224,56 @@ class CourseService:
         return {
             "detail": "Module fetched successfully",
             "module": module_response
+        }
+    
+    #add lesson to module
+    def addLesson(self, module_id: str, lesson_input: LessonInput):
+        # Validate module_id
+        if not module_id:
+            raise ValidationError(detail="Module ID is required")
+        
+        # Convert input to Lesson model
+        lesson = Lesson(
+            title=lesson_input.title,
+            description=lesson_input.description,
+            duration=lesson_input.duration,
+            video_url=lesson_input.video_url
+        )
+        
+        # Add lesson to module
+        created_lesson = self.course_repo.add_lesson(module_id, lesson)
+        
+        # Convert to response model
+        lesson_response = LessonResponse.model_validate(created_lesson)
+        
+        return {
+            "detail": "Lesson added successfully",
+            "lesson": lesson_response
+        }
+    
+    #get all lessons of module
+    def getLessons(self, module_id: str, page: int = 1, page_size: int = 10):
+        # Validate module_id
+        if not module_id:
+            raise ValidationError(detail="Module ID is required")
+        
+        # Get paginated lessons
+        lessons = self.course_repo.get_lessons(module_id, page, page_size)
+        
+        # Convert to response models
+        lessons_response = [
+            LessonResponse.model_validate(lesson)
+            for lesson in lessons
+        ]
+        
+        return {
+            "detail": "Lessons fetched successfully",
+            "lessons": lessons_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_lessons_count(module_id)
+            }
         }
     
 def get_course_service(db: Session = Depends(get_db)):

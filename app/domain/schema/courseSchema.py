@@ -62,17 +62,31 @@ class ModuleResponse(BaseModel):
         from_attributes = True
 
 class LessonInput(BaseModel):
-    title: str
-    description: str
-    duration: int
+    title: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(..., min_length=1)
+    duration: int = Field(..., gt=0)
+    video_url: Optional[str] = None
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Introduction to Python",
+                "description": "Learn the basics of Python programming",
+                "duration": 30,
+                "video_url": "https://example.com/video.mp4"
+            }
+        }
+    }
 
 class LessonResponse(BaseModel):
     id: UUID
     title: str
     description: str
-    video_url: str
     duration: int
+    video_url: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    class Config:
-        from_attributes = True
+
+    model_config = {
+        "from_attributes": True
+    }

@@ -134,10 +134,12 @@ class CourseRepository:
     
     #add lesson to module
     def add_lesson(self, module_id: str, lesson: Lesson):
+        # Verify module exists and belongs to course
         module = self.db.query(Module).filter(Module.id == module_id).first()
         if not module:
             raise NotFoundError(detail="Module not found")
         
+        # Add lesson
         lesson.module_id = module_id
         self.db.add(lesson)
         self.db.commit()
@@ -146,6 +148,7 @@ class CourseRepository:
     
     #get all lessons of module
     def get_lessons(self, module_id: str, page: int = 1, page_size: int = 10):
+        # Verify module exists
         module = self.db.query(Module).filter(Module.id == module_id).first()
         if not module:
             raise NotFoundError(detail="Module not found")
@@ -153,9 +156,17 @@ class CourseRepository:
         return (
             self.db.query(Lesson)
             .filter(Lesson.module_id == module_id)
+            .order_by(Lesson.created_at.asc())  # Order by creation date
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
+        )
+
+    def get_lessons_count(self, module_id: str) -> int:
+        return (
+            self.db.query(Lesson)
+            .filter(Lesson.module_id == module_id)
+            .count()
         )
 
     def get_user_courses_count(self, user_id: str, search: Optional[str] = None):

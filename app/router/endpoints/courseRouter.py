@@ -8,13 +8,17 @@ from app.domain.schema.courseSchema import (
     PaginationParams,
     CourseSearchParams,
     ModuleInput,
-    ModuleResponse
+    ModuleResponse,
+    LessonInput,
+    LessonResponse
 )
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
 from app.service.courseService import get_course_service
 from app.utils.middleware.dependancies import is_admin, is_logged_in
 from uuid import UUID
+from typing import Union, List
+
 courseRouter = APIRouter(
     prefix="/course",
     tags=["course"]
@@ -74,6 +78,36 @@ async def get_module(
 ):
     module = course_service.getModule(course_id, module_id)
     return module
+
+#add lesson to module
+@courseRouter.post(
+    "/{course_id}/module/{module_id}/lesson",
+    response_model=dict[str, Union[str, LessonResponse]]
+)
+async def add_lesson(
+    course_id: str,
+    module_id: str,
+    lesson: LessonInput,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.addLesson(module_id, lesson)
+
+#get all lessons of module
+@courseRouter.get(
+    "/{course_id}/module/{module_id}/lessons",
+    response_model=dict[str, Union[str, List[LessonResponse], dict]]
+)
+async def get_lessons(
+    course_id: str,
+    module_id: str,
+    search_params: PaginationParams = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getLessons(
+        module_id,
+        search_params.page,
+        search_params.page_size
+    )
 
 #get course by using course id
 @courseRouter.get("/{course_id}")
