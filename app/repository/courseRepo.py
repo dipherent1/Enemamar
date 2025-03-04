@@ -1,6 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
-from app.domain.model.course import Course, Enrollment
-from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse, PaginationParams
+from app.domain.model.course import Course, Enrollment, Module, Lesson
+from app.domain.schema.courseSchema import (
+    CourseInput,
+    CourseResponse,
+    CreateCourseResponse,
+    EnrollmentResponse,
+    EnrollResponse,
+    PaginationParams,
+    CourseSearchParams,
+    ModuleInput,
+    ModuleResponse
+)
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
 from app.utils.security.jwt_handler import create_access_token, create_refresh_token
 from sqlalchemy import or_, func
@@ -77,6 +87,65 @@ class CourseRepository:
         
         return (
             query
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+    
+    #add module to course
+    def add_module(self, course_id: str, module: Module):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        module.course_id = course_id
+        self.db.add(module)
+        self.db.commit()
+        self.db.refresh(module)
+        return module
+    
+    #get all modules of course
+    def get_modules(self, course_id: str, page: int = 1, page_size: int = 10):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        return (
+            self.db.query(Module)
+            .filter(Module.course_id == course_id)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+    
+    #get module by using module id
+    def get_module(self, module_id: str):
+        module = self.db.query(Module).filter(Module.id == module_id).first()
+        if not module:
+            raise NotFoundError(detail="Module not found")
+        return module
+    
+    #add lesson to module
+    def add_lesson(self, module_id: str, lesson: Lesson):
+        module = self.db.query(Module).filter(Module.id == module_id).first()
+        if not module:
+            raise NotFoundError(detail="Module not found")
+        
+        lesson.module_id = module_id
+        self.db.add(lesson)
+        self.db.commit()
+        self.db.refresh(lesson)
+        return lesson
+    
+    #get all lessons of module
+    def get_lessons(self, module_id: str, page: int = 1, page_size: int = 10):
+        module = self.db.query(Module).filter(Module.id == module_id).first()
+        if not module:
+            raise NotFoundError(detail="Module not found")
+        
+        return (
+            self.db.query(Lesson)
+            .filter(Lesson.module_id == module_id)
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()

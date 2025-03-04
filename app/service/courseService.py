@@ -1,7 +1,17 @@
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
 import re
-from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse
-from app.domain.model.course import Course
+from app.domain.schema.courseSchema import (
+    CourseInput,
+    CourseResponse,
+    CreateCourseResponse,
+    EnrollmentResponse,
+    EnrollResponse,
+    PaginationParams,
+    CourseSearchParams,
+    ModuleInput,
+    ModuleResponse
+)
+from app.domain.model.course import Course, Enrollment, Module, Lesson
 from app.repository.courseRepo import CourseRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -137,6 +147,61 @@ class CourseService:
                 "page": page,
                 "page_size": page_size,
                 "total_items": self.course_repo.get_user_courses_count(user_id, search)
+            }
+        }
+    
+    #add module to course
+    def addModule(self, course_id: str, module_info: ModuleInput):
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        # Validate module name
+        if not module_info.title:
+            raise ValidationError(detail="Module name is required")
+        
+        # Convert module_info to Module ORM object
+        module = Module(**module_info.model_dump(exclude_none=True))
+
+        # Add module to course
+        module = self.course_repo.add_module(course_id, module)
+        
+        # Convert SQLAlchemy Module object to Pydantic Response Model
+        module_response = ModuleResponse.model_validate(module)
+        
+        # module_response = ModuleResponse(
+        #     id=module.id,
+        #     title=module.title,
+        #     description=module.description,
+        #     is_published=module.is_published
+        # )
+
+        # Return response
+        return {"detail": "Module added successfully","module": module_response}
+    
+    #get all modules of course
+    def getModules(self, course_id: str, page: int = 1, page_size: int = 10):
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        # Get paginated modules
+        modules = self.course_repo.get_modules(course_id, page, page_size)
+        
+        # Convert to Pydantic models
+        modules_response = [
+            ModuleResponse.model_validate(module)
+            for module in modules
+        ]
+
+        # Return response with pagination metadata
+        return {
+            "detail": "Modules fetched successfully",
+            "modules": modules_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_total_modules_count(course_id)
             }
         }
 def get_course_service(db: Session = Depends(get_db)):

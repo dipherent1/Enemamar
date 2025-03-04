@@ -46,5 +46,33 @@ class CourseSearchParams(PaginationParams):
         description="Fuzzy search term for course title and description"
     )
 
+class ModuleInput(BaseModel):
+    title: str
+    description: str
+    is_published: Optional[bool] = False
 
+class ModuleResponse(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    is_published: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True
 
+class LessonInput(BaseModel):
+    title: str
+    description: str
+    duration: int
+
+class LessonResponse(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    video_url: str
+    duration: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True

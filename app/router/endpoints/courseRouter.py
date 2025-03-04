@@ -1,5 +1,15 @@
 from fastapi import APIRouter, HTTPException, Request
-from app.domain.schema.courseSchema import CourseInput,CourseResponse,CreateCourseResponse,EnrollmentResponse,EnrollResponse, PaginationParams, CourseSearchParams
+from app.domain.schema.courseSchema import (
+    CourseInput,
+    CourseResponse,
+    CreateCourseResponse,
+    EnrollmentResponse,
+    EnrollResponse,
+    PaginationParams,
+    CourseSearchParams,
+    ModuleInput,
+    ModuleResponse
+)
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
 from app.service.courseService import get_course_service
@@ -35,6 +45,16 @@ async def get_courses_by_user(
         search=search_params.search
     )
     return enrollments
+
+#add module to course
+@courseRouter.post("/{course_id}/module")
+async def add_module(
+    course_id: str,
+    module_info: ModuleInput,
+    course_service: CourseService = Depends(get_course_service)
+):
+    moduleResponse = course_service.addModule(course_id, module_info)
+    return moduleResponse
 
 #get course by using course id
 @courseRouter.get("/{course_id}")

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.config.database import Base
 import uuid
 from sqlalchemy.dialects.postgresql import UUID  # For PostgreSQL
+from typing import Optional
 
 class Course(Base):
     __tablename__ = "courses"
@@ -20,6 +21,8 @@ class Course(Base):
 
     # Relationships
     enrollments = relationship("Enrollment", back_populates="course")
+    modules = relationship("Module", back_populates="course")  # 1:N (Course ↔ Modules)
+
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
@@ -35,3 +38,61 @@ class Enrollment(Base):
     # Relationships
     user = relationship("User", back_populates="enrollments")  # M:N (Student ↔ Courses)
     course = relationship("Course", back_populates="enrollments")  # M:N
+
+class Module(Base):
+    __tablename__ = "modules"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4
+    )
+    title: Mapped[str]
+    description: Mapped[Optional[str]]
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    is_published: Mapped[bool] = mapped_column(default=False)
+    
+    # Relationships
+    course = relationship("Course", back_populates="modules")
+    lessons = relationship("Lesson", back_populates="module")
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4
+    )
+    title: Mapped[str]
+    content: Mapped[str]
+    module_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("modules.id"))
+    
+    # Relationships
+    module = relationship("Module", back_populates="lessons")
+    videos = relationship("Video", back_populates="lesson")
+
+class Video(Base):
+    __tablename__ = "videos"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4, 
+        index=True
+    )
+    title = Column(String)
+    description = Column(String)
+    video_url = Column(String)
+    duration = Column(Integer)
+    is_published = Column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(),  # Use server_default for timestamp
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(),
+        onupdate=func.now(),  # Automatically update timestamp
+    )
+
+    # Relationships
+    lesson_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id"))
+    lesson = relationship("Lesson", back_populates="videos")  # 1:N (Lesson ↔ Videos)
