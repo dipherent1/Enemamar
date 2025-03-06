@@ -43,17 +43,6 @@ async def get_enrolled_courses(
     )
     return enrollments
 
-#add lesson to course
-@courseRouter.post("/{course_id}/lesson")
-async def add_lesson(
-    course_id: str,
-    lesson: LessonInput,
-    course_service: CourseService = Depends(get_course_service)
-):
-    # course_id = UUID(course_id)
-    
-    return course_service.addLesson(course_id, lesson)
-
 #add multiple lessons to course
 @courseRouter.post("/{course_id}/lessons")
 async def add_multiple_lessons(
@@ -67,11 +56,14 @@ async def add_multiple_lessons(
 @courseRouter.get("/{course_id}/lessons")
 async def get_lessons(
     course_id: str,
+    decoded_token: dict = Depends(is_logged_in),
     search_params: PaginationParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
+    user_id = decoded_token.get("id")
     return course_service.getLessons(
         course_id,
+        user_id,
         search_params.page,
         search_params.page_size
     )
@@ -81,9 +73,11 @@ async def get_lessons(
 async def get_lesson_by_id(
     course_id: str,
     lesson_id: str,
+    decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
-    return course_service.getLessonById(course_id, lesson_id)
+    user_id = decoded_token.get("id")
+    return course_service.getLessonById(course_id, lesson_id, user_id)
 
 #get course by using course id
 @courseRouter.get("/{course_id}")

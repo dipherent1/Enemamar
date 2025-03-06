@@ -96,6 +96,18 @@ class CourseRepository:
             .all()
         )
     
+    #get erollment by using user id and course id
+    def get_enrollment(self, user_id: str, course_id: str):
+        enrollment = (
+            self.db.query(Enrollment)
+            .filter(Enrollment.user_id == user_id)
+            .filter(Enrollment.course_id == course_id)
+            .first()
+        )
+        if not enrollment:
+            raise NotFoundError(detail="Enrollment not found")
+        return enrollment
+    
     #get all lessons of course
     def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
         course = self.db.query(Course).filter(Course.id == course_id).first()

@@ -166,12 +166,22 @@ class CourseService:
     #         "detail": "Lesson added successfully",
     #         "data": lesson_response
     #     }
+    def checkLessonAccess (self,course_id,user_id):
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ValidationError(detail="User not found")
+        
+        #check if user is enrolled in course
+        enrollment = self.course_repo.get_enrollment(user_id, course_id)
+        if not enrollment and user.role != "instructor":
+            raise ValidationError(detail="User not enrolled in course")
+        return True
+
     
     #get all lessons of course
-    def getLessons(self, course_id: str, page: int = 1, page_size: int = 10):
-        if not course_id:
-            raise ValidationError(detail="Course ID is required")
+    def getLessons(self, course_id: str,user_id , page: int = 1, page_size: int = 10):
         
+        self.checkLessonAccess(course_id,user_id)
         lessons = self.course_repo.get_lessons(course_id, page, page_size)
         lessons_response = [
             LessonResponse.model_validate(lesson)
@@ -189,7 +199,8 @@ class CourseService:
         }
     
     #get lesson by id
-    def getLessonById(self, course_id: str, lesson_id: str):
+    def getLessonById(self, course_id: str, lesson_id: str, user_id:str):
+        self.checkLessonAccess(course_id,user_id)
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
