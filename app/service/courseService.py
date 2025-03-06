@@ -1,15 +1,9 @@
-from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
+from app.utils.exceptions.exceptions import ValidationError
 import re
 from app.domain.schema.courseSchema import (
     CourseInput,
     CourseResponse,
-    CreateCourseResponse,
     EnrollmentResponse,
-    EnrollResponse,
-    PaginationParams,
-    CourseSearchParams,
-    ModuleInput,
-    ModuleResponse,
     LessonInput,
     LessonResponse,
     UserResponse,
@@ -33,7 +27,7 @@ class CourseService:
     def addCourse(self, course_info: CourseInput):
         # Validate instructor exists and has correct role
         instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
-        if not instructor:
+        if not instructor and not instructor.role == "instructor":
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
         
         # Create course with instructor relationship
@@ -42,10 +36,18 @@ class CourseService:
         
         # Create course first
         created_course = self.course_repo.create_course(course)
+        if not created_course:
+            raise ValidationError(detail="Failed to create course")
         
         # Add lessons if provided
         if course_info.lessons:
-            lessons = [Lesson(**lesson.model_dump()) for lesson in course_info.lessons]
+            lessons = [
+                Lesson(
+                    **lesson.model_dump(),
+                    course_id=created_course.id  # Set course_id here
+                )
+                for lesson in course_info.lessons
+            ]
             self.course_repo.add_multiple_lessons(str(created_course.id), lessons)
             
         # Refresh course to get lessons

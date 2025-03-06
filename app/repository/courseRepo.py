@@ -1,18 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from app.domain.model.course import Course, Enrollment, Lesson
-from app.domain.schema.courseSchema import (
-    CourseInput,
-    CourseResponse,
-    CreateCourseResponse,
-    EnrollmentResponse,
-    EnrollResponse,
-    PaginationParams,
-    CourseSearchParams,
-    ModuleInput,
-    ModuleResponse
-)
-from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
-from app.utils.security.jwt_handler import create_access_token, create_refresh_token
+from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
 from typing import Optional
 
@@ -107,19 +95,6 @@ class CourseRepository:
             .limit(page_size)
             .all()
         )
-
-    
-    #add lesson to course
-    def add_lesson(self, course_id: str, lesson: Lesson):
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
-        
-        lesson.course_id = course_id
-        self.db.add(lesson)
-        self.db.commit()
-        self.db.refresh(lesson)
-        return lesson
     
     #get all lessons of course
     def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
@@ -147,6 +122,18 @@ class CourseRepository:
         if not lesson:
             raise NotFoundError(detail="Lesson not found")
         return lesson
+   
+    #add lesson to course
+    def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        # Add all lessons in a single operation
+        self.db.add_all(lessons)
+        self.db.commit()
+        
+        return lessons
 
     def get_lessons_count(self, course_id: str) -> int:
         return (
@@ -187,19 +174,6 @@ class CourseRepository:
         
         return query.count()
 
-    def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
-        
-        # Set course_id for all lessons at once
-        for lesson in lessons:
-            lesson.course_id = course_id
-        
-        # Add all lessons in a single operation
-        self.db.add_all(lessons)
-        self.db.commit()
-        
-        return lessons
+
 
     
