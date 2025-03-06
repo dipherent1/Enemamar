@@ -192,11 +192,14 @@ class CourseRepository:
         if not course:
             raise NotFoundError(detail="Course not found")
         
+        # Set course_id for all lessons at once
         for lesson in lessons:
             lesson.course_id = course_id
-            self.db.add(lesson)
         
+        # Add all lessons in a single operation
+        self.db.add_all(lessons)
         self.db.commit()
+        
         return lessons
 
     
