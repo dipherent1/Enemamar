@@ -26,12 +26,23 @@ class CourseRepository:
         self.db.refresh(course)
         return course
     
-    #get course by using course id
-    def get_course(self, course_id: str):
-        course = self.db.query(Course).filter(Course.id == course_id).first()
+    def get_course_with_lessons(self, course_id: str):
+        course = (
+            self.db.query(Course)
+            .options(
+                joinedload(Course.lessons),
+                joinedload(Course.instructor)
+            )
+            .filter(Course.id == course_id)
+            .first()
+        )
         if not course:
             raise NotFoundError(detail="Course not found")
         return course
+
+    #get course by using course id
+    def get_course(self, course_id: str):
+        return self.get_course_with_lessons(course_id)
     
     #get all courses
     def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):

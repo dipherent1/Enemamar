@@ -37,9 +37,19 @@ class CourseService:
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
         
         # Create course with instructor relationship
-        course = Course(**course_info.model_dump(exclude_none=True))
+        course_data = course_info.model_dump(exclude={'lessons'})
+        course = Course(**course_data)
         
+        # Create course first
         created_course = self.course_repo.create_course(course)
+        
+        # Add lessons if provided
+        if course_info.lessons:
+            lessons = [Lesson(**lesson.model_dump()) for lesson in course_info.lessons]
+            self.course_repo.add_multiple_lessons(str(created_course.id), lessons)
+            
+        # Refresh course to get lessons
+        created_course = self.course_repo.get_course_with_lessons(str(created_course.id))
         course_response = CourseResponse.model_validate(created_course)
         course_response.instructor = UserResponse.model_validate(instructor)
         
@@ -54,19 +64,12 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
-        # Get course
-        course = self.course_repo.get_course(course_id)
+        # Get course with lessons
+        course = self.course_repo.get_course_with_lessons(course_id)
         
         # Convert SQLAlchemy Course object to Pydantic Response Model
         course_response = CourseResponse.model_validate(course)
         
-        # course_response = CourseResponse(
-        #     id=course.id,
-        #     title=course.title,
-        #     price=course.price,
-        #     description=course.description
-        # )
-
         # Return response
         return {"detail": "course fetched successfully","data": course_response}
     
