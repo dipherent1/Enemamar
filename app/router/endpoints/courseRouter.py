@@ -28,14 +28,14 @@ courseRouter = APIRouter(
 
 #get all courses enrolled by user
 @courseRouter.get("/enrolled")
-async def get_courses_by_user(
+async def get_enrolled_courses(
     search_params: CourseSearchParams = Depends(),
     decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
-    enrollments = course_service.getCoursesByUser(
+    enrollments = course_service.getEnrolledCourses(
         user_id=user_id,
         page=search_params.page,
         page_size=search_params.page_size,

@@ -126,13 +126,13 @@ class CourseService:
         return {"detail": "Course enrolled successfully", "data": enrollment_response}
     
     #get all courses enrolled by user
-    def getCoursesByUser(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+    def getEnrolledCourses(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         # Validate user_id
         if not user_id:
             raise ValidationError(detail="User ID is required")
         
         # Get paginated courses
-        enrollments = self.course_repo.get_courses_by_user(user_id, page, page_size, search)
+        enrollments = self.course_repo.get_enrolled_courses(user_id, page, page_size, search)
         
         # Extract and convert courses
         courses_response = [
