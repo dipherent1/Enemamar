@@ -25,14 +25,6 @@ courseRouter = APIRouter(
     tags=["course"]
 )
 
-#add course 
-@courseRouter.post("/add")
-async def add_course(
-    course_info: CourseInput,
-    course_service: CourseService = Depends(get_course_service),
-    # _: dict = Depends(is_admin)  # Only admins can create courses
-):
-    return course_service.addCourse(course_info)
 
 #get all courses enrolled by user
 @courseRouter.get("/enrolled")
@@ -129,3 +121,18 @@ async def enroll_course(
     enrollResponse = course_service.enrollCourse(user_id, course_id)
     return enrollResponse
 
+#create protected router for admin
+protected_courseRouter = APIRouter(
+    prefix="protected/course",
+    tags=["course"],
+    dependencies=[Depends(is_admin)]
+)
+
+#add course 
+@protected_courseRouter.post("/add")
+async def add_course(
+    course_info: CourseInput,
+    course_service: CourseService = Depends(get_course_service),
+    # _: dict = Depends(is_admin)  # Only admins can create courses
+):
+    return course_service.addCourse(course_info)

@@ -52,6 +52,8 @@ class CourseService:
             
         # Refresh course to get lessons
         created_course = self.course_repo.get_course_with_lessons(str(created_course.id))
+        if not created_course:
+            raise ValidationError(detail="Failed to fetch course with lessons")
         course_response = CourseResponse.model_validate(created_course)
         course_response.instructor = UserResponse.model_validate(instructor)
         
@@ -150,20 +152,20 @@ class CourseService:
         }
     
     
-    #add lesson to course
-    def addLesson(self, course_id, lesson_input: LessonInput):
-        if not course_id:
-            raise ValidationError(detail="Course ID is required")
+    # #add lesson to course
+    # def addLesson(self, course_id, lesson_input: LessonInput):
+    #     if not course_id:
+    #         raise ValidationError(detail="Course ID is required")
         
-        lesson = Lesson(**lesson_input.model_dump(exclude_none=True))
+    #     lesson = Lesson(**lesson_input.model_dump(exclude_none=True))
         
-        created_lesson = self.course_repo.add_lesson(course_id, lesson)
-        lesson_response = LessonResponse.model_validate(created_lesson)
+    #     created_lesson = self.course_repo.add_lesson(course_id, lesson)
+    #     lesson_response = LessonResponse.model_validate(created_lesson)
         
-        return {
-            "detail": "Lesson added successfully",
-            "data": lesson_response
-        }
+    #     return {
+    #         "detail": "Lesson added successfully",
+    #         "data": lesson_response
+    #     }
     
     #get all lessons of course
     def getLessons(self, course_id: str, page: int = 1, page_size: int = 10):
