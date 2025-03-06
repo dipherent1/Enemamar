@@ -78,9 +78,9 @@ class CourseService:
         # Get paginated courses
         courses = self.course_repo.get_courses(page, page_size, search)
         
-        # Convert to Pydantic models
+        # Convert to Pydantic models, excluding lessons
         courses_response = [
-            CourseResponse.model_validate(course)
+            CourseResponse.model_validate(course).model_dump(exclude={'lessons'})
             for course in courses
         ]
 

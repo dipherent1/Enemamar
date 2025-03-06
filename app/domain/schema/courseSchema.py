@@ -95,7 +95,7 @@ class CourseResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     instructor: Optional[UserResponse] = None
-    lessons: Optional[List[LessonResponse]] = None
+    lessons: Optional[List[LessonResponse]] = Field(default=None, exclude=True)
 
     model_config = {
         "from_attributes": True

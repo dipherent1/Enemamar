@@ -46,7 +46,12 @@ class CourseRepository:
     
     #get all courses
     def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
-        query = self.db.query(Course)
+        query = (
+            self.db.query(Course)
+            .options(
+                joinedload(Course.instructor)  # Only load instructor relationship
+            )
+        )
         
         if search:
             # Fuzzy search using ILIKE for case-insensitive matching
