@@ -151,6 +151,32 @@ class CourseService:
             }
         }
     
+    #get all users enrolled in a course
+    def getEnrolledUsers(self, course_id: str, page: int = 1, page_size: int = 10):
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        # Get paginated users
+        users = self.course_repo.get_enrolled_users(course_id, page, page_size)
+        
+        # Convert to Pydantic models
+        users_response = [
+            UserResponse.model_validate(user)
+            for user in users
+        ]
+
+        # Return response with pagination metadata
+        return {
+            "detail": "Course users fetched successfully",
+            "data": users_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_enrolled_users_count(course_id)
+            }
+        }
+    
     
     # #add lesson to course
     # def addLesson(self, course_id, lesson_input: LessonInput):

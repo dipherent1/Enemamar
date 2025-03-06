@@ -96,6 +96,20 @@ class CourseRepository:
             .all()
         )
     
+    #get all users enrolled in a course
+    def get_enrolled_users(self, course_id: str, page: int = 1, page_size: int = 10):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        return (
+            self.db.query(Enrollment)
+            .filter(Enrollment.course_id == course_id)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+    
     #get erollment by using user id and course id
     def get_enrollment(self, user_id: str, course_id: str):
         enrollment = (
@@ -146,6 +160,13 @@ class CourseRepository:
         self.db.commit()
         
         return lessons
+    
+    def get_enrolled_users_count(self, course_id: str) -> int:
+        return (
+            self.db.query(Enrollment)
+            .filter(Enrollment.course_id == course_id)
+            .count()
+        )
 
     def get_lessons_count(self, course_id: str) -> int:
         return (

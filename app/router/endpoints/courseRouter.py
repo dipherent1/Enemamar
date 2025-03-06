@@ -130,3 +130,30 @@ async def add_course(
     # _: dict = Depends(is_admin)  # Only admins can create courses
 ):
     return course_service.addCourse(course_info)
+
+#get enrolled course of user
+@protected_courseRouter.get("/enrolled/{user_id}")
+async def get_enrolled_courses_by_user(
+    user_id: str,
+    search_params: CourseSearchParams = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getEnrolledCourses(
+        user_id=user_id,
+        page=search_params.page,
+        page_size=search_params.page_size,
+        search=search_params.search
+    )
+
+#get all user enrolled course
+@protected_courseRouter.get("/{course_id}/enrolled")
+async def get_all_enrolled_courses(
+    course_id: str,
+    search_params: CourseSearchParams = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getEnrolledUsers(
+        course_id,
+        search_params.page,
+        search_params.page_size
+    )
