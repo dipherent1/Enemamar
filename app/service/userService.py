@@ -9,6 +9,7 @@ from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
 from app.utils.security.jwt_handler import verify_access_token
+from typing import Optional
 
 #initalize the user service
 class UserService:
@@ -17,14 +18,15 @@ class UserService:
         self.user_repo = UserRepository(db)
     
     #get all users
-    def get_all_users(self):
-        print("get_all_users")
-        users = self.user_repo.get_all_users()
-        #convert the users to response model
-        
+    def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
+        users = self.user_repo.get_all_users(search=search, page=page, page_size=page_size)
         users_response = [UserResponse.model_validate(user) for user in users]
-        #return the response
-        response = {"detail": "Users retrieved successfully", "data": users_response}
+        response = {
+            "detail": "Users retrieved successfully",
+            "data": users_response,
+            "page": page,
+            "page_size": page_size
+        }
         return response
 
     #get user by id
@@ -179,10 +181,15 @@ class UserService:
         return response
 
     #get all instructors
-    def get_all_instructors(self):
-        users = self.user_repo.get_all_instructors()
+    def get_all_instructors(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
+        users = self.user_repo.get_all_instructors(search=search, page=page, page_size=page_size)
         users_response = [UserResponse.model_validate(user) for user in users]
-        response = {"detail": "Instructors retrieved successfully", "data": users_response}
+        response = {
+            "detail": "Instructors retrieved successfully",
+            "data": users_response,
+            "page": page,
+            "page_size": page_size
+        }
         return response
 
     #get instructor by id
