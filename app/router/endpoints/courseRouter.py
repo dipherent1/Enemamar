@@ -109,7 +109,7 @@ async def enroll_course(
 
 #create protected router for admin
 protected_courseRouter = APIRouter(
-    prefix="protected/course",
+    prefix="/protected/course",
     tags=["course"],
     dependencies=[Depends(is_admin)]
 )
