@@ -1,16 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 from app.domain.schema.courseSchema import (
     CourseInput,
-    CourseResponse,
-    CreateCourseResponse,
-    EnrollmentResponse,
-    EnrollResponse,
     PaginationParams,
     SearchParams,
-    ModuleInput,
-    ModuleResponse,
-    LessonInput,
-    LessonResponse,
     MultipleLessonInput
 )
 from app.service.courseService import CourseService
