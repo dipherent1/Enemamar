@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException, Request
 from app.domain.schema.authSchema import signUp,login,editUser, UpdateRoleRequest
+from app.domain.schema.courseSchema import SearchParams
 from fastapi import Depends, Header
 from app.service.userService import UserService, get_user_service
 from app.utils.middleware.dependancies import is_admin, is_logged_in
 from uuid import UUID
+from typing import Optional
 
 
 userRouter = APIRouter(
@@ -14,8 +16,15 @@ userRouter = APIRouter(
 
 #get all users
 @userRouter.get("/")
-async def get_all_users(user_service: UserService = Depends(get_user_service)):
-    return user_service.get_all_users()
+async def get_all_users(
+    params: SearchParams = Depends(),
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.get_all_users(
+        search=params.search,
+        page=params.page,
+        page_size=params.page_size
+    )
 
 #get user by id
 @userRouter.get("/{user_id}")
@@ -47,17 +56,6 @@ async def update_role(
 ):
     return user_service.update_role(user_id, role_data.role)
 
-#get all instructors
-@userRouter.get("/instructors")
-async def get_all_instructors(user_service: UserService = Depends(get_user_service)):
-    print("get_all_instructors")
-    return user_service.get_all_instructors()
-
-#get instructor by id
-@userRouter.get("/instructor/{instructor_id}")
-async def get_instructor_by_id(instructor_id: str, user_service: UserService = Depends(get_user_service)):
-    print("get_instructor_by_id")
-    return user_service.get_instructor_by_id(instructor_id)
 
 #user profile router
 rootRouter = APIRouter()
@@ -87,15 +85,21 @@ async def edit_me(
 
 #create router for instructor 
 instructorRouter = APIRouter(
-    prefix="/instructors",
+    prefix="users/instructors",
     tags=["instructor"],
     dependencies=[Depends(is_admin)]
 )
 #get all instructors
 @instructorRouter.get("/")
-async def get_all_instructors(user_service: UserService = Depends(get_user_service)):
-    print("get_all_instructors")
-    return user_service.get_all_instructors()
+async def get_all_instructors(
+    params: SearchParams = Depends(),
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.get_all_instructors(
+        search=params.search,
+        page=params.page,
+        page_size=params.page_size
+    )
 
 #get instructor by id
 @instructorRouter.get("/{instructor_id}")

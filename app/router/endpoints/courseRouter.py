@@ -6,7 +6,7 @@ from app.domain.schema.courseSchema import (
     EnrollmentResponse,
     EnrollResponse,
     PaginationParams,
-    CourseSearchParams,
+    SearchParams,
     ModuleInput,
     ModuleResponse,
     LessonInput,
@@ -29,7 +29,7 @@ courseRouter = APIRouter(
 #get all courses enrolled by user
 @courseRouter.get("/enrolled")
 async def get_enrolled_courses(
-    search_params: CourseSearchParams = Depends(),
+    search_params: SearchParams = Depends(),
     decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
@@ -91,7 +91,7 @@ async def get_course(
 #get all courses
 @courseRouter.get("/")
 async def get_courses(
-    search_params: CourseSearchParams = Depends(),
+    search_params: SearchParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.getCourses(
@@ -135,7 +135,7 @@ async def add_course(
 @protected_courseRouter.get("/enrolled/{user_id}")
 async def get_enrolled_courses_by_user(
     user_id: str,
-    search_params: CourseSearchParams = Depends(),
+    search_params: SearchParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.getEnrolledCourses(
@@ -149,7 +149,7 @@ async def get_enrolled_courses_by_user(
 @protected_courseRouter.get("/{course_id}/enrolled")
 async def get_all_enrolled_courses(
     course_id: str,
-    search_params: CourseSearchParams = Depends(),
+    search_params: SearchParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.getEnrolledUsers(
