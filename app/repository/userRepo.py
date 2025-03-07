@@ -99,7 +99,7 @@ class UserRepository:
         self.db.commit()
         return accesToken, refreshToken
 
-    def getRefreshToken(self, user_id: int):
+    def get_refresh_token(self, user_id: str):
         return self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
 
     def get_all_instructors(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):

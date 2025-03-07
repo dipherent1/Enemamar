@@ -3,7 +3,7 @@ from app.domain.schema.authSchema import signUp,login
 from app.service.authService import AuthService
 from fastapi import Depends, Header
 from app.service.authService import get_auth_service
-from app.utils.middleware.dependancies import is_admin
+from app.utils.middleware.dependancies import is_admin, is_logged_in
 
 
 authRouter = APIRouter(
@@ -36,7 +36,8 @@ async def login_endpoint(
 @authRouter.get("/refresh")
 async def refresh_token(
     #get access token
-    authorization: str = Header(None),
+    decoded_token: dict = Depends(is_logged_in),
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    return auth_service.refresh_token(authorization)
+    return auth_service.refresh_token(decoded_token)
+    
