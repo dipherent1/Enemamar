@@ -85,7 +85,7 @@ async def edit_me(
 
 #create router for instructor 
 instructorRouter = APIRouter(
-    prefix="users/instructors",
+    prefix="/users/instructors",
     tags=["instructor"],
     dependencies=[Depends(is_admin)]
 )
