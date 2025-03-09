@@ -246,11 +246,11 @@ class CourseService:
             video_Response = videoResponse.model_validate(video)
             library_id,video_id,secret_key=video_Response.library_id, video_Response.video_id, video_Response.secret_key
             # print(secret_key)
-            # if  secret_key:
-            #     try:
-            #         secret_key = decrypt_secret_key(secret_key)
-            #     except Exception as e:
-            #         raise ValidationError(detail=f"Failed to decrypt video secret key: {str(e)}")
+            if  secret_key:
+                try:
+                    secret_key = decrypt_secret_key(secret_key)
+                except Exception as e:
+                    raise ValidationError(detail=f"Failed to decrypt video secret key: {str(e)}")
             
             url = generate_secure_bunny_stream_url(library_id, video_id, secret_key)
             lesson_response.video_url = url
@@ -294,7 +294,7 @@ class CourseService:
 
         
         # Create video
-        # video_input.secret_key = encrypt_secret_key(video_input.secret_key)
+        video_input.secret_key = encrypt_secret_key(video_input.secret_key)
         video_data = video_input.model_dump()
         video = Video(**video_data, lesson_id=lesson_id)
         
