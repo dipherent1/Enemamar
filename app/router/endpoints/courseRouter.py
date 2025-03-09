@@ -156,7 +156,7 @@ async def get_lesson_videos(
     decoded_token: dict = Depends(is_admin),
     course_service: CourseService = Depends(get_course_service)
 ):
-    return course_service.get_lesson_videos(course_id, lesson_id)
+    return course_service.get_lesson_video(course_id, lesson_id)
 
 @protected_courseRouter.get("/{course_id}/lessons/{lesson_id}/video/{video_id}")
 async def get_video_by_id(

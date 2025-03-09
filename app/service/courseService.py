@@ -202,7 +202,8 @@ class CourseService:
         
         #check if user is enrolled in course
         enrollment = self.course_repo.get_enrollment(user_id, course_id)
-        if not enrollment and user.role != "instructor" or user.role != "admin":
+        print(user.role)
+        if not enrollment and user.role not in ["instructor", "admin"]:
             raise ValidationError(detail="User not enrolled in course")
         return True
 
@@ -229,15 +230,31 @@ class CourseService:
     
     #get lesson by id
     def getLessonById(self, course_id: str, lesson_id: str, user_id:str):
-        self.checkLessonAccess(course_id,user_id)
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
         if not lesson_id:
             raise ValidationError(detail="Lesson ID is required")
         
+        self.checkLessonAccess(course_id,user_id)
+
         lesson = self.course_repo.get_lesson_by_id(course_id, lesson_id)
         lesson_response = LessonResponse.model_validate(lesson)
+
+        video = self.course_repo.get_lesson_video(lesson_id)
+        if video:
+            video_Response = videoResponse.model_validate(video)
+            library_id,video_id,secret_key=video_Response.library_id, video_Response.video_id, video_Response.secret_key
+            # print(secret_key)
+            try:
+                secret_key = decrypt_secret_key(secret_key)
+            except Exception as e:
+                raise ValidationError(detail=f"Failed to decrypt video secret key: {str(e)}")
+            
+            url = generate_secure_bunny_stream_url(library_id, video_id, secret_key)
+            lesson_response.video_url = url
+        else:
+            print("No video found")
         
         return {
             "detail": "Lesson fetched successfully",
@@ -283,7 +300,7 @@ class CourseService:
             "data": created_video
         }
 
-    def get_lesson_videos(self, course_id: str, lesson_id: str):
+    def get_lesson_video(self, course_id: str, lesson_id: str):
         # Validate course and lesson exist
         
         video = self.course_repo.get_lesson_video(lesson_id)

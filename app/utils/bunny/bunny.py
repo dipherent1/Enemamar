@@ -10,32 +10,46 @@ def encrypt_secret_key(secret_key: str) -> str:
 	"""
 	Encrypts the secret key using the encryption key.
 	"""
-	cipher_suite = Fernet(ENCRIPTION_SECRET_KEY)
-	encrypted_secret = cipher_suite.encrypt(secret_key.encode())
-	return encrypted_secret
+	try:
+		cipher_suite = Fernet(ENCRIPTION_SECRET_KEY)
+		encrypted_secret = cipher_suite.encrypt(secret_key.encode())  # Encode string to bytes
+		return encrypted_secret.decode()  # Convert bytes to string for storage
+	except Exception as e:
+		raise ValueError(f"Encryption failed: {str(e)}")
 
 def decrypt_secret_key(encrypted_secret: str) -> str:
 	"""
 	Decrypts the encrypted secret key using the encryption key.
 	"""
-	cipher_suite = Fernet(ENCRIPTION_SECRET_KEY)
-	decrypted_secret = cipher_suite.decrypt(encrypted_secret).decode()
-	return decrypted_secret
+	try:
+		cipher_suite = Fernet(ENCRIPTION_SECRET_KEY)
+		decrypted_secret = cipher_suite.decrypt(encrypted_secret.encode())  # Convert string to bytes for decryption
+		return decrypted_secret.decode()  # Decode bytes to string
+	except Exception as e:
+		raise ValueError(f"Decryption failed: {str(e)}")
 
 
 def generate_secure_bunny_stream_url(LIBRARY_ID:str ,video_id: str, BUNNY_STREAM_SECURITY_KEY: str,expiry_seconds: int = 3600):
-    """
-    Generates a correctly signed Bunny Stream URL using HEX SHA256.
-    """
-    expiry_time = int(time.time()) + expiry_seconds  # Expiry timestamp
-    token_string = BUNNY_STREAM_SECURITY_KEY + video_id + str(expiry_time)
+	"""
+	Generates a correctly signed Bunny Stream URL using HEX SHA256.
+	"""
+	# print(ENCRIPTED_SECURITY_KEY)
+	# try:
+	# 	BUNNY_STREAM_SECURITY_KEY = decrypt_secret_key(ENCRIPTED_SECURITY_KEY)
+	# except Exception as e:
+	# 	raise e
+	expiry_time = int(time.time()) + expiry_seconds  # Expiry timestamp
+	token_string = BUNNY_STREAM_SECURITY_KEY + video_id + str(expiry_time)
 
-    # Generate the correct HEX SHA256 hash
-    token_hash = hashlib.sha256(token_string.encode('utf-8')).hexdigest()
+	# Generate the correct HEX SHA256 hash
+	try:
+		token_hash = hashlib.sha256(token_string.encode('utf-8')).hexdigest()
+	except Exception as e:
+		raise e
 
-    # Construct the secure URL
-    secure_url = f"https://iframe.mediadelivery.net/embed/{LIBRARY_ID}/{video_id}?token={token_hash}&expires={expiry_time}"
-    return secure_url
+	# Construct the secure URL
+	secure_url = f"https://iframe.mediadelivery.net/embed/{LIBRARY_ID}/{video_id}?token={token_hash}&expires={expiry_time}"
+	return secure_url
 
 
 VERSION = "2"
