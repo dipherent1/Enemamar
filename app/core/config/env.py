@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     ACCESS_SECRET_KEY: str
     REFRESH_SECRET_KEY: str
-    VIDEIO_SECRET_KEY: str
+    ENCRIPTION_SECRET_KEY: str
     
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int

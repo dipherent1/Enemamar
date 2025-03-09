@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
+from app.utils.bunny.bunny import generate_secure_bunny_stream_url, encrypt_secret_key, decrypt_secret_key
 from typing import Optional
 from app.repository.userRepo import UserRepository
 
@@ -268,11 +269,15 @@ class CourseService:
 
         
         # Create video
+        video_input.secret_key = encrypt_secret_key(video_input.secret_key)
         video_data = video_input.model_dump()
         video = Video(**video_data, lesson_id=lesson_id)
         
         # Add video to lesson
-        created_video = self.course_repo.add_video(video)
+        try:
+            created_video = self.course_repo.add_video(video)
+        except IntegrityError:
+            raise ValidationError(detail="Failed to add video, video already exist")
         return {
             "detail": "Video added successfully",
             "data": created_video
