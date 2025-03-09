@@ -67,6 +67,21 @@ class VideoInput(BaseModel):
     library_id: str = Field(..., min_length=1)
     secret_key: str = Field(..., min_length=1)
 
+class videoResponse(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    duration: int
+    video_id: str
+    library_id: str
+    secret_key: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
 class CourseInput(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str = Field(..., min_length=1)
@@ -100,14 +115,14 @@ class CourseResponse(BaseModel):
     id: UUID
     title: str
     description: str
-    tags: List[str]
+    tags: Optional[List[str]]
     price: float
     thubmnail_url: Optional[str] = None
     instructor_id: UUID
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    instructor: Optional[UserResponse] = None
-    lessons: Optional[List[LessonResponse]] = Field(default=None, exclude=True)
+    instructor: Optional[UserResponse] = Field(default=None)
+    lessons: Optional[List[LessonResponse]] = Field(default=None)
 
     model_config = {
         "from_attributes": True

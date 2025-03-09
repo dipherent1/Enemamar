@@ -10,7 +10,7 @@ class AppCreator():
         self.app = FastAPI()
         self.app.include_router(routers)
 
-# # Drop all tables with CASCADE
+# Drop all tables with CASCADE
 # with engine.connect() as connection:
 #     # Disable foreign key checks temporarily
 #     connection.execute(text("DROP SCHEMA public CASCADE;"))

@@ -3,7 +3,8 @@ from app.domain.schema.courseSchema import (
     CourseInput,
     PaginationParams,
     SearchParams,
-    MultipleLessonInput
+    MultipleLessonInput,
+    VideoInput
 )
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
@@ -34,15 +35,6 @@ async def get_enrolled_courses(
         search=search_params.search
     )
     return enrollments
-
-#add multiple lessons to course
-@courseRouter.post("/{course_id}/lessons")
-async def add_multiple_lessons(
-    course_id: str,
-    lessons_input: MultipleLessonInput,  # Change the parameter name to be more clear
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.addMultipleLessons(course_id, lessons_input)
 
 #get all lessons of course
 @courseRouter.get("/{course_id}/lessons")
@@ -136,6 +128,44 @@ async def get_enrolled_courses_by_user(
         page_size=search_params.page_size,
         search=search_params.search
     )
+
+
+#add multiple lessons to course
+@courseRouter.post("/{course_id}/lessons")
+async def add_multiple_lessons(
+    course_id: str,
+    lessons_input: MultipleLessonInput,  # Change the parameter name to be more clear
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.addMultipleLessons(course_id, lessons_input)
+
+@protected_courseRouter.post("/{course_id}/lessons/{lesson_id}/video")
+async def add_video_to_lesson(
+    course_id: str,
+    lesson_id: str,
+    video_input: VideoInput,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.add_video_to_lesson(course_id, lesson_id, video_input)
+
+
+@protected_courseRouter.get("/{course_id}/lessons/{lesson_id}/video")
+async def get_lesson_videos(
+    course_id: str,
+    lesson_id: str,
+    decoded_token: dict = Depends(is_admin),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.get_lesson_videos(course_id, lesson_id)
+
+@protected_courseRouter.get("/{course_id}/lessons/{lesson_id}/video/{video_id}")
+async def get_video_by_id(
+    course_id: str,
+    lesson_id: str,
+    video_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.get_video_by_id(course_id, lesson_id, video_id)
 
 #get all user enrolled course
 @protected_courseRouter.get("/{course_id}/enrolled")

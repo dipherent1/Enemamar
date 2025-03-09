@@ -7,9 +7,11 @@ from app.domain.schema.courseSchema import (
     LessonInput,
     LessonResponse,
     UserResponse,
-    MultipleLessonInput
+    MultipleLessonInput,
+    VideoInput,
+    videoResponse
 )
-from app.domain.model.course import Course, Enrollment, Lesson
+from app.domain.model.course import Course, Enrollment, Lesson, Video
 from app.repository.courseRepo import CourseRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -27,7 +29,7 @@ class CourseService:
     def addCourse(self, course_info: CourseInput):
         # Validate instructor exists and has correct role
         instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
-        if not instructor and not instructor.role == "instructor":
+        if not instructor or not instructor.role == "instructor":
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
         
         # Create course with instructor relationship
@@ -55,7 +57,7 @@ class CourseService:
         if not created_course:
             raise ValidationError(detail="Failed to fetch course with lessons")
         course_response = CourseResponse.model_validate(created_course)
-        course_response.instructor = UserResponse.model_validate(instructor)
+        # course_response.instructor = UserResponse.model_validate(instructor)
         
         return {
             "detail": "Course created successfully",
@@ -199,7 +201,7 @@ class CourseService:
         
         #check if user is enrolled in course
         enrollment = self.course_repo.get_enrollment(user_id, course_id)
-        if not enrollment and user.role != "instructor":
+        if not enrollment and user.role != "instructor" or user.role != "admin":
             raise ValidationError(detail="User not enrolled in course")
         return True
 
@@ -256,6 +258,54 @@ class CourseService:
         return {
             "detail": "Lessons added successfully",
             "data": lessons_response
+        }
+
+    def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
+        # Get lesson and check if a available
+        lesson = self.course_repo.get_lesson_by_id(course_id,lesson_id)  
+        if not lesson:
+            raise ValidationError(detail="Lesson not found")
+
+        
+        # Create video
+        video_data = video_input.model_dump()
+        video = Video(**video_data, lesson_id=lesson_id)
+        
+        # Add video to lesson
+        created_video = self.course_repo.add_video(video)
+        return {
+            "detail": "Video added successfully",
+            "data": created_video
+        }
+
+    def get_lesson_videos(self, course_id: str, lesson_id: str):
+        # Validate course and lesson exist
+        
+        video = self.course_repo.get_lesson_video(lesson_id)
+        if not video:
+            return {
+                "detail": "No video found for this lesson",
+                "data": None
+            }
+            
+        return {
+            "detail": "Video fetched successfully",
+            "data": videoResponse.model_validate(video.__dict__)
+        }
+
+    def get_video_by_id(self, course_id: str, lesson_id: str, video_id: str):
+        # Validate course and lesson exist
+        lesson = self.course_repo.get_lesson_by_id(course_id,lesson_id)  
+        if not lesson:
+            raise ValidationError(detail="Lesson not found")
+        
+        video = self.course_repo.get_video_by_id(lesson_id, video_id)
+        if not video:
+            raise ValidationError(detail="Video not found")
+        
+        return {
+            "detail": "Video fetched successfully",
+            "data": videoResponse.model_validate(video)
         }
 
 def get_course_service(db: Session = Depends(get_db)):
