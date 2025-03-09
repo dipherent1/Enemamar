@@ -266,7 +266,14 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
-        lessons = [Lesson(**lesson.model_dump()) for lesson in lessons_input.lessons]
+        # Set course_id for each lesson
+        lessons = [
+            Lesson(
+                **lesson.model_dump(),
+                course_id=course_id  # Add course_id here
+            )
+            for lesson in lessons_input.lessons
+        ]
         
         created_lessons = self.course_repo.add_multiple_lessons(course_id, lessons)
         lessons_response = [
