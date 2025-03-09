@@ -10,6 +10,7 @@ def encrypt_secret_key(secret_key: str) -> str:
 	"""
 	Encrypts the secret key using the encryption key.
 	"""
+	print(ENCRIPTION_SECRET_KEY)
 	try:
 		cipher_suite = Fernet(ENCRIPTION_SECRET_KEY)
 		encrypted_secret = cipher_suite.encrypt(secret_key.encode())  # Encode string to bytes
