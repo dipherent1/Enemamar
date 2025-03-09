@@ -62,7 +62,7 @@ class CourseService:
         
         return {
             "detail": "Course created successfully",
-            "course": course_response
+            "data": course_response
         }
     
     #get course by using course id
