@@ -1,4 +1,4 @@
-#!/home/biniam/Desktop/Projects/Management-System/venv/bin/python3
+#!/home/biniam/Desktop/Projects/Enemamar/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

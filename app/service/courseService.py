@@ -7,15 +7,18 @@ from app.domain.schema.courseSchema import (
     LessonInput,
     LessonResponse,
     UserResponse,
-    MultipleLessonInput
+    MultipleLessonInput,
+    VideoInput,
+    videoResponse
 )
-from app.domain.model.course import Course, Enrollment, Lesson
+from app.domain.model.course import Course, Enrollment, Lesson, Video
 from app.repository.courseRepo import CourseRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
+from app.utils.bunny.bunny import generate_secure_bunny_stream_url, encrypt_secret_key, decrypt_secret_key
 from typing import Optional
 from app.repository.userRepo import UserRepository
 
@@ -27,7 +30,7 @@ class CourseService:
     def addCourse(self, course_info: CourseInput):
         # Validate instructor exists and has correct role
         instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
-        if not instructor and not instructor.role == "instructor":
+        if not instructor or not instructor.role == "instructor":
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
         
         # Create course with instructor relationship
@@ -55,7 +58,7 @@ class CourseService:
         if not created_course:
             raise ValidationError(detail="Failed to fetch course with lessons")
         course_response = CourseResponse.model_validate(created_course)
-        course_response.instructor = UserResponse.model_validate(instructor)
+        # course_response.instructor = UserResponse.model_validate(instructor)
         
         return {
             "detail": "Course created successfully",
@@ -199,7 +202,8 @@ class CourseService:
         
         #check if user is enrolled in course
         enrollment = self.course_repo.get_enrollment(user_id, course_id)
-        if not enrollment and user.role != "instructor":
+        print(user.role)
+        if not enrollment and user.role not in ["instructor", "admin"]:
             raise ValidationError(detail="User not enrolled in course")
         return True
 
@@ -226,15 +230,31 @@ class CourseService:
     
     #get lesson by id
     def getLessonById(self, course_id: str, lesson_id: str, user_id:str):
-        self.checkLessonAccess(course_id,user_id)
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
         if not lesson_id:
             raise ValidationError(detail="Lesson ID is required")
         
+        self.checkLessonAccess(course_id,user_id)
+
         lesson = self.course_repo.get_lesson_by_id(course_id, lesson_id)
         lesson_response = LessonResponse.model_validate(lesson)
+
+        video = self.course_repo.get_lesson_video(lesson_id)
+        if video:
+            video_Response = videoResponse.model_validate(video)
+            library_id,video_id,secret_key=video_Response.library_id, video_Response.video_id, video_Response.secret_key
+            # print(secret_key)
+            try:
+                secret_key = decrypt_secret_key(secret_key)
+            except Exception as e:
+                raise ValidationError(detail=f"Failed to decrypt video secret key: {str(e)}")
+            
+            url = generate_secure_bunny_stream_url(library_id, video_id, secret_key)
+            lesson_response.video_url = url
+        else:
+            print("No video found")
         
         return {
             "detail": "Lesson fetched successfully",
@@ -256,6 +276,58 @@ class CourseService:
         return {
             "detail": "Lessons added successfully",
             "data": lessons_response
+        }
+
+    def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
+        # Get lesson and check if a available
+        lesson = self.course_repo.get_lesson_by_id(course_id,lesson_id)  
+        if not lesson:
+            raise ValidationError(detail="Lesson not found")
+
+        
+        # Create video
+        video_input.secret_key = encrypt_secret_key(video_input.secret_key)
+        video_data = video_input.model_dump()
+        video = Video(**video_data, lesson_id=lesson_id)
+        
+        # Add video to lesson
+        try:
+            created_video = self.course_repo.add_video(video)
+        except IntegrityError:
+            raise ValidationError(detail="Failed to add video, video already exist")
+        return {
+            "detail": "Video added successfully",
+            "data": created_video
+        }
+
+    def get_lesson_video(self, course_id: str, lesson_id: str):
+        # Validate course and lesson exist
+        
+        video = self.course_repo.get_lesson_video(lesson_id)
+        if not video:
+            return {
+                "detail": "No video found for this lesson",
+                "data": None
+            }
+            
+        return {
+            "detail": "Video fetched successfully",
+            "data": videoResponse.model_validate(video.__dict__)
+        }
+
+    def get_video_by_id(self, course_id: str, lesson_id: str, video_id: str):
+        # Validate course and lesson exist
+        lesson = self.course_repo.get_lesson_by_id(course_id,lesson_id)  
+        if not lesson:
+            raise ValidationError(detail="Lesson not found")
+        
+        video = self.course_repo.get_video_by_id(lesson_id, video_id)
+        if not video:
+            raise ValidationError(detail="Video not found")
+        
+        return {
+            "detail": "Video fetched successfully",
+            "data": videoResponse.model_validate(video)
         }
 
 def get_course_service(db: Session = Depends(get_db)):
