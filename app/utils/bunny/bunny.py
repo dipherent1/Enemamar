@@ -38,6 +38,9 @@ def generate_secure_bunny_stream_url(LIBRARY_ID:str ,video_id: str, BUNNY_STREAM
 	# 	BUNNY_STREAM_SECURITY_KEY = decrypt_secret_key(ENCRIPTED_SECURITY_KEY)
 	# except Exception as e:
 	# 	raise e
+	if not BUNNY_STREAM_SECURITY_KEY:
+		return "https://iframe.mediadelivery.net/embed/{LIBRARY_ID}/{video_id}"
+
 	expiry_time = int(time.time()) + expiry_seconds  # Expiry timestamp
 	token_string = BUNNY_STREAM_SECURITY_KEY + video_id + str(expiry_time)
 
