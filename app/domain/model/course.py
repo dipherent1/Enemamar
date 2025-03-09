@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float, ARRAY
 from sqlalchemy.sql import func
 from datetime import datetime, timezone
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,7 +21,13 @@ class Course(Base):
     title = Column(String)
     price = Column(Float)
     description = Column(String)
+    tags = Column(ARRAY(String))
     instructor_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+
+    thumbnail_url = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    view_count = Column(Integer, default=0)
 
     # Relationships
     enrollments = relationship("Enrollment", back_populates="course")
@@ -65,7 +71,7 @@ class Lesson(Base):
     
     # Relationships
     course = relationship("Course", back_populates="lessons")
-    videos = relationship("Video", back_populates="lesson")  # 1:N (Lesson ↔ Videos)
+    video = relationship("Video", back_populates="lesson", uselist=False)  # Changed to one-to-one
 
 class Video(Base):
     __tablename__ = "videos"
@@ -77,19 +83,22 @@ class Video(Base):
     )
     title = Column(String)
     description = Column(String)
-    video_url = Column(String)
     duration = Column(Integer)
-    is_published = Column(Boolean, default=False)
+    
+    library_id = Column(String)
+    video_id = Column(String)
+    secret_key = Column(String)
+    
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
-        server_default=func.now(),  # Use server_default for timestamp
+        server_default=func.now(),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         server_default=func.now(),
-        onupdate=func.now(),  # Automatically update timestamp
+        onupdate=func.now(),
     )
 
     # Relationships
-    lesson_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id"))
-    lesson = relationship("Lesson", back_populates="videos")  # 1:N (Lesson ↔ Videos)
+    lesson_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id"), unique=True)  # Added unique constraint
+    lesson = relationship("Lesson", back_populates="video")  # Changed to one-to-one
