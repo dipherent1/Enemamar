@@ -7,7 +7,7 @@ import uuid
 
 settings = get_settings()
 
-SECRET_KEY = settings.SECRET_KEY
+ACCESS_SECRET_KEY = settings.ACCESS_SECRET_KEY
 REFRESH_SECRET_KEY = settings.REFRESH_SECRET_KEY
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
@@ -22,7 +22,7 @@ def create_access_token(data: dict) -> str:
             to_encode[key] = str(value)
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, ACCESS_SECRET_KEY, algorithm=ALGORITHM)
 
 def create_refresh_token(data: dict) -> str:
     """Generate a new refresh token."""
@@ -37,7 +37,7 @@ def create_refresh_token(data: dict) -> str:
 def verify_access_token(token: str) -> Optional[dict]:
     """Verify access token and return payload."""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")

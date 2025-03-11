@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
+from app.utils.security.jwt_handler import verify_refresh_token, verify_access_token, create_access_token, create_refresh_token
 
 
 class AuthService:
@@ -82,16 +83,17 @@ class AuthService:
         if not user:
             raise NotFoundError(detail="User with this email or phone number does not exist")
         
-        user_data = {
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "phone_number": user.phone_number,
-        "role": user.role,
-        "is_active": user.is_active,
-    }
+        user_response = UserResponse.model_validate(user)
+    #     user_data = {
+    #     "id": user.id,
+    #     "username": user.username,
+    #     "email": user.email,
+    #     "first_name": user.first_name,
+    #     "last_name": user.last_name,
+    #     "phone_number": user.phone_number,
+    #     "role": user.role,
+    #     "is_active": user.is_active,
+    # }
         if not user.is_active:
             raise ValidationError(detail="User is not active")
 
@@ -103,14 +105,22 @@ class AuthService:
         access_token, refresh_token = self.user_repo.login(token_data)
 
         # Convert SQLAlchemy User object to Pydantic Response Model
-        user_response = UserResponse(**user_data)
+        user_response = UserResponse.model_validate(user)
         login_response = loginResponse(detail="Login successful", access_token=access_token, refresh_token= refresh_token, user=user_response)
         return login_response
     
-    def refresh_token(self, access_token: str):
-        #TODO: check if inactive
-        print(access_token)
-        pass
+    def refresh_token(self, decoded_token: dict):
+        #get user id
+        user_id = decoded_token.get("id")
+        #get refresh token
+        refresh_token = self.user_repo.get_refresh_token(user_id)
+        #validate refresh token
+        verify_refresh_token(refresh_token)
+
+        # Create new access token
+        token_data = tokenLoginData(id=user_id, role=decoded_token.get("role"))
+        access_token = create_access_token(token_data.model_dump())
+        return {"access_token": access_token}
 
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     return AuthService(db)

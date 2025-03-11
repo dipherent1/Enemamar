@@ -3,6 +3,8 @@ from app.domain.model.user import User, RefreshToken
 from app.domain.schema.authSchema import tokenLoginData, editUser
 from app.utils.security.jwt_handler import create_access_token, create_refresh_token
 from sqlalchemy.exc import DataError
+from typing import Optional
+from sqlalchemy import or_
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -14,8 +16,21 @@ class UserRepository:
         self.db.refresh(user)
         return user
     
-    def get_all_users(self):
-        return self.db.query(User).all()
+    def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
+        query = self.db.query(User)
+        
+        if search:
+            query = query.filter(
+                or_(
+                    User.email.ilike(f"%{search}%"),
+                    User.phone_number.ilike(f"%{search}%"),
+                    User.first_name.ilike(f"%{search}%"),
+                    User.last_name.ilike(f"%{search}%")
+                )
+            )
+        
+        offset = (page - 1) * page_size
+        return query.offset(offset).limit(page_size).all()
     
     def get_user_by_id(self, user_id: str):
         try:
@@ -84,11 +99,24 @@ class UserRepository:
         self.db.commit()
         return accesToken, refreshToken
 
-    def getRefreshToken(self, user_id: int):
+    def get_refresh_token(self, user_id: str):
         return self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
 
-    def get_all_instructors(self):
-        return self.db.query(User).filter(User.role == "inst").all()
+    def get_all_instructors(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
+        query = self.db.query(User).filter(User.role == "instructor")
+        
+        if search:
+            query = query.filter(
+                or_(
+                    User.email.ilike(f"%{search}%"),
+                    User.phone_number.ilike(f"%{search}%"),
+                    User.first_name.ilike(f"%{search}%"),
+                    User.last_name.ilike(f"%{search}%")
+                )
+            )
+        
+        offset = (page - 1) * page_size
+        return query.offset(offset).limit(page_size).all()
     
     def get_instructor_by_id(self, instructor_id: str):
         try:

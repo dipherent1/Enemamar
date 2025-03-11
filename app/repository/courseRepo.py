@@ -1,18 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
-from app.domain.model.course import Course, Enrollment, Lesson
-from app.domain.schema.courseSchema import (
-    CourseInput,
-    CourseResponse,
-    CreateCourseResponse,
-    EnrollmentResponse,
-    EnrollResponse,
-    PaginationParams,
-    CourseSearchParams,
-    ModuleInput,
-    ModuleResponse
-)
-from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
-from app.utils.security.jwt_handler import create_access_token, create_refresh_token
+from app.domain.model.course import Course, Enrollment, Lesson, Video
+from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
 from typing import Optional
 
@@ -46,7 +34,12 @@ class CourseRepository:
     
     #get all courses
     def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
-        query = self.db.query(Course)
+        query = (
+            self.db.query(Course)
+            .options(
+                joinedload(Course.instructor)  # Only load instructor relationship
+            )
+        )
         
         if search:
             # Fuzzy search using ILIKE for case-insensitive matching
@@ -80,7 +73,7 @@ class CourseRepository:
         return enrollment 
     
     #get all courses enrolled by user
-    def get_courses_by_user(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+    def get_enrolled_courses(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         query = (
             self.db.query(Enrollment)
             .options(joinedload(Enrollment.course))
@@ -102,19 +95,32 @@ class CourseRepository:
             .limit(page_size)
             .all()
         )
-
     
-    #add lesson to course
-    def add_lesson(self, course_id: str, lesson: Lesson):
+    #get all users enrolled in a course
+    def get_enrolled_users(self, course_id: str, page: int = 1, page_size: int = 10):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
         
-        lesson.course_id = course_id
-        self.db.add(lesson)
-        self.db.commit()
-        self.db.refresh(lesson)
-        return lesson
+        return (
+            self.db.query(Enrollment)
+            .filter(Enrollment.course_id == course_id)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+    
+    #get erollment by using user id and course id
+    def get_enrollment(self, user_id: str, course_id: str):
+        enrollment = (
+            self.db.query(Enrollment)
+            .filter(Enrollment.user_id == user_id)
+            .filter(Enrollment.course_id == course_id)
+            .first()
+        )
+        if not enrollment:
+            return None
+        return enrollment
     
     #get all lessons of course
     def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
@@ -142,6 +148,52 @@ class CourseRepository:
         if not lesson:
             raise NotFoundError(detail="Lesson not found")
         return lesson
+   
+    #add lesson to course
+    def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        # Add all lessons in a single operation
+        self.db.add_all(lessons)
+        self.db.commit()
+        
+        return lessons
+    
+    def get_enrolled_users_count(self, course_id: str) -> int:
+        return (
+            self.db.query(Enrollment)
+            .filter(Enrollment.course_id == course_id)
+            .count()
+        )
+
+    def add_video(self, video: Video):
+        self.db.add(video)
+        self.db.commit()
+        self.db.refresh(video)
+        return video
+    
+
+
+    def get_lesson_video(self, lesson_id: str):
+        video = (
+            self.db.query(Video)
+            .filter(Video.lesson_id == lesson_id)
+            .first()
+        )
+        return video
+
+    def get_video_by_id(self, lesson_id: str, video_id: str):
+        video = (
+            self.db.query(Video)
+            .filter(Video.lesson_id == lesson_id)
+            .filter(Video.id == video_id)
+            .first()
+        )
+        if not video:
+            raise NotFoundError(detail="Video not found")
+        return video
 
     def get_lessons_count(self, course_id: str) -> int:
         return (
@@ -149,7 +201,7 @@ class CourseRepository:
             .filter(Lesson.course_id == course_id)
             .count()
         )
-
+        
     def get_user_courses_count(self, user_id: str, search: Optional[str] = None):
         query = (
             self.db.query(Enrollment)
@@ -182,16 +234,5 @@ class CourseRepository:
         
         return query.count()
 
-    def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
-        
-        for lesson in lessons:
-            lesson.course_id = course_id
-            self.db.add(lesson)
-        
-        self.db.commit()
-        return lessons
 
     
