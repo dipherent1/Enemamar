@@ -93,9 +93,9 @@ class CourseService:
         return {"detail": "course fetched successfully","data": course_response}
     
     #get all courses
-    def getCourses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+    def getCourses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None, filter: Optional[str] = None):
         # Get paginated courses
-        courses = self.course_repo.get_courses(page, page_size, search)
+        courses = self.course_repo.get_courses(page, page_size, search, filter)
         
         # Convert to Pydantic models, excluding lessons
         courses_response = [

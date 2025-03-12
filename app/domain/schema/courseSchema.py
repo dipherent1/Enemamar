@@ -6,17 +6,13 @@ from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
 
 class VideoInput(BaseModel):
-    title: str = Field(..., min_length=1, max_length=100)
-    description: str = Field(..., min_length=1)
-    duration: int = Field(..., gt=0)
+    duration: Optional[int] = None
     video_id: str = Field(..., min_length=1)
     library_id: str = Field(..., min_length=1)
     secret_key: str = Field(..., min_length=1)
 
 class videoResponse(BaseModel):
     id: UUID
-    title: str
-    description: str
     duration: int
     video_id: str
     library_id: str
@@ -32,6 +28,7 @@ class LessonInput(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     description: str = Field(..., min_length=1)
     duration: int = Field(..., gt=0)
+    order: int = Field(default=None)
     video: Optional[VideoInput] = Field(default=None)
 
     model_config = {
@@ -52,6 +49,7 @@ class LessonResponse(BaseModel):
     description: str
     duration: int
     video_url: Optional[str] = None
+    order: int 
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     video: Optional[videoResponse] = Field(default=None)
@@ -162,6 +160,10 @@ class SearchParams(PaginationParams):
     search: Optional[str] = Field(
         default=None,
         description="Fuzzy search term"
+    )
+    filter: Optional[str] = Field(
+        default=None,
+        description="Filter term"
     )
 
 class ModuleInput(BaseModel):

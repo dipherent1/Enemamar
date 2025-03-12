@@ -81,7 +81,8 @@ async def get_courses(
     return course_service.getCourses(
         page=search_params.page,
         page_size=search_params.page_size,
-        search=search_params.search
+        search=search_params.search,
+        filter=search_params.filter
     )
 
 #enroll course only for logged in user

@@ -33,7 +33,7 @@ class CourseRepository:
         return self.get_course_with_lessons(course_id)
     
     #get all courses
-    def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+    def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None, filter: Optional[str] = None):
         query = (
             self.db.query(Course)
             .options(
@@ -47,9 +47,13 @@ class CourseRepository:
             query = query.filter(
                 or_(
                     Course.title.ilike(search_term),
-                    Course.description.ilike(search_term)
+                    Course.description.ilike(search_term),
+                    Course.tags.ilike(search_term)
                 )
             )
+
+        if filter:
+            query = query.filter(Course.tags.ilike(f"%{filter}%"))
         
         return (
             query

@@ -18,8 +18,8 @@ class UserService:
         self.user_repo = UserRepository(db)
     
     #get all users
-    def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
-        users = self.user_repo.get_all_users(search=search, page=page, page_size=page_size)
+    def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
+        users = self.user_repo.get_all_users(search=search, page=page, page_size=page_size, filter=filter)
         users_response = [UserResponse.model_validate(user) for user in users]
         response = {
             "detail": "Users retrieved successfully",
