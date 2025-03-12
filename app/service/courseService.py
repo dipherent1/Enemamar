@@ -85,7 +85,12 @@ class CourseService:
         
         # Get course with lessons
         course = self.course_repo.get_course_with_lessons(course_id)
+        if not course:
+            raise ValidationError(detail="Course not found")
         
+        #TODO remove video from response
+
+
         # Convert SQLAlchemy Course object to Pydantic Response Model
         course_response = CourseResponse.model_validate(course)
         

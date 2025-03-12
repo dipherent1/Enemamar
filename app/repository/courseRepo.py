@@ -57,7 +57,7 @@ class CourseRepository:
         
         return (
             query
-            .offset((page - 1) * page_size)
+            .order_by(Lesson.order.desc())
             .limit(page_size)
             .all()
         )
@@ -128,6 +128,17 @@ class CourseRepository:
     
     #get all lessons of course
     def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
+        """
+        Retrieve all lessons for a given course.
+
+        Args:
+            course_id (str): The ID of the course.
+            page (int, optional): The page number for pagination. Defaults to 1.
+            page_size (int, optional): The number of lessons per page. Defaults to 10.
+
+        Returns:
+            List[Lesson]: A list of lessons for the specified course.
+        """
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
@@ -135,7 +146,7 @@ class CourseRepository:
         return (
             self.db.query(Lesson)
             .filter(Lesson.course_id == course_id)
-            .order_by(Lesson.created_at.asc())
+            .order_by(Lesson.order.asc())  # Order lessons in ascending order
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
