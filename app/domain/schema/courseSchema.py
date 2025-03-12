@@ -5,10 +5,34 @@ from app.domain.model.user import User
 from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
 
+class VideoInput(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+    description: str = Field(..., min_length=1)
+    duration: int = Field(..., gt=0)
+    video_id: str = Field(..., min_length=1)
+    library_id: str = Field(..., min_length=1)
+    secret_key: str = Field(..., min_length=1)
+
+class videoResponse(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    duration: int
+    video_id: str
+    library_id: str
+    secret_key: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
 class LessonInput(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
     description: str = Field(..., min_length=1)
     duration: int = Field(..., gt=0)
+    video: Optional[VideoInput] = Field(default=None)
 
     model_config = {
         "json_schema_extra": {
@@ -30,6 +54,7 @@ class LessonResponse(BaseModel):
     video_url: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    video: Optional[videoResponse] = Field(default=None)
 
     model_config = {
         "from_attributes": True
@@ -59,28 +84,7 @@ class MultipleLessonInput(BaseModel):
         }
     }
 
-class VideoInput(BaseModel):
-    title: str = Field(..., min_length=1, max_length=100)
-    description: str = Field(..., min_length=1)
-    duration: int = Field(..., gt=0)
-    video_id: str = Field(..., min_length=1)
-    library_id: str = Field(..., min_length=1)
-    secret_key: str = Field(..., min_length=1)
 
-class videoResponse(BaseModel):
-    id: UUID
-    title: str
-    description: str
-    duration: int
-    video_id: str
-    library_id: str
-    secret_key: str
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    model_config = {
-        "from_attributes": True
-    }
 
 class CourseInput(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
