@@ -236,6 +236,14 @@ class CourseRepository:
             no_of_lessons=total_lessons
         )
     
+    #get course all by instructor
+    def get_courses_by_instructor(self, instructor_id: str):
+        courses = self.db.query(Course).filter(Course.instructor_id == instructor_id).all()
+        course_analysis_list = []
+        for course in courses:
+            analysis = self.course_analysis(course.id)
+            course_analysis_list.append(analysis)
+        return course_analysis_list
 
     def get_lessons_count(self, course_id: str) -> int:
         return (

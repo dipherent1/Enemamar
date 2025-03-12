@@ -381,6 +381,23 @@ class CourseService:
             "detail": "Course analysis fetched successfully",
             "data": analysis_data
         }
+    
+    def get_intructor_course(self, instructor_id: str):
+        # Validate instructor_id
+        if not instructor_id:
+            raise ValidationError(detail="Instructor ID is required")
+        
+        user = self.user_repo.get_user_by_id(instructor_id)
+        if not user or not user.role == "instructor":
+            raise ValidationError(detail="Invalid instructor ID or not an instructor")
+        
+        courses = self.course_repo.get_courses_by_instructor(instructor_id)
+        
+        
+        return {
+            "detail": "Instructor courses fetched successfully",
+            "data": courses
+        }
         
         
 def get_course_service(db: Session = Depends(get_db)):
