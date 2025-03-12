@@ -300,12 +300,7 @@ class CourseService:
             lessons_responses.append(lesson_response)
 
             if lesson.video:
-                print(lesson.video)
-                try:
-                    video = Video(**lesson.video.model_dump(), lesson_id=created_lesson.id)
-                    self.course_repo.add_video(video)
-                except IntegrityError:
-                    raise ValidationError(detail="Failed to add video, video already exists")
+                self.add_video_to_lesson_helper(course_id, created_lesson.id, lesson.video)
                 
 
         return lessons_responses
@@ -316,7 +311,7 @@ class CourseService:
             "data": self.addMultipleLessonsHelper(course_id, lessons_input)
         }
 
-    def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
+    def add_video_to_lesson_helper(self, course_id: str, lesson_id: str, video_input: VideoInput):
         # Get lesson and check if a available
         lesson = self.course_repo.get_lesson_by_id(course_id,lesson_id)  
         if not lesson:
@@ -333,6 +328,13 @@ class CourseService:
             created_video = self.course_repo.add_video(video)
         except IntegrityError:
             raise ValidationError(detail="Failed to add video, video already exist")
+        
+        return created_video
+        
+
+    def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
+        
+        created_video = self.add_video_to_lesson_helper(course_id, lesson_id, video_input)
         return {
             "detail": "Video added successfully",
             "data": created_video
