@@ -178,7 +178,7 @@ class CourseRepository:
         return lessons
     
     #add single lesson
-    def add_lesson(self ,course_id:str ,lesson: Lesson):
+    def add_lesson(self, course_id: str, lesson: Lesson):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
@@ -291,4 +291,4 @@ class CourseRepository:
             .filter(Enrollment.course_id == course_id)
         )
         return query.count()
-    
+

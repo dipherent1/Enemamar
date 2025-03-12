@@ -6,14 +6,12 @@ from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
 
 class VideoInput(BaseModel):
-    duration: Optional[int] = None
     video_id: str = Field(..., min_length=1)
     library_id: str = Field(..., min_length=1)
     secret_key: str = Field(..., min_length=1)
 
 class videoResponse(BaseModel):
     id: UUID
-    duration: int
     video_id: str
     library_id: str
     secret_key: str

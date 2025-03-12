@@ -285,12 +285,16 @@ class CourseService:
         
         lessons_responses = []
         for lesson in lessons_input:
-            lesson_data = Lesson(**lesson.model_dump(exclude={'video'}), course_id=course_id)
+            print(lesson)
+            lesson_data = Lesson(**lesson.model_dump(exclude={'video'}))
+            lesson_data.course_id = course_id
 
             try:
+
                 created_lesson = self.course_repo.add_lesson(course_id, lesson_data)
-            except IntegrityError:
-                raise ValidationError(detail="Failed to add lesson, lesson already exists")
+            except IntegrityError as e:
+                print(f"Error: {str(e)}")
+                raise ValidationError(detail=f"Failed to add lesson, {str(e)}")
             
             lesson_response = LessonResponse.model_validate(created_lesson)
             lessons_responses.append(lesson_response)
