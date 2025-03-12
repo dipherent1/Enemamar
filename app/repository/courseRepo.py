@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from app.domain.model.course import Course, Enrollment, Lesson, Video
+from app.domain.schema.courseSchema import CourseAnalysisResponse
 from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
 from typing import Optional
@@ -220,6 +221,21 @@ class CourseRepository:
         if not video:
             raise NotFoundError(detail="Video not found")
         return video
+    
+    def course_analysis(self, course_id: str):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        total_lessons = self.get_lessons_count(course_id)
+        total_enrolled_users = self.get_total_enrolled_users_count(course_id)
+        
+        return CourseAnalysisResponse(
+            view_count=course.view_count,
+            no_of_enrollments=total_enrolled_users,
+            no_of_lessons=total_lessons
+        )
+    
 
     def get_lessons_count(self, course_id: str) -> int:
         return (
@@ -257,8 +273,14 @@ class CourseRepository:
                     Course.description.ilike(search_term)
                 )
             )
-        
+            
         return query.count()
 
-
+    def get_total_enrolled_users_count(self, course_id):
+        query = (
+            self.db.query(Enrollment)
+            .join(Course)
+            .filter(Enrollment.course_id == course_id)
+        )
+        return query.count()
     
