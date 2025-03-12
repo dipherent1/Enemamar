@@ -128,7 +128,7 @@ class CourseResponse(BaseModel):
         "from_attributes": True
     }
 
-class CourseAnalysisResponse(CourseResponse):
+class CourseAnalysisResponse(BaseModel):
     view_count: int
     no_of_enrollments: int
     no_of_lessons: int
