@@ -9,7 +9,8 @@ from app.domain.schema.courseSchema import (
     UserResponse,
     MultipleLessonInput,
     VideoInput,
-    videoResponse
+    videoResponse,
+    CourseAnalysisResponse
 )
 from app.domain.model.course import Course, Enrollment, Lesson, Video
 from app.repository.courseRepo import CourseRepository
@@ -363,5 +364,41 @@ class CourseService:
             "data": videoResponse.model_validate(video)
         }
 
+    def get_courses_analysis(self, course_id: str):
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+
+        analysis_data = self.course_repo.course_analysis(course_id)
+        if not analysis_data:
+            return {
+                "detail": "No analysis data found for this course",
+                "data": None
+            }
+
+        return {
+            "detail": "Course analysis fetched successfully",
+            "data": analysis_data
+        }
+    
+    def get_intructor_course(self, instructor_id: str):
+        # Validate instructor_id
+        if not instructor_id:
+            raise ValidationError(detail="Instructor ID is required")
+        
+        user = self.user_repo.get_user_by_id(instructor_id)
+        if not user or not user.role == "instructor":
+            raise ValidationError(detail="Invalid instructor ID or not an instructor")
+        
+        courses = self.course_repo.get_courses_by_instructor(instructor_id)
+        
+        
+        return {
+            "detail": "Instructor courses fetched successfully",
+            "data": courses
+        }
+        
+        
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)
