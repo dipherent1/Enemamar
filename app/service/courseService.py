@@ -17,7 +17,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
-from app.utils.security.hash import hash_password, verify_password
 from app.utils.bunny.bunny import generate_secure_bunny_stream_url, encrypt_secret_key, decrypt_secret_key
 from typing import Optional
 from app.repository.userRepo import UserRepository
@@ -44,15 +43,28 @@ class CourseService:
         
         # Add lessons if provided
         if course_info.lessons:
-            lessons = [
-                Lesson(
-                    **lesson.model_dump(),
-                    course_id=created_course.id  # Set course_id here
-                )
-                for lesson in course_info.lessons
-            ]
-            self.course_repo.add_multiple_lessons(str(created_course.id), lessons)
+            self.addMultipleLessonsHelper(str(created_course.id), course_info.lessons)
+
+
+            # lessons = [
+            #     Lesson(
+            #         **lesson.model_dump(exclude={'video'}),
+            #         course_id=created_course.id  # Set course_id here
+            #     )
+            #     for lesson in course_info.lessons
+            # ]
+            # self.course_repo.add_multiple_lessons(str(created_course.id), lessons)
+        
+            # for lesson in course_info.lessons:
+            #     video = Video(**lesson.video.model_dump()) if lesson.video else None
+                
+            #     lesson_data = lesson.model_dump(exclude={'video'})
+            #     lesson_instance = Lesson(**lesson_data, video=video)
+
+            #     lessons.append(lesson_instance)
             
+            # self.course_repo.add_multiple_lessons(str(created_course.id), lessons)
+        
         # Refresh course to get lessons
         created_course = self.course_repo.get_course_with_lessons(str(created_course.id))
         if not created_course:
@@ -206,7 +218,6 @@ class CourseService:
         if not enrollment and user.role not in ["instructor", "admin"]:
             raise ValidationError(detail="User not enrolled in course")
         return True
-
     
     #get all lessons of course
     def getLessons(self, course_id: str,user_id , page: int = 1, page_size: int = 10):
@@ -262,28 +273,37 @@ class CourseService:
             "data": lesson_response
         }
     
-    def addMultipleLessons(self, course_id: str, lessons_input: MultipleLessonInput):
+    def addMultipleLessonsHelper(self, course_id: str, lessons_input):
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
-        # Set course_id for each lesson
-        lessons = [
-            Lesson(
-                **lesson.model_dump(),
-                course_id=course_id  # Add course_id here
-            )
-            for lesson in lessons_input.lessons
-        ]
-        
-        created_lessons = self.course_repo.add_multiple_lessons(course_id, lessons)
-        lessons_response = [
-            LessonResponse.model_validate(lesson)
-            for lesson in created_lessons
-        ]
-        
+        lessons_responses = []
+        for lesson in lessons_input:
+            lesson_data = Lesson(**lesson.model_dump(exclude={'video'}), course_id=course_id)
+
+            try:
+                created_lesson = self.course_repo.add_lesson(course_id, lesson_data)
+            except IntegrityError:
+                raise ValidationError(detail="Failed to add lesson, lesson already exists")
+            
+            lesson_response = LessonResponse.model_validate(created_lesson)
+            lessons_responses.append(lesson_response)
+
+            if lesson.video:
+                print(lesson.video)
+                try:
+                    video = Video(**lesson.video.model_dump(), lesson_id=created_lesson.id)
+                    self.course_repo.add_video(video)
+                except IntegrityError:
+                    raise ValidationError(detail="Failed to add video, video already exists")
+                
+
+        return lessons_responses
+    
+    def addMultipleLessons(self, course_id: str, lessons_input: MultipleLessonInput):
         return {
             "detail": "Lessons added successfully",
-            "data": lessons_response
+            "data": self.addMultipleLessonsHelper(course_id, lessons_input)
         }
 
     def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):

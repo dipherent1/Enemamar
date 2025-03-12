@@ -149,7 +149,7 @@ class CourseRepository:
             raise NotFoundError(detail="Lesson not found")
         return lesson
    
-    #add lesson to course
+    #add multiple lesson to course
     def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
@@ -161,6 +161,17 @@ class CourseRepository:
         
         return lessons
     
+    #add single lesson
+    def add_lesson(self ,course_id:str ,lesson: Lesson):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+    
+        self.db.add(lesson)
+        self.db.commit()
+        self.db.refresh(lesson)
+        return lesson
+
     def get_enrolled_users_count(self, course_id: str) -> int:
         return (
             self.db.query(Enrollment)
