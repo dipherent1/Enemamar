@@ -58,12 +58,11 @@ class CourseRepository:
         
         return (
             query
-            .order_by(Lesson.order.desc())
             .limit(page_size)
             .all()
         )
     
-    #enroll course by using user id and and course id 
+    #enroll course by using user id and course id 
     def enroll_course(self, user_id: str, course_id: str):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:

@@ -327,11 +327,10 @@ class CourseService:
         try:
             created_video = self.course_repo.add_video(video)
         except IntegrityError:
-            raise ValidationError(detail="Failed to add video, video already exist")
+            raise ValidationError(detail="Failed to add video, video already exists")
         
         return created_video
         
-
     def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
         
         created_video = self.add_video_to_lesson_helper(course_id, lesson_id, video_input)
