@@ -4,7 +4,8 @@ from app.domain.schema.courseSchema import (
     PaginationParams,
     SearchParams,
     MultipleLessonInput,
-    VideoInput
+    VideoInput,
+    CourseAnalysisResponse
 )
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
@@ -81,7 +82,8 @@ async def get_courses(
     return course_service.getCourses(
         page=search_params.page,
         page_size=search_params.page_size,
-        search=search_params.search
+        search=search_params.search,
+        filter=search_params.filter
     )
 
 #enroll course only for logged in user
@@ -129,6 +131,15 @@ async def get_enrolled_courses_by_user(
         search=search_params.search
     )
 
+# get ccourse of instructor
+@protected_courseRouter.get("/instructor/{instructor_id}")
+async def get_courses_by_instructor(
+    instructor_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.get_intructor_course(
+        instructor_id,
+    )
 
 #add multiple lessons to course
 @courseRouter.post("/{course_id}/lessons")
@@ -179,3 +190,12 @@ async def get_all_enrolled_courses(
         search_params.page,
         search_params.page_size
     )
+
+# get all courses with analysis
+@protected_courseRouter.get("/{course_id}/analysis")
+async def get_courses_analysis(
+    course_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.get_courses_analysis(course_id)
+

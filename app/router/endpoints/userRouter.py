@@ -23,7 +23,8 @@ async def get_all_users(
     return user_service.get_all_users(
         search=params.search,
         page=params.page,
-        page_size=params.page_size
+        page_size=params.page_size,
+        filter=params.filter
     )
 
 #get user by id

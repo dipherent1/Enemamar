@@ -16,7 +16,7 @@ class UserRepository:
         self.db.refresh(user)
         return user
     
-    def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
+    def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
         query = self.db.query(User)
         
         if search:
@@ -25,10 +25,15 @@ class UserRepository:
                     User.email.ilike(f"%{search}%"),
                     User.phone_number.ilike(f"%{search}%"),
                     User.first_name.ilike(f"%{search}%"),
-                    User.last_name.ilike(f"%{search}%")
+                    User.last_name.ilike(f"%{search}%"),    
+                    User.profession.ilike(f"%{search}%")
+
                 )
             )
+
         
+        
+
         offset = (page - 1) * page_size
         return query.offset(offset).limit(page_size).all()
     

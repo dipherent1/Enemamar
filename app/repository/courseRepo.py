@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from app.domain.model.course import Course, Enrollment, Lesson, Video
+from app.domain.schema.courseSchema import CourseAnalysisResponse
 from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
 from typing import Optional
@@ -33,7 +34,7 @@ class CourseRepository:
         return self.get_course_with_lessons(course_id)
     
     #get all courses
-    def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+    def get_courses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None, filter: Optional[str] = None):
         query = (
             self.db.query(Course)
             .options(
@@ -47,18 +48,21 @@ class CourseRepository:
             query = query.filter(
                 or_(
                     Course.title.ilike(search_term),
-                    Course.description.ilike(search_term)
+                    Course.description.ilike(search_term),
+                    Course.tags.ilike(search_term)
                 )
             )
+
+        if filter:
+            query = query.filter(Course.tags.ilike(f"%{filter}%"))
         
         return (
             query
-            .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
         )
     
-    #enroll course by using user id and and course id 
+    #enroll course by using user id and course id 
     def enroll_course(self, user_id: str, course_id: str):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
@@ -124,6 +128,17 @@ class CourseRepository:
     
     #get all lessons of course
     def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
+        """
+        Retrieve all lessons for a given course.
+
+        Args:
+            course_id (str): The ID of the course.
+            page (int, optional): The page number for pagination. Defaults to 1.
+            page_size (int, optional): The number of lessons per page. Defaults to 10.
+
+        Returns:
+            List[Lesson]: A list of lessons for the specified course.
+        """
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
@@ -131,7 +146,7 @@ class CourseRepository:
         return (
             self.db.query(Lesson)
             .filter(Lesson.course_id == course_id)
-            .order_by(Lesson.created_at.asc())
+            .order_by(Lesson.order.asc())  # Order lessons in ascending order
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
@@ -162,7 +177,7 @@ class CourseRepository:
         return lessons
     
     #add single lesson
-    def add_lesson(self ,course_id:str ,lesson: Lesson):
+    def add_lesson(self, course_id: str, lesson: Lesson):
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
@@ -205,6 +220,29 @@ class CourseRepository:
         if not video:
             raise NotFoundError(detail="Video not found")
         return video
+    
+    def course_analysis(self, course_id: str):
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+        
+        total_lessons = self.get_lessons_count(course_id)
+        total_enrolled_users = self.get_total_enrolled_users_count(course_id)
+        
+        return CourseAnalysisResponse(
+            view_count=course.view_count,
+            no_of_enrollments=total_enrolled_users,
+            no_of_lessons=total_lessons
+        )
+    
+    #get course all by instructor
+    def get_courses_by_instructor(self, instructor_id: str):
+        courses = self.db.query(Course).filter(Course.instructor_id == instructor_id).all()
+        course_analysis_list = []
+        for course in courses:
+            analysis = self.course_analysis(course.id)
+            course_analysis_list.append(analysis)
+        return course_analysis_list
 
     def get_lessons_count(self, course_id: str) -> int:
         return (
@@ -242,8 +280,14 @@ class CourseRepository:
                     Course.description.ilike(search_term)
                 )
             )
-        
+            
         return query.count()
 
+    def get_total_enrolled_users_count(self, course_id):
+        query = (
+            self.db.query(Enrollment)
+            .join(Course)
+            .filter(Enrollment.course_id == course_id)
+        )
+        return query.count()
 
-    

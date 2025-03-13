@@ -9,7 +9,8 @@ from app.domain.schema.courseSchema import (
     UserResponse,
     MultipleLessonInput,
     VideoInput,
-    videoResponse
+    videoResponse,
+    CourseAnalysisResponse
 )
 from app.domain.model.course import Course, Enrollment, Lesson, Video
 from app.repository.courseRepo import CourseRepository
@@ -85,7 +86,12 @@ class CourseService:
         
         # Get course with lessons
         course = self.course_repo.get_course_with_lessons(course_id)
+        if not course:
+            raise ValidationError(detail="Course not found")
         
+        #TODO remove video from response
+
+
         # Convert SQLAlchemy Course object to Pydantic Response Model
         course_response = CourseResponse.model_validate(course)
         
@@ -93,9 +99,9 @@ class CourseService:
         return {"detail": "course fetched successfully","data": course_response}
     
     #get all courses
-    def getCourses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None):
+    def getCourses(self, page: int = 1, page_size: int = 10, search: Optional[str] = None, filter: Optional[str] = None):
         # Get paginated courses
-        courses = self.course_repo.get_courses(page, page_size, search)
+        courses = self.course_repo.get_courses(page, page_size, search, filter)
         
         # Convert to Pydantic models, excluding lessons
         courses_response = [
@@ -279,23 +285,22 @@ class CourseService:
         
         lessons_responses = []
         for lesson in lessons_input:
-            lesson_data = Lesson(**lesson.model_dump(exclude={'video'}), course_id=course_id)
+            print(lesson)
+            lesson_data = Lesson(**lesson.model_dump(exclude={'video'}))
+            lesson_data.course_id = course_id
 
             try:
+
                 created_lesson = self.course_repo.add_lesson(course_id, lesson_data)
-            except IntegrityError:
-                raise ValidationError(detail="Failed to add lesson, lesson already exists")
+            except IntegrityError as e:
+                print(f"Error: {str(e)}")
+                raise ValidationError(detail=f"Failed to add lesson, {str(e)}")
             
             lesson_response = LessonResponse.model_validate(created_lesson)
             lessons_responses.append(lesson_response)
 
             if lesson.video:
-                print(lesson.video)
-                try:
-                    video = Video(**lesson.video.model_dump(), lesson_id=created_lesson.id)
-                    self.course_repo.add_video(video)
-                except IntegrityError:
-                    raise ValidationError(detail="Failed to add video, video already exists")
+                self.add_video_to_lesson_helper(course_id, created_lesson.id, lesson.video)
                 
 
         return lessons_responses
@@ -306,7 +311,7 @@ class CourseService:
             "data": self.addMultipleLessonsHelper(course_id, lessons_input)
         }
 
-    def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
+    def add_video_to_lesson_helper(self, course_id: str, lesson_id: str, video_input: VideoInput):
         # Get lesson and check if a available
         lesson = self.course_repo.get_lesson_by_id(course_id,lesson_id)  
         if not lesson:
@@ -322,7 +327,13 @@ class CourseService:
         try:
             created_video = self.course_repo.add_video(video)
         except IntegrityError:
-            raise ValidationError(detail="Failed to add video, video already exist")
+            raise ValidationError(detail="Failed to add video, video already exists")
+        
+        return created_video
+        
+    def add_video_to_lesson(self, course_id: str, lesson_id: str, video_input: VideoInput):
+        
+        created_video = self.add_video_to_lesson_helper(course_id, lesson_id, video_input)
         return {
             "detail": "Video added successfully",
             "data": created_video
@@ -358,5 +369,41 @@ class CourseService:
             "data": videoResponse.model_validate(video)
         }
 
+    def get_courses_analysis(self, course_id: str):
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+
+        analysis_data = self.course_repo.course_analysis(course_id)
+        if not analysis_data:
+            return {
+                "detail": "No analysis data found for this course",
+                "data": None
+            }
+
+        return {
+            "detail": "Course analysis fetched successfully",
+            "data": analysis_data
+        }
+    
+    def get_intructor_course(self, instructor_id: str):
+        # Validate instructor_id
+        if not instructor_id:
+            raise ValidationError(detail="Instructor ID is required")
+        
+        user = self.user_repo.get_user_by_id(instructor_id)
+        if not user or not user.role == "instructor":
+            raise ValidationError(detail="Invalid instructor ID or not an instructor")
+        
+        courses = self.course_repo.get_courses_by_instructor(instructor_id)
+        
+        
+        return {
+            "detail": "Instructor courses fetched successfully",
+            "data": courses
+        }
+        
+        
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)
