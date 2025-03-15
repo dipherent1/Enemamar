@@ -14,23 +14,6 @@ userRouter = APIRouter(
     dependencies=[Depends(is_admin)]
 )
 
-#get all users
-@userRouter.get("/")
-async def get_all_users(
-    params: SearchParams = Depends(),
-    user_service: UserService = Depends(get_user_service)
-):
-    return user_service.get_all_users(
-        search=params.search,
-        page=params.page,
-        page_size=params.page_size,
-        filter=params.filter
-    )
-
-#get user by id
-@userRouter.get("/{user_id}")
-async def get_user_by_id(user_id: str, user_service: UserService = Depends(get_user_service)):
-    return user_service.get_user_by_id(user_id)
 
 #deactivate user
 @userRouter.put("/deactivate/{user_id}")
@@ -83,6 +66,26 @@ async def edit_me(
     user_id = UUID(user_id)
     
     return user_service.edit_user_by_token(user_id,edit_user)
+
+
+
+#get all users
+@rootRouter.get("/all/users")
+async def get_all_users(
+    params: SearchParams = Depends(),
+    user_service: UserService = Depends(get_user_service)
+):
+    return user_service.get_all_users(
+        search=params.search,
+        page=params.page,
+        page_size=params.page_size,
+        filter=params.filter
+    )
+
+#get user by id
+@rootRouter.get("/user/{user_id}")
+async def get_user_by_id(user_id: str, user_service: UserService = Depends(get_user_service)):
+    return user_service.get_user_by_id(user_id)
 
 #create router for instructor 
 instructorRouter = APIRouter(
