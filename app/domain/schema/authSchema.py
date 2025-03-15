@@ -50,7 +50,8 @@ class UserResponse(BaseModel):
 class editUser(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
-    full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     phone_number: Optional[str] = None
     class Config:
         from_attributes = True 
