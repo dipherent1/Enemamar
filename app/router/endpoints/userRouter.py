@@ -89,7 +89,7 @@ async def get_user_by_id(user_id: str, user_service: UserService = Depends(get_u
 
 #create router for instructor 
 instructorRouter = APIRouter(
-    prefix="/users/instructors",
+    prefix="/protected/users/instructors",
     tags=["instructor"],
     dependencies=[Depends(is_admin)]
 )
