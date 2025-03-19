@@ -129,7 +129,7 @@ class UserRepository:
         except DataError:
             return None
     
-    def verify_user(self, phone_number: str, code: str):
+    def verify_user(self, phone_number: str):
         user = self.get_user_by_phone(phone_number)
         if not user:
             return None
