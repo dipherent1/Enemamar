@@ -91,7 +91,6 @@ async def get_user_by_id(user_id: str, user_service: UserService = Depends(get_u
 instructorRouter = APIRouter(
     prefix="/protected/users/instructors",
     tags=["instructor"],
-    dependencies=[Depends(is_admin)]
 )
 #get all instructors
 @instructorRouter.get("/")
