@@ -24,7 +24,7 @@ def send_otp_sms(phone_number: str):
     sb = 0
     sa = 0
     ttl = 100
-    len = 4
+    len = 6
     t = 0
     # final url
     url = '%s?from=%s&sender=%s&to=%s&pr=%s&ps=%s&callback=%s&sb=%d&sa=%d&ttl=%d&len=%d&t=%d' % (base_url, form_id, sender, to, pre, post, callback, sb, sa, ttl, len, t)
