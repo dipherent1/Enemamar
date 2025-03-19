@@ -76,3 +76,5 @@ class tokenLoginData(BaseModel):
 
 class UpdateRoleRequest(BaseModel):
     role: str
+    class Config:
+        from_attributes = True

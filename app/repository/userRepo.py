@@ -128,3 +128,11 @@ class UserRepository:
             return self.db.query(User).filter(User.id == instructor_id, User.role == "instructor").first()
         except DataError:
             return None
+    
+    def verify_user(self, phone_number: str):
+        user = self.get_user_by_phone(phone_number)
+        if not user:
+            return None
+        user.is_active = True
+        self.db.commit()
+        return user
