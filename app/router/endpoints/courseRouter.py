@@ -101,6 +101,19 @@ async def enroll_course(
     enrollResponse = course_service.enrollCourse(user_id, course_id)
     return enrollResponse
 
+
+
+
+#add multiple lessons to course
+@courseRouter.post("/{course_id}/lessons")
+async def add_multiple_lessons(
+    course_id: str,
+    lessons_input: MultipleLessonInput,  # Change the parameter name to be more clear
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.addMultipleLessons(course_id, lessons_input)
+
+
 #create protected router for admin
 protected_courseRouter = APIRouter(
     prefix="/protected/course",
@@ -130,25 +143,6 @@ async def get_enrolled_courses_by_user(
         page_size=search_params.page_size,
         search=search_params.search
     )
-
-# get ccourse of instructor
-@protected_courseRouter.get("/instructor/{instructor_id}")
-async def get_courses_by_instructor(
-    instructor_id: str,
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.get_intructor_course(
-        instructor_id,
-    )
-
-#add multiple lessons to course
-@courseRouter.post("/{course_id}/lessons")
-async def add_multiple_lessons(
-    course_id: str,
-    lessons_input: MultipleLessonInput,  # Change the parameter name to be more clear
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.addMultipleLessons(course_id, lessons_input)
 
 @protected_courseRouter.post("/{course_id}/lessons/{lesson_id}/video")
 async def add_video_to_lesson(
@@ -191,11 +185,26 @@ async def get_all_enrolled_courses(
         search_params.page_size
     )
 
+
+analysis_router = APIRouter(
+    prefix="/analysis",
+    tags=["course"]
+)
+
 # get all courses with analysis
-@protected_courseRouter.get("/{course_id}/analysis")
+@analysis_router.get("/{course_id}")
 async def get_courses_analysis(
     course_id: str,
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.get_courses_analysis(course_id)
 
+# get ccourse of instructor
+@analysis_router.get("/instructor/{instructor_id}")
+async def get_courses_by_instructor(
+    instructor_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.get_intructor_course(
+        instructor_id,
+    )

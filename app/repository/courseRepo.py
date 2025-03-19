@@ -230,6 +230,7 @@ class CourseRepository:
         total_enrolled_users = self.get_total_enrolled_users_count(course_id)
         
         return CourseAnalysisResponse(
+            course_id=course.id,
             view_count=course.view_count,
             no_of_enrollments=total_enrolled_users,
             no_of_lessons=total_lessons
