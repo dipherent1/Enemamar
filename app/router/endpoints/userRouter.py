@@ -67,6 +67,15 @@ async def edit_me(
     
     return user_service.edit_user_by_token(user_id,edit_user)
 
+#delete
+@rootRouter.delete("/me")
+async def delete_me(
+    decoded_token: dict = Depends(is_logged_in),
+    user_service: UserService = Depends(get_user_service)
+):
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
+    return user_service.deactivate_user(user_id)
 
 
 #get all users

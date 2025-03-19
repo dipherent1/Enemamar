@@ -38,7 +38,7 @@ class UserRepository:
         return True
 
     def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
-        query = self.db.query(User)
+        query = self.db.query(User).filter(User.is_active == True)
         
         if search:
             query = query.filter(
@@ -48,7 +48,6 @@ class UserRepository:
                     User.first_name.ilike(f"%{search}%"),
                     User.last_name.ilike(f"%{search}%"),    
                     User.profession.ilike(f"%{search}%")
-
                 )
             )
 
