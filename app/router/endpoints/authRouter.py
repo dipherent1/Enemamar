@@ -41,11 +41,16 @@ async def login_endpoint(
 
     return auth_service.login(login_info)
 
+@authRouter.post("/logout")
+async def logout(refresh_token: str = Header(None), auth_service:AuthService = Depends(get_auth_service)):
+
+    return auth_service.logout(refresh_token=refresh_token)
+
 @authRouter.get("/refresh")
 async def refresh_token(
     #get access token
-    decoded_token: dict = Depends(is_logged_in),
+    refresh_token: str = Header(None),
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    return auth_service.refresh_token(decoded_token)
+    return auth_service.refresh_token(refresh_token)
     
