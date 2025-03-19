@@ -79,10 +79,16 @@ class UserRepository:
         self.db.commit()
         return user
     
-    def activate_user(self, user_id: int):
-        user = self.db.query(User).filter(User.id == user_id).first()
+    def activate_user(self, user_id: Optional[str] = None, phone_number: Optional[str] = None):
+        user = None
+        if user_id:
+            user = self.get_user_by_id(user_id)
+        elif phone_number:
+            user = self.get_user_by_phone(phone_number)
+        
         if not user:
             return None
+        
         user.is_active = True
         self.db.commit()
         return user
@@ -158,10 +164,3 @@ class UserRepository:
         except DataError:
             return None
     
-    def verify_user(self, phone_number: str):
-        user = self.get_user_by_phone(phone_number)
-        if not user:
-            return None
-        user.is_active = True
-        self.db.commit()
-        return user

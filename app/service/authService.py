@@ -144,7 +144,7 @@ class AuthService:
         status_code, content = verify_otp_sms(phone_number, code)
         
         if status_code == 200:
-            self.user_repo.verify_user(phone_number)
+            self.user_repo.activate_user(None, phone_number)
             return {"detail": "OTP verified successfully", "status_code": status_code}
         
         else:
