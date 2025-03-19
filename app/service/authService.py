@@ -17,7 +17,8 @@ class AuthService:
 
     def signUp(self, sign_up_data: signUp):
         # Validate phone number
-        if not sign_up_data.phone_number.isdigit():
+        regex = r'^(?:\+251|0)?9\d{8}$'
+        if not re.match(regex, sign_up_data.phone_number):
             raise ValidationError(detail="Invalid phone number")
         
         # Set username if not provided
@@ -46,22 +47,23 @@ class AuthService:
             raise DuplicatedError(detail="User with this email or phone number already exists")
 
         # Convert SQLAlchemy User object to Pydantic Response Model
-        user_response = UserResponse(
-            id=user.id,
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            email=user.email,
-            phone_number=user.phone_number,
-            role=user.role,
-            is_active=user.is_active
-        )
+        # user_response = UserResponse(
+        #     id=user.id,
+        #     username=user.username,
+        #     first_name=user.first_name,
+        #     last_name=user.last_name,
+        #     email=user.email,
+        #     phone_number=user.phone_number,
+        #     role=user.role,
+        #     is_active=user.is_active
+        # )
+        user_response = UserResponse.model_validate(user)
 
         # Return response
         response = signUpResponse(detail="User created successfully", user=user_response)
         return response
 
-    def login(self,login_data: login):
+    def login(self, login_data: login):
         print(login_data)
         user = None
         if login_data.email:
