@@ -1,7 +1,8 @@
+import requests  
+from app.core.config.env import get_settings
 
 
-import requests                            
-
+setting = get_settings()
 def send_otp_sms(phone_number: str):
     # Send OTP SMS
         # we use requests library for the samples
@@ -10,14 +11,14 @@ def send_otp_sms(phone_number: str):
     # base url
     base_url = 'https://api.afromessage.com/api/challenge'
     # api token
-    token = 'YOUR_TOKEN'
+    token = setting.SMS_TOKEN
     # header
     headers = {'Authorization': 'Bearer ' + token}
     # request parameters
-    callback = 'YOUR_CALLBACK'
-    form_id = 'YOUR_IDENTIFIER_ID'
-    sender = 'Enemamar'
-    to = 'YOUR_RECIPIENT'
+    callback = ""
+    form_id = setting.SMS_ID
+    sender = ""
+    to = phone_number
     pre = " Hello, your OTP is: " 
     post = " Thank you for using our service."
     sb = 0
@@ -42,7 +43,8 @@ def send_otp_sms(phone_number: str):
     else:
         # anything other than 200 goes here.
         print ("http error ... code: %d , msg: %s " % (result.status_code, result.content))    
-    pass
+    
+    return (result.status_code, result.content)
 
 def verify_otp_sms(phone_number: str, otp: str):
     # Verify OTP SMS

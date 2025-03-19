@@ -11,7 +11,11 @@ authRouter = APIRouter(
     tags=["auth"]
 )
 
-@authRouter.post("")
+@authRouter.post("/otp/send")
+def sendOTP(auth_service: AuthService = Depends(get_auth_service)):
+    return auth_service.send_otp()
+
+
 
 @authRouter.post("/signup")
 async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_auth_service)):

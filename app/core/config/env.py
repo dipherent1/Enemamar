@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int  
+    SMS_TOKEN: str
+    SMS_ID: str
 
     
 
