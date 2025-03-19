@@ -9,7 +9,7 @@ from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
 from app.utils.security.jwt_handler import verify_refresh_token, verify_access_token, create_access_token, create_refresh_token
-from app.utils.otp.sms import send_otp_sms
+from app.utils.otp.sms import send_otp_sms, verify_otp_sms
 
 class AuthService:
     def __init__(self, db):
@@ -130,9 +130,17 @@ class AuthService:
         if status_code == 200:  # Assuming 200 means success
             return {"detail": "OTP sent successfully", "status_code": status_code}
         else:
-            raise ValidationError(detail="Failed to send OTP", additional_info=content)
+            raise ValidationError(detail="Failed to send OTP", data=content)
 
-
+    def verify_otp(self, phone_number: str, code: str):
+        status_code, content = verify_otp_sms(phone_number, code)
+        
+        if status_code == 200:
+            self.user_repo.verify_user(phone_number)
+            return {"detail": "OTP verified successfully", "status_code": status_code}
+        
+        else:
+            raise ValidationError(detail="Failed to verify OTP", data=content)
 
         
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:

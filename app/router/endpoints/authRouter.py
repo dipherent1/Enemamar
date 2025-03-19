@@ -12,8 +12,12 @@ authRouter = APIRouter(
 )
 
 @authRouter.post("/otp/send")
-def sendOTP(auth_service: AuthService = Depends(get_auth_service)):
-    return auth_service.send_otp()
+async def sendOTP(phone_number: str, auth_service: AuthService = Depends(get_auth_service)):
+    return auth_service.send_otp(phone_number=phone_number)
+
+@authRouter.post("/otp/verify")
+async def verifyOTP(phone_number: str, code: str, auth_service: AuthService = Depends(get_auth_service)):
+    return auth_service.verify_otp(phone_number=phone_number, code=code)
 
 
 
