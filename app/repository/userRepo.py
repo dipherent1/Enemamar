@@ -1,3 +1,4 @@
+from app.utils.exceptions.exceptions import AuthError
 from sqlalchemy.orm import Session
 from app.domain.model.user import User, RefreshToken
 from app.domain.schema.authSchema import tokenLoginData, editUser
@@ -5,6 +6,7 @@ from app.utils.security.jwt_handler import create_access_token, create_refresh_t
 from sqlalchemy.exc import DataError
 from typing import Optional
 from sqlalchemy import or_
+from app.utils.security.hash import hash_password, verify_password
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -17,14 +19,20 @@ class UserRepository:
         return user
 
     def get_user_by_refresh(self, user_id: str, refresh_token: str):
-        result = self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id, RefreshToken.token == refresh_token).first()
+        result = self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
         if not result:
             return None
+        
+        if not verify_password(refresh_token,result.token):
+            raise AuthError(detail="Invalid refresh token: token not verified")
+        
         return result
+    
     def delete_refresh(self, user_id: str, refresh_token: str):
         refresh = self.get_user_by_refresh(user_id=user_id, refresh_token=refresh_token)
         if not refresh:
             return None
+        
         self.db.delete(refresh)
         self.db.commit()
         return True
@@ -111,13 +119,18 @@ class UserRepository:
     def login(self, login_data: tokenLoginData):
         accesToken = create_access_token(login_data.model_dump())
         refreshToken = create_refresh_token(login_data.model_dump())
+        
         # check and delete if there is existing refresh token
         existing_refresh = self.get_refresh_token(login_data.id)
         if existing_refresh:
             self.db.delete(existing_refresh)
-        # store refresh token in database
-        self.db.add(RefreshToken(user_id=login_data.id, token=refreshToken))
+        
+        # store hashed refresh token in database
+
+        hashed_refresh_token = hash_password(refreshToken)
+        self.db.add(RefreshToken(user_id=login_data.id, token=hashed_refresh_token))
         self.db.commit()
+        
         return accesToken, refreshToken
 
     def get_refresh_token(self, user_id: str):
