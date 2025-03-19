@@ -15,7 +15,13 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
-    
+
+    def get_user_by_refresh(self, user_id: str, refresh_token: str):
+        result = self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id, RefreshToken.token == refresh_token).first()
+        if not result:
+            return None
+        return result
+
     def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
         query = self.db.query(User)
         
@@ -98,8 +104,11 @@ class UserRepository:
     def login(self, login_data: tokenLoginData):
         accesToken = create_access_token(login_data.model_dump())
         refreshToken = create_refresh_token(login_data.model_dump())
-
-        #store refresh token in database
+        # check and delete if there is existing refresh token
+        existing_refresh = self.get_refresh_token(login_data.id)
+        if existing_refresh:
+            self.db.delete(existing_refresh)
+        # store refresh token in database
         self.db.add(RefreshToken(user_id=login_data.id, token=refreshToken))
         self.db.commit()
         return accesToken, refreshToken

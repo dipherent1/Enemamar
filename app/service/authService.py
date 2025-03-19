@@ -111,15 +111,14 @@ class AuthService:
         login_response = loginResponse(detail="Login successful", access_token=access_token, refresh_token= refresh_token, user=user_response)
         return login_response
     
-    def refresh_token(self, decoded_token: dict):
+    def refresh_token(self, refresh_token: str):
         #get user id
+        decoded_token = verify_refresh_token(refresh_token)
         user_id = decoded_token.get("id")
         #get refresh token
-        refresh_token = self.user_repo.get_refresh_token(user_id)
-        #validate refresh token
-        verify_refresh_token(refresh_token)
-
-        # Create new access token
+        user = self.user_repo.get_user_by_refresh(user_id, refresh_token)
+        if not user:
+            raise ValidationError(detail="Invalid refresh token, user has been logged out")
         token_data = tokenLoginData(id=user_id, role=decoded_token.get("role"))
         access_token = create_access_token(token_data.model_dump())
         return {"access_token": access_token}
