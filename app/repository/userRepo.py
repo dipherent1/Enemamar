@@ -21,6 +21,13 @@ class UserRepository:
         if not result:
             return None
         return result
+    def delete_refresh(self, user_id: str, refresh_token: str):
+        refresh = self.get_user_by_refresh(user_id=user_id, refresh_token=refresh_token)
+        if not refresh:
+            return None
+        self.db.delete(refresh)
+        self.db.commit()
+        return True
 
     def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
         query = self.db.query(User)

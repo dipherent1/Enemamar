@@ -111,6 +111,15 @@ class AuthService:
         login_response = loginResponse(detail="Login successful", access_token=access_token, refresh_token= refresh_token, user=user_response)
         return login_response
     
+    def logout(self,refresh_token):
+        decoded_token = verify_refresh_token(refresh_token)
+        user_id = decoded_token.get("id")
+        result = self.user_repo.delete_refresh(user_id,refresh_token)
+        if not result:
+            raise ValidationError(detail="Failed to logout, refresh token not found")
+
+
+
     def refresh_token(self, refresh_token: str):
         #get user id
         decoded_token = verify_refresh_token(refresh_token)
