@@ -20,6 +20,7 @@ class Course(Base):
     )
     title = Column(String)
     price = Column(Float)
+    discount = Column(Float)
     description = Column(String)
     tags = Column(ARRAY(String))
     instructor_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -49,6 +50,7 @@ class Enrollment(Base):
     )
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    enrolled_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     user = relationship("User", back_populates="enrollments")  # M:N (Student ↔ Courses)
@@ -99,3 +101,25 @@ class Video(Base):
     # Relationships
     lesson_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id"), unique=True)  # Added unique constraint
     lesson = relationship("Lesson", back_populates="video")  # Changed to one-to-one
+
+class Payment(Base):
+    __tablename__="payment"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4, 
+        index=True
+    )
+    tx_ref = Column(String, unique=True)
+    ref_id = Column(String, unique=True)
+
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    amount = Column(Float)
+    status = Column(String, default="pending")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    course = relationship("Course", back_populates="payment")
+    user = relationship("User", back_populates="payment")  # M:N (Student ↔ Courses)

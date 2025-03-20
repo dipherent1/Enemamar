@@ -88,6 +88,7 @@ class CourseInput(BaseModel):
     tags: Optional[List[str]] = Field(default=None, description="List of tags for the course")
     thumbnail_url: Optional[str] = Field(default=None, description="URL of the course thumbnail")
     price: float = Field(..., ge=0)
+    discount: Optional[float] = Field(default=None, description="Special offer price")
     instructor_id: UUID = Field(..., description="UUID of the instructor")
     lessons: Optional[List[LessonInput]] = Field(default=None, description="List of lessons for the course")
 
@@ -117,7 +118,8 @@ class CourseResponse(BaseModel):
     description: str
     tags: Optional[List[str]]
     price: float
-    thubmnail_url: Optional[str] = None
+    discount: Optional[float] = None
+    thumbnail_url: Optional[str] = None
     instructor_id: UUID
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -151,6 +153,35 @@ class EnrollResponse(BaseModel):
     detail: str
     enrollment: EnrollmentResponse
 
+class PaymentResponse(BaseModel):
+    id: UUID
+    tx_ref: str
+    ref_id: str
+    user_id: UUID
+    course_id: UUID
+    amount: float
+    status: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True
+
+class PaymentData(BaseModel):
+    tx_ref: str
+    amount: float
+    user_id: UUID
+    course_id: UUID
+    email: str
+    first_name: str
+    last_name: str
+    title: str
+    callback_url: str
+
+class CallbackPayload(BaseModel):
+    trx_ref: str
+    ref_id: str
+    status: str
+
 class PaginationParams(BaseModel):
     page: int = Field(default=1, ge=1, description="Page number (1-based)")
     page_size: int = Field(default=10, ge=1, le=100, description="Number of items per page")
@@ -164,6 +195,7 @@ class SearchParams(PaginationParams):
         default=None,
         description="Filter term"
     )
+
 
 class ModuleInput(BaseModel):
     title: str
