@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int  
     SMS_TOKEN: str
     SMS_ID: str
+    CHAPA_PUBLIC_KEY: str
+    CHAPA_SECRET_KEY: str   
+    CHAPA_ENCRIPTION_KEY: str
 
     
 
