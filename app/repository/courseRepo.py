@@ -311,11 +311,15 @@ class CourseRepository:
         return course_analysis_list
 
     def get_user_payments_count(self, user_id: str, filter: Optional[str] = None):
-        query = self.db.query(Payment).filter(Payment.user_id == user_id, Payment.status == filter)
+        query = self.db.query(Payment).filter(Payment.user_id == user_id)
+        if filter is not None:
+            query = query.filter(Payment.status == filter)
         return query.count()
 
     def get_course_payments_count(self, course_id: str, filter: Optional[str] = None):
-        query = self.db.query(Payment).filter(Payment.course_id == course_id, Payment.status == filter)
+        query = self.db.query(Payment).filter(Payment.course_id == course_id)
+        if filter is not None:
+            query = query.filter(Payment.status == filter)
         return query.count()
 
     def get_course_revenue(self, course_id: str):
