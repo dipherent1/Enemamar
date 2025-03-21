@@ -4,15 +4,17 @@ from app.domain.schema.courseSchema import (
     CourseInput,
     CourseResponse,
     EnrollmentResponse,
-    LessonInput,
+    PaymentData,
+    PaymentResponse,
     LessonResponse,
     UserResponse,
     MultipleLessonInput,
     VideoInput,
     videoResponse,
-    CourseAnalysisResponse
+    CourseAnalysisResponse,
+    CallbackPayload,
 )
-from app.domain.model.course import Course, Enrollment, Lesson, Video
+from app.domain.model.course import Course, Enrollment, Lesson, Video, Payment
 from app.repository.courseRepo import CourseRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -21,6 +23,7 @@ from app.core.config.database import get_db
 from app.utils.bunny.bunny import generate_secure_bunny_stream_url, encrypt_secret_key, decrypt_secret_key
 from typing import Optional
 from app.repository.userRepo import UserRepository
+from app.utils.chapa.chapa import pay_course, verify_payment, generete_tx_ref
 
 class CourseService:
     def __init__(self, db):
@@ -126,26 +129,109 @@ class CourseService:
         if not user_id:
             raise ValidationError(detail="User ID is required")
         
+        print(user_id)
         # Validate course_id
         if not course_id:
             raise ValidationError(detail="Course ID is required")
         
+        # Validate user exists
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ValidationError(detail="User not found")
+        
+
+        course = self.course_repo.get_course(course_id)
+        if not course:
+            raise ValidationError(detail="Course not found")
+        
+        enrollment = self.course_repo.get_enrollment(user_id, course_id)
+        if enrollment:
+            raise ValidationError(detail="User already enrolled in course")
+        
+        if course.price > 0:
+            callback = "http://localhost:8000/course/enroll/callback"
+
+            tx_ref = generete_tx_ref(12)
+            if course.discount:
+                amount = course.price - course.discount * course.price
+            else:
+                amount = course.price
+
+            data = PaymentData(
+                tx_ref=tx_ref,
+                user_id=user_id,
+                course_id=course_id,
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                amount=amount,
+                title=course.title,
+                callback_url=callback
+            )
+            
+            response = pay_course(data)
+
+            if response.get("status") != "success":
+                raise ValidationError(detail=response['message'])
+            
+            payment = Payment(
+                user_id=user_id,
+                course_id=course_id,
+                amount=amount,
+                tx_ref=tx_ref
+            )
+            
+
+            self.course_repo.save_payment(payment)
+            
+            return {"detail": "Payment initiated", "data": response}
+        
+        else:
+            # Enroll course
+            enrollment = self.course_repo.enroll_course(user_id, course_id)
+            
+            # Convert SQLAlchemy Enrollment object to Pydantic Response Model
+            enrollment_response = EnrollmentResponse.model_validate(enrollment)
+            
+            return {"detail": "Course enrolled successfully", "data": enrollment_response}
+
+    def enrollCourseCallback(self, payload: CallbackPayload):
+        # Validate user_id
+        print("payload: ",payload)
+        payment = self.course_repo.get_payment(payload.trx_ref)
+        if not payment:
+            raise ValidationError(detail="Payment not found")
+        
+        response = verify_payment(payload.trx_ref)
+        print("verify data",response)
+    
+
+        if response["status"] != "success":
+            payment = self.course_repo.update_payment(payload.trx_ref, "failed", ref_id=payload.ref_id)
+            raise ValidationError(detail="Payment failed")
+        
+        payment = self.course_repo.update_payment(payload.trx_ref, "success", ref_id=response["data"]["reference"])
+        payment = PaymentResponse.model_validate(payment)
+        
+        # Validate user exists
+        user = self.user_repo.get_user_by_id(payment.user_id)
+        if not user:
+            raise ValidationError(detail="User not found")
+        
+        # Validate course exists
+        course = self.course_repo.get_course(payment.course_id)
+        if not course:
+            raise ValidationError(detail="Course not found")
+        
         # Enroll course
-        enrollment = self.course_repo.enroll_course(user_id, course_id)
+        enrollment = self.course_repo.enroll_course(user.id, course.id)
         
         # Convert SQLAlchemy Enrollment object to Pydantic Response Model
         enrollment_response = EnrollmentResponse.model_validate(enrollment)
         
-        # enrollment_response = EnrollmentResponse(
-        #     id=enrollment.id,
-        #     user_id=enrollment.user_id,
-        #     course_id=enrollment.course_id,
-        #     # enrolled_at=enrollment.enrolled_at
-        # )
-
-        # Return response
         return {"detail": "Course enrolled successfully", "data": enrollment_response}
     
+
     #get all courses enrolled by user
     def getEnrolledCourses(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         # Validate user_id
@@ -198,21 +284,7 @@ class CourseService:
             }
         }
     
-    
-    # #add lesson to course
-    # def addLesson(self, course_id, lesson_input: LessonInput):
-    #     if not course_id:
-    #         raise ValidationError(detail="Course ID is required")
-        
-    #     lesson = Lesson(**lesson_input.model_dump(exclude_none=True))
-        
-    #     created_lesson = self.course_repo.add_lesson(course_id, lesson)
-    #     lesson_response = LessonResponse.model_validate(created_lesson)
-        
-    #     return {
-    #         "detail": "Lesson added successfully",
-    #         "data": lesson_response
-    #     }
+
     def checkLessonAccess (self,course_id,user_id):
         user = self.user_repo.get_user_by_id(user_id)
         if not user:

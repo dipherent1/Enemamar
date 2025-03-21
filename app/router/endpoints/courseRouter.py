@@ -5,7 +5,8 @@ from app.domain.schema.courseSchema import (
     SearchParams,
     MultipleLessonInput,
     VideoInput,
-    CourseAnalysisResponse
+    CourseAnalysisResponse,
+    CallbackPayload
 )
 from app.service.courseService import CourseService
 from fastapi import Depends, Header
@@ -19,6 +20,18 @@ courseRouter = APIRouter(
     tags=["course"]
 )
 
+#get all courses
+@courseRouter.get("/")
+async def get_courses(
+    search_params: SearchParams = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getCourses(
+        page=search_params.page,
+        page_size=search_params.page_size,
+        search=search_params.search,
+        filter=search_params.filter
+    )
 
 #get all courses enrolled by user
 @courseRouter.get("/enrolled")
@@ -29,13 +42,49 @@ async def get_enrolled_courses(
 ):
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
-    enrollments = course_service.getEnrolledCourses(
+    response = course_service.getEnrolledCourses(
         user_id=user_id,
         page=search_params.page,
         page_size=search_params.page_size,
         search=search_params.search
     )
-    return enrollments
+    return response
+
+@courseRouter.get("/enroll/callback")
+async def enroll_callback(
+    callback: str,
+    trx_ref: str,
+    status: str,
+    course_service: CourseService = Depends(get_course_service)
+    ):
+    payload = CallbackPayload(trx_ref=trx_ref, ref_id=callback, status=status) 
+    response = course_service.enrollCourseCallback(payload)
+    return response
+
+#get course by using course id
+@courseRouter.get("/{course_id}")
+async def get_course(
+    course_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    courseResponse = course_service.getCourse(course_id)
+    return courseResponse
+
+#enroll course only for logged in user
+@courseRouter.post("/{course_id}/enroll")
+async def enroll_course(
+    course_id: str,
+    decoded_token: dict = Depends(is_logged_in),
+    course_service: CourseService = Depends(get_course_service)
+):
+    user_id = decoded_token.get("id")
+   
+    user_id = UUID(user_id)
+    course_id = UUID(course_id)
+   
+    enrollResponse = course_service.enrollCourse(user_id, course_id)
+    return enrollResponse
+
 
 #get all lessons of course
 @courseRouter.get("/{course_id}/lessons")
@@ -64,45 +113,6 @@ async def get_lesson_by_id(
     user_id = decoded_token.get("id")
     return course_service.getLessonById(course_id, lesson_id, user_id)
 
-#get course by using course id
-@courseRouter.get("/{course_id}")
-async def get_course(
-    course_id: str,
-    course_service: CourseService = Depends(get_course_service)
-):
-    courseResponse = course_service.getCourse(course_id)
-    return courseResponse
-
-#get all courses
-@courseRouter.get("/")
-async def get_courses(
-    search_params: SearchParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.getCourses(
-        page=search_params.page,
-        page_size=search_params.page_size,
-        search=search_params.search,
-        filter=search_params.filter
-    )
-
-#enroll course only for logged in user
-@courseRouter.post("/{course_id}/enroll")
-async def enroll_course(
-    course_id: str,
-    decoded_token: dict = Depends(is_logged_in),
-    course_service: CourseService = Depends(get_course_service)
-):
-    user_id = decoded_token.get("id")
-   
-    user_id = UUID(user_id)
-    course_id = UUID(course_id)
-   
-    enrollResponse = course_service.enrollCourse(user_id, course_id)
-    return enrollResponse
-
-
-
 
 #add multiple lessons to course
 @courseRouter.post("/{course_id}/lessons")
@@ -112,7 +122,6 @@ async def add_multiple_lessons(
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.addMultipleLessons(course_id, lessons_input)
-
 
 #create protected router for admin
 protected_courseRouter = APIRouter(
@@ -126,7 +135,7 @@ protected_courseRouter = APIRouter(
 async def add_course(
     course_info: CourseInput,
     course_service: CourseService = Depends(get_course_service),
-    # _: dict = Depends(is_admin)  # Only admins can create courses
+    _: dict = Depends(is_admin)  # Only admins can create courses
 ):
     return course_service.addCourse(course_info)
 

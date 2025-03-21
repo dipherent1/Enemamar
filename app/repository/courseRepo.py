@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from app.domain.model.course import Course, Enrollment, Lesson, Video
+from app.domain.model.course import Course, Enrollment, Lesson, Video, Payment
 from app.domain.schema.courseSchema import CourseAnalysisResponse
 from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
@@ -200,7 +200,33 @@ class CourseRepository:
         self.db.refresh(video)
         return video
     
-
+    def save_payment(self, payment: Payment):
+        self.db.add(payment)
+        self.db.commit()
+        self.db.refresh(payment)
+        return payment
+    
+    def get_payment(self, tx_ref: str):
+        payment = (
+            self.db.query(Payment)
+            .filter(Payment.tx_ref == tx_ref)
+            .first()
+        )
+        if not payment:
+            return None
+        return payment
+    
+    def update_payment(self, tx_ref: str, status: str, ref_id: str):
+        payment = self.get_payment(tx_ref)
+        if not payment:
+            raise NotFoundError(detail="Payment not found")
+        
+        payment.status = status
+        payment.ref_id = ref_id
+        self.db.commit()
+        self.db.refresh(payment)
+        return payment
+         
 
     def get_lesson_video(self, lesson_id: str):
         video = (
