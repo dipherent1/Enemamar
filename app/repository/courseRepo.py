@@ -322,6 +322,7 @@ class CourseRepository:
         total_revenue = (
             self.db.query(func.sum(Payment.amount))
             .filter(Payment.course_id == course_id)
+            .filter(Payment.status == "success")
             .scalar()
         )
         return total_revenue or 0.0
