@@ -36,5 +36,11 @@ def pay_course(payment_data):
 
 def verify_payment(transaction_id):
     chapa = Chapa(settings.CHAPA_SECRET_KEY)
+    print(f"Verifying transaction {transaction_id}")
+    
     verification_response = chapa.verify(transaction_id)
+    
+
+    print(f"Verification response for transaction {transaction_id}: {verification_response}")
+    
     return verification_response

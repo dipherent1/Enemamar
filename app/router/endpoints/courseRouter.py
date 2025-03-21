@@ -51,7 +51,13 @@ async def get_enrolled_courses(
     return response
 
 @courseRouter.get("/enroll/callback")
-async def enroll_callback(payload: CallbackPayload, course_service: CourseService = Depends(get_course_service)):
+async def enroll_callback(
+    callback: str,
+    trx_ref: str,
+    status: str,
+    course_service: CourseService = Depends(get_course_service)
+    ):
+    payload = CallbackPayload(trx_ref=trx_ref, ref_id=callback, status=status) 
     response = course_service.enrollCourseCallback(payload)
     return response
 
