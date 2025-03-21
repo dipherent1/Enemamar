@@ -129,6 +129,7 @@ class CourseService:
         if not user_id:
             raise ValidationError(detail="User ID is required")
         
+        print(user_id)
         # Validate course_id
         if not course_id:
             raise ValidationError(detail="Course ID is required")
@@ -151,7 +152,10 @@ class CourseService:
             callback = "http://localhost:8000/course/enroll/callback"
 
             tx_ref = generete_tx_ref(12)
-            amount = course.price - course.discount * course.price
+            if course.discount:
+                amount = course.price - course.discount * course.price
+            else:
+                amount = course.price
 
             data = PaymentData(
                 tx_ref=tx_ref,

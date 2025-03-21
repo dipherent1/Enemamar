@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.config.database import Base
 from sqlalchemy.dialects.postgresql import UUID  # For PostgreSQL
-from app.domain.model.course import Enrollment, Course
+from app.domain.model.course import Enrollment, Course, Payment
 import uuid
 from typing import List
 
@@ -48,6 +48,8 @@ class User(Base):
         back_populates="instructor",
         foreign_keys="Course.instructor_id"
     )
+
+    payments: Mapped[List["Payment"]] = relationship("Payment", back_populates="user")
 
     def deactivate(self) -> None:
         """Deactivate the user."""

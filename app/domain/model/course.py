@@ -38,6 +38,7 @@ class Course(Base):
         back_populates="courses_taught",
         foreign_keys=[instructor_id]
     )
+    payment = relationship("Payment", back_populates="course")
 
 
 class Enrollment(Base):
@@ -122,4 +123,4 @@ class Payment(Base):
 
     # Relationships
     course = relationship("Course", back_populates="payment")
-    user = relationship("User", back_populates="payment")  # M:N (Student ↔ Courses)
+    user = relationship("User", back_populates="payments")  # M:N (Student ↔ Courses)

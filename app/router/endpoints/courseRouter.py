@@ -129,7 +129,7 @@ protected_courseRouter = APIRouter(
 async def add_course(
     course_info: CourseInput,
     course_service: CourseService = Depends(get_course_service),
-    # _: dict = Depends(is_admin)  # Only admins can create courses
+    _: dict = Depends(is_admin)  # Only admins can create courses
 ):
     return course_service.addCourse(course_info)
 
