@@ -135,6 +135,7 @@ class CourseAnalysisResponse(BaseModel):
     view_count: int
     no_of_enrollments: int
     no_of_lessons: int
+    revenue: float
 
 
 class CreateCourseResponse(BaseModel):
@@ -156,7 +157,7 @@ class EnrollResponse(BaseModel):
 class PaymentResponse(BaseModel):
     id: UUID
     tx_ref: str
-    ref_id: str
+    ref_id: Optional[str]  # Fixed the type hint to Optional[str]
     user_id: UUID
     course_id: UUID
     amount: float

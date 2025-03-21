@@ -119,7 +119,7 @@ class CourseService:
             "pagination": {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_total_courses_count(search)
+                "total_items": self.course_repo.get_total_courses_count(search, filter)
             }
         }
     
@@ -182,9 +182,9 @@ class CourseService:
             )
             
 
-            self.course_repo.save_payment(payment)
+            payment =self.course_repo.save_payment(payment)
             
-            return {"detail": "Payment initiated", "data": response}
+            return {"detail": "Payment initiated", "data": {"payment": PaymentResponse.model_validate(payment), "chapa_response": response}}
         
         else:
             # Enroll course
@@ -230,7 +230,66 @@ class CourseService:
         enrollment_response = EnrollmentResponse.model_validate(enrollment)
         
         return {"detail": "Course enrolled successfully", "data": enrollment_response}
+
+    #get user payments
+    def getUserPayments(self, user_id: str, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
+        # Validate user_id
+        if not user_id:
+            raise ValidationError(detail="User ID is required")
+        
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ValidationError(detail="User not found")
+        
+        # Get paginated payments
+        payments = self.course_repo.get_user_payments(user_id, page, page_size, filter)
+        
+        # Convert to Pydantic models
+        payments_response = [
+            PaymentResponse.model_validate(payment)
+            for payment in payments
+        ]
+
+        # Return response with pagination metadata
+        return {
+            "detail": "User payments fetched successfully",
+            "data": payments_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_user_payments_count(user_id, filter)
+            }
+        }    
     
+    #get course payments
+    def getCoursePayments(self, course_id: str, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        course = self.course_repo.get_course(course_id)
+        if not course:
+            raise ValidationError(detail="Course not found")
+        
+        # Get paginated payments
+        payments = self.course_repo.get_course_payments(course_id, page, page_size, filter)
+        
+        # Convert to Pydantic models
+        payments_response = [
+            PaymentResponse.model_validate(payment)
+            for payment in payments
+        ]
+
+        # Return response with pagination metadata
+        return {
+            "detail": "Course payments fetched successfully",
+            "data": payments_response,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_items": self.course_repo.get_course_payments_count(course_id, filter)
+            }
+        }
 
     #get all courses enrolled by user
     def getEnrolledCourses(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
