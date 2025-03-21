@@ -19,8 +19,8 @@ class Course(Base):
         index=True
     )
     title = Column(String)
-    price = Column(Float)
-    discount = Column(Float)
+    price = Column(Float, default=0.0)
+    discount = Column(Float, default=0.0)
     description = Column(String)
     tags = Column(ARRAY(String))
     instructor_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
