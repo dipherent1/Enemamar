@@ -226,7 +226,44 @@ class CourseRepository:
         self.db.commit()
         self.db.refresh(payment)
         return payment
-         
+
+    #get user payment with pagination and sorting
+    def get_user_payments(self, user_id: str, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
+        query = (
+            self.db.query(Payment)
+            .filter(Payment.user_id == user_id)
+        )
+        
+        if filter:
+            query = query.filter(Payment.status == filter)
+        
+        payments = (
+            query
+            .order_by(Payment.updated_at.desc())  # Sort by updated_at in descending order
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+        return payments
+    
+    #get course payment
+    def get_course_payments(self, course_id: str, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
+        query = (
+            self.db.query(Payment)
+            .filter(Payment.course_id == course_id)
+        )
+        
+        if filter:
+            query = query.filter(Payment.status == filter)
+        
+        payments = (
+            query
+            .order_by(Payment.updated_at.desc())  # Sort by updated_at in descending order
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+        return payments
 
     def get_lesson_video(self, lesson_id: str):
         video = (
@@ -259,7 +296,9 @@ class CourseRepository:
             course_id=course.id,
             view_count=course.view_count,
             no_of_enrollments=total_enrolled_users,
-            no_of_lessons=total_lessons
+            no_of_lessons=total_lessons,
+            revenue=self.get_course_revenue(course_id)
+            
         )
     
     #get course all by instructor
@@ -270,6 +309,22 @@ class CourseRepository:
             analysis = self.course_analysis(course.id)
             course_analysis_list.append(analysis)
         return course_analysis_list
+
+    def get_user_payments_count(self, user_id: str, filter: Optional[str] = None):
+        query = self.db.query(Payment).filter(Payment.user_id == user_id, Payment.status == filter)
+        return query.count()
+
+    def get_course_payments_count(self, course_id: str, filter: Optional[str] = None):
+        query = self.db.query(Payment).filter(Payment.course_id == course_id, Payment.status == filter)
+        return query.count()
+
+    def get_course_revenue(self, course_id: str):
+        total_revenue = (
+            self.db.query(func.sum(Payment.amount))
+            .filter(Payment.course_id == course_id)
+            .scalar()
+        )
+        return total_revenue or 0.0
 
     def get_lessons_count(self, course_id: str) -> int:
         return (
@@ -296,7 +351,7 @@ class CourseRepository:
         
         return query.count()
 
-    def get_total_courses_count(self, search: Optional[str] = None):
+    def get_total_courses_count(self, search: Optional[str] = None, filter: Optional[str] = None):
         query = self.db.query(Course)
         
         if search:

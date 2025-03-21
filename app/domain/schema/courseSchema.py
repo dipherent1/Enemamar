@@ -135,6 +135,7 @@ class CourseAnalysisResponse(BaseModel):
     view_count: int
     no_of_enrollments: int
     no_of_lessons: int
+    revenue: float
 
 
 class CreateCourseResponse(BaseModel):

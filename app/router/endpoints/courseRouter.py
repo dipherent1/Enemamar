@@ -139,6 +139,14 @@ async def add_course(
 ):
     return course_service.addCourse(course_info)
 
+@protected_courseRouter.get("/payment/{user_id}")
+async def get_user_payment(
+    user_id: str,
+    search_params: SearchParams = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getUserPayments(user_id, search_params.page, search_params.page_size, search_params.filter)
+
 #get enrolled course of user
 @protected_courseRouter.get("/enrolled/{user_id}")
 async def get_enrolled_courses_by_user(
@@ -161,7 +169,6 @@ async def add_video_to_lesson(
     course_service: CourseService = Depends(get_course_service)
 ):
     return course_service.add_video_to_lesson(course_id, lesson_id, video_input)
-
 
 @protected_courseRouter.get("/{course_id}/lessons/{lesson_id}/video")
 async def get_lesson_videos(
@@ -194,12 +201,20 @@ async def get_all_enrolled_courses(
         search_params.page_size
     )
 
+@protected_courseRouter.get("/{course_id}/payment")
+async def get_course_payment(
+    course_id: str,
+    search_params: SearchParams = Depends(),
+    course_service: CourseService = Depends(get_course_service)
+):
+    return course_service.getCoursePayments(course_id, search_params.page, search_params.page_size, search_params.filter)
+
 
 analysis_router = APIRouter(
     prefix="/analysis",
     tags=["course"]
 )
-# get ccourse of instructor
+# get course of instructor
 @analysis_router.get("/instructor/{instructor_id}")
 async def get_courses_by_instructor(
     instructor_id: str,
