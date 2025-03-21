@@ -197,22 +197,21 @@ class CourseService:
 
     def enrollCourseCallback(self, payload: CallbackPayload):
         # Validate user_id
-        print(payload)
+        print("payload: ",payload)
         payment = self.course_repo.get_payment(payload.trx_ref)
         if not payment:
             raise ValidationError(detail="Payment not found")
         
-        # response = verify_payment(payload.trx_ref)
-        # print(response)
+        response = verify_payment(payload.trx_ref)
+        print("verify data",response)
     
 
-        if payload.status != "success":
+        if response["status"] != "success":
             payment = self.course_repo.update_payment(payload.trx_ref, "failed", ref_id=payload.ref_id)
             raise ValidationError(detail="Payment failed")
         
-        payment = self.course_repo.update_payment(payload.trx_ref, "success", ref_id=payload.ref_id)
+        payment = self.course_repo.update_payment(payload.trx_ref, "success", ref_id=response["data"]["reference"])
         payment = PaymentResponse.model_validate(payment)
-        print(payment)
         
         # Validate user exists
         user = self.user_repo.get_user_by_id(payment.user_id)

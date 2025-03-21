@@ -1,3 +1,4 @@
+import requests
 from chapa import Chapa
 from app.core.config.env import get_settings
 import random
@@ -35,12 +36,13 @@ def pay_course(payment_data):
     return response
 
 def verify_payment(transaction_id):
-    chapa = Chapa(settings.CHAPA_SECRET_KEY)
-    print(f"Verifying transaction {transaction_id}")
     
-    verification_response = chapa.verify(transaction_id)
-    
-
-    print(f"Verification response for transaction {transaction_id}: {verification_response}")
-    
-    return verification_response
+	url = f"https://api.chapa.co/v1/transaction/verify/{transaction_id}"
+	payload = ''
+	headers = {
+		'Authorization': f'Bearer {settings.CHAPA_SECRET_KEY}'
+	}
+	response = requests.get(url, headers=headers, data=payload)
+	print("verification response",response)
+	data = response.json()
+	return data
