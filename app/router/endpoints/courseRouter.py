@@ -85,6 +85,15 @@ async def enroll_course(
     enrollResponse = course_service.enrollCourse(user_id, course_id)
     return enrollResponse
 
+@courseRouter.get("/{course_id}/enrollment/{user_id}")
+async def get_enrollment(
+    course_id: str,
+    user_id: str,
+    course_service: CourseService = Depends(get_course_service)
+):
+    user_id = UUID(user_id)
+    course_id = UUID(course_id)
+    return course_service.getEnrollment(user_id, course_id)
 
 #get all lessons of course
 @courseRouter.get("/{course_id}/lessons")

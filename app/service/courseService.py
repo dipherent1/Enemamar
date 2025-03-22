@@ -123,6 +123,26 @@ class CourseService:
             }
         }
     
+    def getEnrollment(self, user_id: str, course_id: str):
+        # Validate user_id
+        if not user_id:
+            raise ValidationError(detail="User ID is required")
+        
+        # Validate course_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        
+        # Get enrollment
+        enrollment = self.course_repo.get_enrollment(user_id, course_id)
+        if not enrollment:
+            raise ValidationError(detail="User not enrolled in course")
+        
+        # Convert SQLAlchemy Enrollment object to Pydantic Response Model
+        enrollment_response = EnrollmentResponse.model_validate(enrollment)
+        
+        # Return response
+        return {"detail": "Enrollment fetched successfully", "data": enrollment_response}
+    
     #enroll course by using user id and and course id
     def enrollCourse(self, user_id: str, course_id: str):
         # Validate user_id
