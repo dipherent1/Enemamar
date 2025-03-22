@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from app.domain.schema.authSchema import signUp,login
+from app.domain.schema.authSchema import signUp,login, RefreshTokenRequest
 from app.service.authService import AuthService
 from fastapi import Depends, Header
 from app.service.authService import get_auth_service
@@ -46,11 +46,13 @@ async def logout(refresh_token: str = Header(None), auth_service:AuthService = D
 
     return auth_service.logout(refresh_token=refresh_token)
 
-@authRouter.get("/refresh")
+@authRouter.post("/refresh")
 async def refresh_token(
-    #get access token
-    refresh_token: str = Header(None),
+    refresh_token_request: RefreshTokenRequest,  # Get refresh token from the request body
     auth_service: AuthService = Depends(get_auth_service)
 ):
-    return auth_service.refresh_token(refresh_token)
+
+    print("Received refresh token request:", refresh_token_request)
+    
+    return auth_service.refresh_token(refresh_token=refresh_token_request.refresh_token)
     
