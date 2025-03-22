@@ -302,7 +302,7 @@ class CourseService:
         
         # Extract and convert courses
         courses_response = [
-            CourseResponse.model_validate(enrollment.course)
+            CourseResponse.model_validate(enrollment.course).model_dump(exclude={'lessons'})
             for enrollment in enrollments
         ]
 
