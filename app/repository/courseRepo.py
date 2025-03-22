@@ -58,7 +58,8 @@ class CourseRepository:
         
         return (
             query
-            .limit(page_size)
+            .offset((page - 1) * page_size)  # Pagination offset
+            .limit(page_size)  # Limit results to page size
             .all()
         )
     
