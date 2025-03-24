@@ -131,11 +131,11 @@ class CourseResponse(BaseModel):
     }
 
 class CourseAnalysisResponse(BaseModel):
-    course_id: UUID
     view_count: int
     no_of_enrollments: int
     no_of_lessons: int
     revenue: float
+    course: Optional[CourseResponse] = Field(default=None)
 
 
 class CreateCourseResponse(BaseModel):

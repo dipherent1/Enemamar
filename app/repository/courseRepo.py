@@ -293,13 +293,15 @@ class CourseRepository:
         total_lessons = self.get_lessons_count(course_id)
         total_enrolled_users = self.get_total_enrolled_users_count(course_id)
         
+        for lesson in course.lessons:
+            lesson.video = None
+
         return CourseAnalysisResponse(
-            course_id=course.id,
+            course=course,
             view_count=course.view_count,
             no_of_enrollments=total_enrolled_users,
             no_of_lessons=total_lessons,
             revenue=self.get_course_revenue(course_id)
-            
         )
     
     #get course all by instructor
