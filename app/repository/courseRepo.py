@@ -188,6 +188,21 @@ class CourseRepository:
         self.db.refresh(lesson)
         return lesson
 
+    #edit lesson
+    def edit_lesson(self, course_id: str, lesson_id: str, lesson: Lesson):
+        lesson_to_update = (
+            self.db.query(Lesson)
+            .filter(Lesson.course_id == course_id)
+            .filter(Lesson.id == lesson_id)
+            .first()
+        )
+        if not lesson_to_update:
+            raise NotFoundError(detail="Lesson not found")
+        lesson_to_update.title = lesson.title
+        lesson_to_update.description = lesson.description
+
+    
+
     def get_enrolled_users_count(self, course_id: str) -> int:
         return (
             self.db.query(Enrollment)
