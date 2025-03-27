@@ -189,7 +189,7 @@ class CourseRepository:
         return lesson
 
     #edit lesson
-    def edit_lesson(self, course_id: str, lesson_id: str, lesson: Lesson):
+    def edit_lesson(self, course_id: str, lesson_id: str, lesson_data: dict):
         lesson_to_update = (
             self.db.query(Lesson)
             .filter(Lesson.course_id == course_id)
@@ -198,10 +198,30 @@ class CourseRepository:
         )
         if not lesson_to_update:
             raise NotFoundError(detail="Lesson not found")
-        lesson_to_update.title = lesson.title
-        lesson_to_update.description = lesson.description
-
+        
+        for key, value in lesson_data.items():
+            if hasattr(lesson_to_update, key):
+                setattr(lesson_to_update, key, value)
+        
+        self.db.commit()
+        self.db.refresh(lesson_to_update)
+        return lesson_to_update
     
+    #delete lesson
+    def delete_lesson(self, course_id: str, lesson_id: str):
+        lesson_to_delete = (
+            self.db.query(Lesson)
+            .filter(Lesson.course_id == course_id)
+            .filter(Lesson.id == lesson_id)
+            .first()
+        )
+        if not lesson_to_delete:
+            raise NotFoundError(detail="Lesson not found")
+        self.db.delete(lesson_to_delete)
+        self.db.commit()
+        return lesson_to_delete
+
+
 
     def get_enrolled_users_count(self, course_id: str) -> int:
         return (
