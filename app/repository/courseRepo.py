@@ -162,7 +162,7 @@ class CourseRepository:
             .first()
         )
         if not lesson:
-            raise NotFoundError(detail="Lesson not found")
+            return None
         return lesson
    
     #add multiple lesson to course
@@ -196,8 +196,6 @@ class CourseRepository:
             .filter(Lesson.id == lesson_id)
             .first()
         )
-        if not lesson_to_update:
-            raise NotFoundError(detail="Lesson not found")
         
         for key, value in lesson_data.items():
             if hasattr(lesson_to_update, key):

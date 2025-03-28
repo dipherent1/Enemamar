@@ -13,6 +13,7 @@ from app.domain.schema.courseSchema import (
     videoResponse,
     CourseAnalysisResponse,
     CallbackPayload,
+    LessonInput,
 )
 from app.domain.model.course import Course, Enrollment, Lesson, Video, Payment
 from app.repository.courseRepo import CourseRepository
@@ -430,6 +431,39 @@ class CourseService:
             "data": lesson_response
         }
     
+    #edit lesson
+    def editLesson(self, course_id: str, lesson_id: str, lesson_input: LessonInput):
+        # Validate course_id and lesson_id
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+        if not lesson_id:
+            raise ValidationError(detail="Lesson ID is required")
+        # Validate course and lesson exist
+        lesson = self.course_repo.get_lesson_by_id(course_id, lesson_id)
+        if not lesson:
+            raise ValidationError(detail="Lesson not found")
+        # Update lesson data
+        lesson_data = lesson_input.model_dump(exclude={'video'})
+        lesson_data = Lesson(**lesson_data)
+        lesson_data.course_id = course_id
+        lesson_data.id = lesson_id
+        # Update lesson in database
+        try:
+            updated_lesson = self.course_repo.update_lesson(lesson_data)
+        except IntegrityError as e:
+            print(f"Error: {str(e)}")
+            raise ValidationError(detail=f"Failed to update lesson, {str(e)}")
+        # Convert to Pydantic model
+        lesson_response = LessonResponse.model_validate(updated_lesson)
+        # Add video if provided
+        if lesson_input.video:
+            self.add_video_to_lesson_helper(course_id, lesson_id, lesson_input.video)
+        # Return response
+        return {
+            "detail": "Lesson updated successfully",
+            "data": lesson_response
+        }
+
     def addMultipleLessonsHelper(self, course_id: str, lessons_input):
         if not course_id:
             raise ValidationError(detail="Course ID is required")
