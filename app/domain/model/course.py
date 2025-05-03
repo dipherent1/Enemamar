@@ -124,3 +124,22 @@ class Payment(Base):
     # Relationships
     course = relationship("Course", back_populates="payment")
     user = relationship("User", back_populates="payments")  # M:N (Student ↔ Courses)
+
+# class Comment(Base):
+#     __tablename__ = "comments"
+#     id: Mapped[UUID] = mapped_column(
+#         UUID(as_uuid=True), 
+#         primary_key=True, 
+#         default=uuid.uuid4, 
+#         index=True
+#     )
+#     content = Column(String, nullable=False)
+#     created_at = Column(DateTime(timezone=True), server_default=func.now())
+#     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+#     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+#     course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+
+#     # Relationships
+#     user = relationship("User", back_populates="comments")
+#     course = relationship("Course", back_populates="comments")

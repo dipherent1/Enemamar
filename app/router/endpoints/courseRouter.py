@@ -1,19 +1,11 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends
 from app.domain.schema.courseSchema import (
     CourseInput,
-    PaginationParams,
     SearchParams,
-    MultipleLessonInput,
-    VideoInput,
-    CourseAnalysisResponse,
-    CallbackPayload
 )
-from app.service.courseService import CourseService
-from fastapi import Depends, Header
-from app.service.courseService import get_course_service
+from app.service.courseService import CourseService, get_course_service
 from app.utils.middleware.dependancies import is_admin, is_logged_in
 from uuid import UUID
-from typing import Union, List
 
 courseRouter = APIRouter(
     prefix="/course",
@@ -50,16 +42,7 @@ async def get_enrolled_courses(
     )
     return response
 
-@courseRouter.get("/enroll/callback")
-async def enroll_callback(
-    callback: str,
-    trx_ref: str,
-    status: str,
-    course_service: CourseService = Depends(get_course_service)
-    ):
-    payload = CallbackPayload(trx_ref=trx_ref, ref_id=callback, status=status) 
-    response = course_service.enrollCourseCallback(payload)
-    return response
+# Payment endpoints moved to payment_router.py
 
 #get course by using course id
 @courseRouter.get("/{course_id}")
@@ -78,10 +61,10 @@ async def enroll_course(
     course_service: CourseService = Depends(get_course_service)
 ):
     user_id = decoded_token.get("id")
-   
+
     user_id = UUID(user_id)
     course_id = UUID(course_id)
-   
+
     enrollResponse = course_service.enrollCourse(user_id, course_id)
     return enrollResponse
 
@@ -96,41 +79,12 @@ async def get_enrollment(
     return course_service.getEnrollment(user_id, course_id)
 
 #get all lessons of course
-@courseRouter.get("/{course_id}/lessons")
-async def get_lessons(
-    course_id: str,
-    decoded_token: dict = Depends(is_logged_in),
-    search_params: PaginationParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
-):
-    user_id = decoded_token.get("id")
-    return course_service.getLessons(
-        course_id,
-        user_id,
-        search_params.page,
-        search_params.page_size
-    )
+# Lesson endpoints moved to lesson_router.py
 
-#get lesson by id
-@courseRouter.get("/{course_id}/lesson/{lesson_id}")
-async def get_lesson_by_id(
-    course_id: str,
-    lesson_id: str,
-    decoded_token: dict = Depends(is_logged_in),
-    course_service: CourseService = Depends(get_course_service)
-):
-    user_id = decoded_token.get("id")
-    return course_service.getLessonById(course_id, lesson_id, user_id)
+# Lesson endpoints moved to lesson_router.py
 
 
-#add multiple lessons to course
-@courseRouter.post("/{course_id}/lessons")
-async def add_multiple_lessons(
-    course_id: str,
-    lessons_input: MultipleLessonInput,  # Change the parameter name to be more clear
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.addMultipleLessons(course_id, lessons_input)
+# Lesson endpoints moved to lesson_router.py
 
 #create protected router for admin
 protected_courseRouter = APIRouter(
@@ -139,7 +93,7 @@ protected_courseRouter = APIRouter(
     dependencies=[Depends(is_admin)]
 )
 
-#add course 
+#add course
 @protected_courseRouter.post("/add")
 async def add_course(
     course_info: CourseInput,
@@ -148,13 +102,7 @@ async def add_course(
 ):
     return course_service.addCourse(course_info)
 
-@protected_courseRouter.get("/payment/{user_id}")
-async def get_user_payment(
-    user_id: str,
-    search_params: SearchParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.getUserPayments(user_id, search_params.page, search_params.page_size, search_params.filter)
+# Payment endpoints moved to payment_router.py
 
 #get enrolled course of user
 @protected_courseRouter.get("/enrolled/{user_id}")
@@ -170,32 +118,7 @@ async def get_enrolled_courses_by_user(
         search=search_params.search
     )
 
-@protected_courseRouter.post("/{course_id}/lessons/{lesson_id}/video")
-async def add_video_to_lesson(
-    course_id: str,
-    lesson_id: str,
-    video_input: VideoInput,
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.add_video_to_lesson(course_id, lesson_id, video_input)
-
-@protected_courseRouter.get("/{course_id}/lessons/{lesson_id}/video")
-async def get_lesson_videos(
-    course_id: str,
-    lesson_id: str,
-    decoded_token: dict = Depends(is_admin),
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.get_lesson_video(course_id, lesson_id)
-
-@protected_courseRouter.get("/{course_id}/lessons/{lesson_id}/video/{video_id}")
-async def get_video_by_id(
-    course_id: str,
-    lesson_id: str,
-    video_id: str,
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.get_video_by_id(course_id, lesson_id, video_id)
+# Lesson and video endpoints moved to lesson_router.py
 
 #get all user enrolled course
 @protected_courseRouter.get("/{course_id}/enrolled")
@@ -210,13 +133,7 @@ async def get_all_enrolled_courses(
         search_params.page_size
     )
 
-@protected_courseRouter.get("/{course_id}/payment")
-async def get_course_payment(
-    course_id: str,
-    search_params: SearchParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
-):
-    return course_service.getCoursePayments(course_id, search_params.page, search_params.page_size, search_params.filter)
+# Payment endpoints moved to payment_router.py
 
 
 analysis_router = APIRouter(

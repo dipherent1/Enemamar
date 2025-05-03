@@ -1,4 +1,4 @@
-from app.utils.exceptions.exceptions import AuthError
+from app.utils.exceptions.exceptions import AuthError, NotFoundError,DuplicatedError,ValidationError
 from sqlalchemy.orm import Session
 from app.domain.model.user import User, RefreshToken
 from app.domain.schema.authSchema import tokenLoginData, editUser
