@@ -63,15 +63,19 @@ class PaymentService:
                 tx_ref=tx_ref,
                 user_id=user_id,
                 course_id=course_id,
-                email=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
                 amount=amount,
                 title=course.title,
-                callback_url=callback
+                callback_url=callback,
+                phone_number="0"+user.phone_number
             )
-            
-            response = pay_course(data)
+            if user.email:
+                data.email = user.email
+            try:
+                response = pay_course(data)
+            except Exception as e:
+                raise ValidationError(detail="Payment initiation failed")
 
             if response.get("status") != "success":
                 raise ValidationError(detail=response['message'])
@@ -115,7 +119,10 @@ class PaymentService:
             raise ValidationError(detail="Payment not found")
         
         # Verify payment with payment provider
-        response = verify_payment(payload.trx_ref)
+        try:
+            response = verify_payment(payload.trx_ref)
+        except Exception as e:
+            raise ValidationError(detail="Payment verification failed")
         
         if response["status"] != "success":
             payment = self.payment_repo.update_payment(payload.trx_ref, "failed", ref_id=payload.ref_id)

@@ -5,7 +5,7 @@ from app.core.config.env import get_settings
 setting = get_settings()
 def send_otp_sms(phone_number: str):
     # Send OTP SMS
-        # we use requests library for the samples
+    # we use requests library for the samples
     # session object
     session = requests.Session()
     # base url
@@ -29,26 +29,26 @@ def send_otp_sms(phone_number: str):
     # final url
     url = '%s?from=%s&sender=%s&to=%s&pr=%s&ps=%s&callback=%s&sb=%d&sa=%d&ttl=%d&len=%d&t=%d' % (base_url, form_id, sender, to, pre, post, callback, sb, sa, ttl, len, t)
     # make request
-    result = session.get(url, headers=headers)
+    try:
+        result = session.get(url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        # Handle the exception (e.g., log it, raise a custom error, etc.)
+        print(f"Request failed: {e}")
+        return (500, str(e))
     # check result
+    status_code = 200
     if result.status_code == 200:
         # request is success. inspect the json object for the value of `acknowledge`
         json = result.json()
-        if json['acknowledge'] == 'success':
-            # do success
-            print ("api success")
-        else:
-            # do failure
-            print ("api error") 
+        if json['acknowledge'] != 'success':
+            status_code = 400
     else:
         # anything other than 200 goes here.
-        print ("http error ... code: %d , msg: %s " % (result.status_code, result.content))    
+        return (result.status_code, result.content)
     
-    return (result.status_code, result.content)
+    return (status_code, result.content)
 
 def verify_otp_sms(phone_number: str, code: str):
-    # we use reqests library for the samples
-    import requests
     # session configuration
     session = requests.Session()
     # base url
@@ -65,20 +65,22 @@ def verify_otp_sms(phone_number: str, code: str):
     # final url
     url = '%s?to=%s&code=%s' % (base_url, to, code)
     # make request
-    result = session.get(url, headers=headers)
+    try:
+        result = session.get(url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        # Handle the exception (e.g., log it, raise a custom error, etc.)
+        print(f"Request failed: {e}")
+        return (500, str(e))
     # check result
+    status_code = 200
     if result.status_code == 200:
         # request is success. inspect the json object for the value of `acknowledge`
         json = result.json()
-        if json['acknowledge'] == 'success':
-            # do success
-            print ('api success')
-        else:
-            # do failure
-            print ('api error')
+        if json['acknowledge'] != 'success':
+            status_code = 400
     else:
         # anything other than 200 goes here.
-        print ('http error ... code: %d , msg: %s ' % (result.status_code, result.content))
+        return (result.status_code, result.content)
     
-    return (result.status_code, result.content)
+    return (status_code, result.content)
                                 

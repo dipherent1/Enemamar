@@ -171,6 +171,7 @@ class PaymentData(BaseModel):
     tx_ref: str
     amount: float
     user_id: UUID
+    phone_number: str
     course_id: UUID
     email: str
     first_name: str

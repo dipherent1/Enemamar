@@ -83,6 +83,7 @@ class UserRepository:
         if user_id:
             user = self.get_user_by_id(user_id)
         elif phone_number:
+            print("from activate user", phone_number)
             user = self.get_user_by_phone(phone_number)
         
         if not user:
@@ -90,6 +91,7 @@ class UserRepository:
         
         user.is_active = True
         self.db.commit()
+        print("User activated:", user.id)
         return user
     
     def delete_user(self, user_id: int):

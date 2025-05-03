@@ -11,16 +11,28 @@ from app.utils.security.hash import hash_password, verify_password
 from app.utils.security.jwt_handler import verify_refresh_token, verify_access_token, create_access_token, create_refresh_token
 from app.utils.otp.sms import send_otp_sms, verify_otp_sms
 
+def normalize_phone_number(phone: str) -> str:
+    # Strip +251, 251, or 0 at the start
+    return re.sub(r'^(?:\+251|251|0)', '', phone)
+
+def format_phone_for_sending(phone: str, use_plus_prefix=True) -> str:
+    if use_plus_prefix:
+        return f'+251{normalize_phone_number(phone)}'
+    else:
+        return f'0{normalize_phone_number(phone)}'
+
 class AuthService:
     def __init__(self, db):
         self.user_repo = UserRepository(db)
 
     def signUp(self, sign_up_data: signUp):
-        # Validate phone number
+        # Validate and normalize phone number
         regex = r'^(?:\+251|0)?9\d{8}$'
         if not re.match(regex, sign_up_data.phone_number):
             raise ValidationError(detail="Invalid phone number")
         
+        # Normalize phone number to raw form (e.g., 966934381)
+        sign_up_data.phone_number = normalize_phone_number(sign_up_data.phone_number)
         # Set username if not provided
         if not sign_up_data.username:
             sign_up_data.username = sign_up_data.phone_number
@@ -33,7 +45,7 @@ class AuthService:
         # Convert sign_up_data to User ORM object
         user = User(**sign_up_data.model_dump(exclude_none=True))
 
-        #hash the password
+        # Hash the password
         user.password = hash_password(user.password)
 
         # Check for duplicate entry using database constraints
@@ -46,17 +58,6 @@ class AuthService:
         except IntegrityError:
             raise DuplicatedError(detail="User with this email or phone number already exists")
 
-        # Convert SQLAlchemy User object to Pydantic Response Model
-        # user_response = UserResponse(
-        #     id=user.id,
-        #     username=user.username,
-        #     first_name=user.first_name,
-        #     last_name=user.last_name,
-        #     email=user.email,
-        #     phone_number=user.phone_number,
-        #     role=user.role,
-        #     is_active=user.is_active
-        # )
         user_response = UserResponse.model_validate(user)
 
         # Return response
@@ -133,22 +134,44 @@ class AuthService:
         return {"access_token": access_token}
 
     def send_otp(self, phone_number: str):
-        status_code, content = send_otp_sms(phone_number)
+        print("Sending OTP to phone number:", phone_number)
+        phone_number = format_phone_for_sending(phone_number)
+        try:
+            status_code, content = send_otp_sms(phone_number)
+        except Exception as e:
+            raise ValidationError(detail="Failed to send OTP", data=str(e))
+        print("Sending OTP to phone number:", phone_number)
         
         if status_code == 200:  # Assuming 200 means success
+            print("OTP sent successfully to:", phone_number)
             return {"detail": "OTP sent successfully", "status_code": status_code}
         else:
             raise ValidationError(detail="Failed to send OTP", data=content)
 
     def verify_otp(self, phone_number: str, code: str):
-        status_code, content = verify_otp_sms(phone_number, code)
+        print("Verifying OTP for phone number:", phone_number)
+        print("OTP code:", code)
+        formatted_phone_number = format_phone_for_sending(phone_number)
+        try:
+            status_code, content = verify_otp_sms(formatted_phone_number, code)
+        except Exception as e:
+            raise ValidationError(detail="Failed to verify OTP", data=str(e))
         
         if status_code == 200:
-            self.user_repo.activate_user(None, phone_number)
+            # Normalize phone number to raw form (e.g., 966934381)
+            phone_number = normalize_phone_number(formatted_phone_number)
+            # phone_number = re.sub(r'^(?:\+251|0)', '', phone_number)
+                        
+            # Activate the user
+            print("Normalized phone number:", phone_number)
+            user = self.user_repo.activate_user(None, phone_number)
+            if not user:
+                raise NotFoundError(detail="User with this phone number does not exist")
+            
             return {"detail": "OTP verified successfully", "status_code": status_code}
         
         else:
-            raise ValidationError(detail="Failed to verify OTP", data=content)
+            raise ValidationError(detail=f"Failed to verify OTP: {str(content)}")
 
         
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
