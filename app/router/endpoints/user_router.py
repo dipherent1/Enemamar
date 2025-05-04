@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from app.domain.schema.authSchema import editUser, UserResponse
 from app.domain.schema.courseSchema import SearchParams
+from app.domain.schema.responseSchema import (
+    UserProfileResponse, UserUpdateResponse, BaseResponse,
+    ErrorResponse, PaginatedResponse
+)
 from app.service.userService import UserService, get_user_service
 from app.utils.middleware.dependancies import is_logged_in
 from uuid import UUID
@@ -14,36 +18,18 @@ user_router = APIRouter(
 
 @user_router.get(
     "/me",
-    response_model=Dict[str, Any],
+    response_model=UserProfileResponse,
     status_code=status.HTTP_200_OK,
     summary="Get current user profile",
     description="Retrieve the profile information of the currently authenticated user.",
     responses={
         200: {
             "description": "User profile retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "User profile retrieved successfully",
-                        "data": {
-                            "id": "123e4567-e89b-12d3-a456-426614174000",
-                            "username": "johndoe",
-                            "email": "john.doe@example.com",
-                            "first_name": "John",
-                            "last_name": "Doe",
-                            "phone_number": "0912345678",
-                            "role": "student",
-                            "is_active": True,
-                            "profile_picture": "https://example.com/profile.jpg",
-                            "created_at": "2023-01-01T12:00:00Z",
-                            "updated_at": "2023-01-02T12:00:00Z"
-                        }
-                    }
-                }
-            }
+            "model": UserProfileResponse
         },
         401: {
             "description": "Unauthorized",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "Missing or invalid token"}
@@ -52,6 +38,7 @@ user_router = APIRouter(
         },
         404: {
             "description": "User not found",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "User not found"}
@@ -79,33 +66,18 @@ async def read_users_me(
 
 @user_router.put(
     "/me",
-    response_model=Dict[str, Any],
+    response_model=UserUpdateResponse,
     status_code=status.HTTP_200_OK,
     summary="Update current user profile",
     description="Update the profile information of the currently authenticated user.",
     responses={
         200: {
             "description": "User profile updated successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "User profile updated successfully",
-                        "data": {
-                            "id": "123e4567-e89b-12d3-a456-426614174000",
-                            "username": "johndoe_updated",
-                            "email": "john.doe.updated@example.com",
-                            "first_name": "John",
-                            "last_name": "Doe",
-                            "phone_number": "0912345678",
-                            "role": "student",
-                            "is_active": True
-                        }
-                    }
-                }
-            }
+            "model": UserUpdateResponse
         },
         400: {
             "description": "Bad request",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "Invalid email format"}
@@ -114,6 +86,7 @@ async def read_users_me(
         },
         401: {
             "description": "Unauthorized",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "Missing or invalid token"}
@@ -122,6 +95,7 @@ async def read_users_me(
         },
         404: {
             "description": "User not found",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "User not found"}
@@ -130,6 +104,7 @@ async def read_users_me(
         },
         409: {
             "description": "Conflict",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "Username or email already exists"}
@@ -158,7 +133,42 @@ async def edit_me(
 
     return user_service.edit_user_by_token(user_id, edit_user)
 
-@user_router.delete("/me")
+@user_router.delete(
+    "/me",
+    response_model=BaseResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Deactivate user account",
+    description="Deactivate the current user's account.",
+    responses={
+        200: {
+            "description": "Account deactivated successfully",
+            "model": BaseResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Account deactivated successfully"}
+                }
+            }
+        },
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Missing or invalid token"}
+                }
+            }
+        },
+        404: {
+            "description": "User not found",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "User not found"}
+                }
+            }
+        }
+    }
+)
 async def delete_me(
     decoded_token: dict = Depends(is_logged_in),
     user_service: UserService = Depends(get_user_service)
@@ -166,12 +176,10 @@ async def delete_me(
     """
     Deactivate the current user's account.
 
-    Args:
-        decoded_token (dict): The decoded JWT token.
-        user_service (UserService): The user service.
+    This endpoint marks the user account as inactive, effectively deactivating it.
+    The account data is preserved but the user will no longer be able to log in.
 
-    Returns:
-        dict: The deactivation response.
+    Authentication is required via JWT token in the Authorization header.
     """
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
@@ -199,20 +207,38 @@ async def delete_me(
 #         filter=params.filter
 #     )
 
-@user_router.get("/{user_id}")
+@user_router.get(
+    "/{user_id}",
+    response_model=UserProfileResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get user by ID",
+    description="Retrieve a user's profile by their ID.",
+    responses={
+        200: {
+            "description": "User profile retrieved successfully",
+            "model": UserProfileResponse
+        },
+        404: {
+            "description": "User not found",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "User not found"}
+                }
+            }
+        }
+    }
+)
 async def get_user_by_id(
     user_id: str,
     user_service: UserService = Depends(get_user_service)
 ):
     """
-    Get a user by ID.
+    Retrieve a user's profile by their ID.
 
-    Args:
-        user_id (str): The user ID.
-        user_service (UserService): The user service.
+    This endpoint returns the public profile information of a user identified by their UUID.
 
-    Returns:
-        dict: The user profile.
+    - **user_id**: UUID of the user to retrieve
     """
     return user_service.get_user_by_id(user_id)
 

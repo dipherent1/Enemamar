@@ -6,10 +6,14 @@ from app.domain.schema.courseSchema import (
     EnrollResponse,
     CourseAnalysisResponse
 )
+from app.domain.schema.responseSchema import (
+    CourseListResponse, CourseDetailResponse, EnrollmentResponse as EnrollmentResponseModel,
+    BaseResponse, ErrorResponse, PaginatedResponse
+)
 from app.service.courseService import CourseService, get_course_service
 from app.utils.middleware.dependancies import is_logged_in
 from uuid import UUID
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 # Course router
 course_router = APIRouter(
@@ -19,38 +23,18 @@ course_router = APIRouter(
 
 @course_router.get(
     "/",
-    response_model=Dict[str, Any],
+    response_model=CourseListResponse,
     status_code=status.HTTP_200_OK,
     summary="Get all courses",
     description="Retrieve a paginated list of all available courses with optional filtering and search.",
     responses={
         200: {
             "description": "List of courses retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Courses retrieved successfully",
-                        "data": {
-                            "courses": [
-                                {
-                                    "id": "123e4567-e89b-12d3-a456-426614174000",
-                                    "title": "Introduction to Python",
-                                    "description": "Learn Python from scratch",
-                                    "price": 99.99,
-                                    "instructor_id": "123e4567-e89b-12d3-a456-426614174001"
-                                }
-                            ],
-                            "total": 1,
-                            "page": 1,
-                            "page_size": 10,
-                            "total_pages": 1
-                        }
-                    }
-                }
-            }
+            "model": CourseListResponse
         },
         404: {
             "description": "No courses found",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "No courses found"}
@@ -81,22 +65,53 @@ async def get_courses(
         filter=search_params.filter
     )
 
-@course_router.get("/enrolled")
+@course_router.get(
+    "/enrolled",
+    response_model=CourseListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get enrolled courses",
+    description="Retrieve a paginated list of courses enrolled by the current user.",
+    responses={
+        200: {
+            "description": "Enrolled courses retrieved successfully",
+            "model": CourseListResponse
+        },
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Missing or invalid token"}
+                }
+            }
+        },
+        404: {
+            "description": "No enrolled courses found",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "No enrolled courses found"}
+                }
+            }
+        }
+    }
+)
 async def get_enrolled_courses(
     search_params: SearchParams = Depends(),
     decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Get all courses enrolled by the current user.
+    Retrieve a paginated list of courses enrolled by the current user.
 
-    Args:
-        search_params (SearchParams): The search parameters.
-        decoded_token (dict): The decoded JWT token.
-        course_service (CourseService): The course service.
+    This endpoint returns all courses that the authenticated user has enrolled in,
+    with pagination support and optional search functionality.
 
-    Returns:
-        dict: The enrolled courses response.
+    - **page**: Page number for pagination (default: 1)
+    - **page_size**: Number of items per page (default: 10, max: 100)
+    - **search**: Optional search term to filter enrolled courses by title or description
+
+    Authentication is required via JWT token in the Authorization header.
     """
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
@@ -108,22 +123,60 @@ async def get_enrolled_courses(
     )
     return response
 
-@course_router.post("/enroll/{course_id}")
+@course_router.post(
+    "/enroll/{course_id}",
+    response_model=EnrollmentResponseModel,
+    status_code=status.HTTP_201_CREATED,
+    summary="Enroll in a course",
+    description="Enroll the current user in a specific course.",
+    responses={
+        201: {
+            "description": "Successfully enrolled in course",
+            "model": EnrollmentResponseModel
+        },
+        400: {
+            "description": "Bad request",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Already enrolled in this course"}
+                }
+            }
+        },
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Missing or invalid token"}
+                }
+            }
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Course not found"}
+                }
+            }
+        }
+    }
+)
 async def enroll_course(
     course_id: str,
     decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Enroll in a course.
+    Enroll the current user in a specific course.
 
-    Args:
-        course_id (str): The course ID.
-        decoded_token (dict): The decoded JWT token.
-        course_service (CourseService): The course service.
+    This endpoint creates an enrollment record linking the authenticated user to the specified course.
+    If the course requires payment, this endpoint will initiate the payment process.
 
-    Returns:
-        dict: The enrollment response.
+    - **course_id**: UUID of the course to enroll in
+
+    Authentication is required via JWT token in the Authorization header.
     """
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
@@ -131,22 +184,64 @@ async def enroll_course(
         user_id=user_id,
         course_id=course_id
     )
-@course_router.delete("/enroll/{course_id}")
+@course_router.delete(
+    "/enroll/{course_id}",
+    response_model=BaseResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Unenroll from a course",
+    description="Unenroll the current user from a specific course.",
+    responses={
+        200: {
+            "description": "Successfully unenrolled from course",
+            "model": BaseResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Successfully unenrolled from course"}
+                }
+            }
+        },
+        400: {
+            "description": "Bad request",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Not enrolled in this course"}
+                }
+            }
+        },
+        401: {
+            "description": "Unauthorized",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Missing or invalid token"}
+                }
+            }
+        },
+        404: {
+            "description": "Not found",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Course not found"}
+                }
+            }
+        }
+    }
+)
 async def unenroll_course(
     course_id: str,
     decoded_token: dict = Depends(is_logged_in),
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Unenroll from a course.
+    Unenroll the current user from a specific course.
 
-    Args:
-        course_id (str): The course ID.
-        decoded_token (dict): The decoded JWT token.
-        course_service (CourseService): The course service.
+    This endpoint removes the enrollment record linking the authenticated user to the specified course.
 
-    Returns:
-        dict: The unenrollment response.
+    - **course_id**: UUID of the course to unenroll from
+
+    Authentication is required via JWT token in the Authorization header.
     """
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
@@ -157,45 +252,18 @@ async def unenroll_course(
 
 @course_router.get(
     "/{course_id}",
-    response_model=Dict[str, Any],
+    response_model=CourseDetailResponse,
     status_code=status.HTTP_200_OK,
     summary="Get course by ID",
     description="Retrieve detailed information about a specific course by its ID.",
     responses={
         200: {
             "description": "Course retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Course retrieved successfully",
-                        "data": {
-                            "id": "123e4567-e89b-12d3-a456-426614174000",
-                            "title": "Introduction to Python",
-                            "description": "Learn Python from scratch",
-                            "price": 99.99,
-                            "discount": 0.1,
-                            "thumbnail_url": "https://example.com/thumbnail.jpg",
-                            "instructor_id": "123e4567-e89b-12d3-a456-426614174001",
-                            "instructor": {
-                                "id": "123e4567-e89b-12d3-a456-426614174001",
-                                "first_name": "John",
-                                "last_name": "Doe"
-                            },
-                            "lessons": [
-                                {
-                                    "id": "123e4567-e89b-12d3-a456-426614174002",
-                                    "title": "Getting Started with Python",
-                                    "description": "Learn the basics of Python programming",
-                                    "duration": 30
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
+            "model": CourseDetailResponse
         },
         404: {
             "description": "Course not found",
+            "model": ErrorResponse,
             "content": {
                 "application/json": {
                     "example": {"detail": "Course not found"}
@@ -225,38 +293,93 @@ analysis_router = APIRouter(
     tags=["course"]
 )
 
-@analysis_router.get("/instructor/{instructor_id}")
+@analysis_router.get(
+    "/instructor/{instructor_id}",
+    response_model=CourseListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get courses by instructor",
+    description="Retrieve a list of courses taught by a specific instructor.",
+    responses={
+        200: {
+            "description": "Instructor courses retrieved successfully",
+            "model": CourseListResponse
+        },
+        404: {
+            "description": "Instructor not found or has no courses",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "No courses found for this instructor"}
+                }
+            }
+        }
+    }
+)
 async def get_courses_by_instructor(
     instructor_id: str,
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Get courses by instructor.
+    Retrieve a list of courses taught by a specific instructor.
 
-    Args:
-        instructor_id (str): The instructor ID.
-        course_service (CourseService): The course service.
+    This endpoint returns all courses that are associated with the specified instructor.
 
-    Returns:
-        dict: The courses response.
+    - **instructor_id**: UUID of the instructor whose courses to retrieve
     """
     return course_service.get_intructor_course(
         instructor_id,
     )
 
-@analysis_router.get("/{course_id}")
+@analysis_router.get(
+    "/{course_id}",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Get course analysis",
+    description="Retrieve analytics and statistics for a specific course.",
+    responses={
+        200: {
+            "description": "Course analysis retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Course analysis retrieved successfully",
+                        "data": {
+                            "course_id": "123e4567-e89b-12d3-a456-426614174000",
+                            "total_enrollments": 150,
+                            "completion_rate": 0.75,
+                            "average_rating": 4.5,
+                            "revenue": 14925.50,
+                            "enrollment_trend": [
+                                {"date": "2023-01", "count": 25},
+                                {"date": "2023-02", "count": 35},
+                                {"date": "2023-03", "count": 45}
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Course not found",
+            "model": ErrorResponse,
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Course not found"}
+                }
+            }
+        }
+    }
+)
 async def get_courses_analysis(
     course_id: str,
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Get course analysis.
+    Retrieve analytics and statistics for a specific course.
 
-    Args:
-        course_id (str): The course ID.
-        course_service (CourseService): The course service.
+    This endpoint returns detailed analytics about a course, including enrollment statistics,
+    completion rates, revenue data, and other metrics useful for instructors and administrators.
 
-    Returns:
-        dict: The course analysis response.
+    - **course_id**: UUID of the course to analyze
     """
     return course_service.get_courses_analysis(course_id)

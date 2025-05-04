@@ -1,5 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header, status
 from app.domain.schema.authSchema import signUp, login, RefreshTokenRequest, signUpResponse, loginResponse, TokenResponse, UserResponse
+from app.domain.schema.responseSchema import (
+    OTPSendResponse, OTPVerifyResponse, LogoutResponse, TokenRefreshResponse,
+    ErrorResponse
+)
 from app.service.authService import AuthService, get_auth_service
 from app.utils.middleware.dependancies import is_admin, is_logged_in
 from typing import Dict, Any
@@ -11,7 +15,7 @@ auth_router = APIRouter(
 
 @auth_router.post(
     "/otp/send",
-    response_model=Dict[str, Any],
+    response_model=OTPSendResponse,
     status_code=status.HTTP_200_OK,
     summary="Send OTP",
     description="Send a one-time password (OTP) to the provided phone number for verification.",
@@ -54,7 +58,7 @@ async def send_otp(phone_number: str, auth_service: AuthService = Depends(get_au
 
 @auth_router.post(
     "/otp/verify",
-    response_model=Dict[str, Any],
+    response_model=OTPVerifyResponse,
     status_code=status.HTTP_200_OK,
     summary="Verify OTP",
     description="Verify the OTP code sent to the provided phone number.",
@@ -105,7 +109,23 @@ async def verify_otp(phone_number: str, code: str, auth_service: AuthService = D
     responses={
         201: {
             "description": "User created successfully",
-            "model": signUpResponse
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "User created successfully",
+                        "user": {
+                            "id": "123e4567-e89b-12d3-a456-426614174000",
+                            "username": "johndoe",
+                            "email": "john.doe@example.com",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "phone_number": "0912345678",
+                            "role": "student",
+                            "is_active": True
+                        }
+                    }
+                }
+            }
         },
         400: {
             "description": "Bad request",
@@ -146,7 +166,25 @@ async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_a
     responses={
         200: {
             "description": "Login successful",
-            "model": loginResponse
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Login successful",
+                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "user": {
+                            "id": "123e4567-e89b-12d3-a456-426614174000",
+                            "username": "johndoe",
+                            "email": "john.doe@example.com",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "phone_number": "0912345678",
+                            "role": "student",
+                            "is_active": True
+                        }
+                    }
+                }
+            }
         },
         400: {
             "description": "Bad request",
@@ -195,7 +233,7 @@ async def login_endpoint(
 
 @auth_router.post(
     "/logout",
-    response_model=Dict[str, str],
+    response_model=LogoutResponse,
     status_code=status.HTTP_200_OK,
     summary="Log out a user",
     description="Invalidate the user's refresh token to log them out.",
@@ -239,7 +277,7 @@ async def logout(refresh_token: str = Header(None), auth_service: AuthService = 
 
 @auth_router.post(
     "/refresh",
-    response_model=Dict[str, str],
+    response_model=TokenRefreshResponse,
     status_code=status.HTTP_200_OK,
     summary="Refresh access token",
     description="Generate a new access token using a valid refresh token.",

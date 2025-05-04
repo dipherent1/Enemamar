@@ -48,14 +48,58 @@ def custom_openapi():
         routes=app.routes,
     )
 
+    # Initialize components if not present
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+
     # Add security scheme
-    openapi_schema["components"] = {
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT",
-                "description": "Enter JWT token in the format: Bearer {token}"
+    openapi_schema["components"]["securitySchemes"] = {
+        "bearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Enter JWT token in the format: Bearer {token}"
+        }
+    }
+
+    # Ensure schemas are initialized
+    if "schemas" not in openapi_schema["components"]:
+        openapi_schema["components"]["schemas"] = {}
+
+    # Add common error response schemas
+    openapi_schema["components"]["schemas"]["HTTPValidationError"] = {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+            "detail": {
+                "title": "Detail",
+                "type": "string",
+                "description": "Error message"
+            }
+        }
+    }
+
+    openapi_schema["components"]["schemas"]["ValidationError"] = {
+        "title": "ValidationError",
+        "type": "object",
+        "properties": {
+            "loc": {
+                "title": "Location",
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Error location"
+            },
+            "msg": {
+                "title": "Message",
+                "type": "string",
+                "description": "Error message"
+            },
+            "type": {
+                "title": "Error Type",
+                "type": "string",
+                "description": "Error type"
             }
         }
     }
@@ -64,6 +108,19 @@ def custom_openapi():
     for path in openapi_schema["paths"].values():
         for operation in path.values():
             operation["security"] = [{"bearerAuth": []}]
+
+            # Fix response references if needed
+            if "responses" in operation:
+                for status_code, response in operation["responses"].items():
+                    if "content" in response and "application/json" in response["content"]:
+                        content = response["content"]["application/json"]
+                        if "$ref" in content.get("schema", {}):
+                            # Replace $ref with the actual schema
+                            ref = content["schema"]["$ref"]
+                            if ref.startswith("#/components/schemas/"):
+                                schema_name = ref.split("/")[-1]
+                                if schema_name in openapi_schema["components"]["schemas"]:
+                                    content["schema"] = openapi_schema["components"]["schemas"][schema_name]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
