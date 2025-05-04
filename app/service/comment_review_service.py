@@ -122,11 +122,11 @@ class CommentReviewService:
         try:
             comments = self.comment_review_repo.get_comments_by_course(course_id, page, page_size)
             comments_response = [CommentResponse.model_validate(comment) for comment in comments]
-            
+
             return {
                 "detail": "Course comments retrieved successfully",
-                "data": comments_response,
-                "pagination": {
+                "data": {
+                    "comments": comments_response,
                     "page": page,
                     "page_size": page_size,
                     "total_items": self.comment_review_repo.get_comments_count_by_course(course_id)
@@ -160,11 +160,11 @@ class CommentReviewService:
 
         comments = self.comment_review_repo.get_comments_by_user(str(user_id), page, page_size)
         comments_response = [CommentResponse.model_validate(comment) for comment in comments]
-        
+
         return {
             "detail": "User comments retrieved successfully",
-            "data": comments_response,
-            "pagination": {
+            "data": {
+                "comments": comments_response,
                 "page": page,
                 "page_size": page_size,
                 "total_items": self.comment_review_repo.get_comments_count_by_user(str(user_id))
@@ -193,15 +193,15 @@ class CommentReviewService:
         try:
             # Get the comment to check ownership
             comment = self.comment_review_repo.get_comment(comment_id)
-            
+
             # Check if the user is the author of the comment
             if str(comment.user_id) != str(user_id):
                 raise ValidationError(detail="You can only update your own comments")
-            
+
             # Update the comment
             updated_comment = self.comment_review_repo.update_comment(comment_id, comment_input.content)
             comment_response = CommentResponse.model_validate(updated_comment)
-            
+
             return {
                 "detail": "Comment updated successfully",
                 "data": comment_response
@@ -230,14 +230,14 @@ class CommentReviewService:
         try:
             # Get the comment to check ownership
             comment = self.comment_review_repo.get_comment(comment_id)
-            
+
             # Check if the user is the author of the comment
             if str(comment.user_id) != str(user_id):
                 raise ValidationError(detail="You can only delete your own comments")
-            
+
             # Delete the comment
             self.comment_review_repo.delete_comment(comment_id)
-            
+
             return {
                 "detail": "Comment deleted successfully"
             }
@@ -343,12 +343,12 @@ class CommentReviewService:
             reviews = self.comment_review_repo.get_reviews_by_course(course_id, page, page_size)
             reviews_response = [ReviewResponse.model_validate(review) for review in reviews]
             average_rating = self.comment_review_repo.get_average_rating_by_course(course_id)
-            
+
             return {
                 "detail": "Course reviews retrieved successfully",
-                "data": reviews_response,
-                "average_rating": average_rating,
-                "pagination": {
+                "data": {
+                    "reviews": reviews_response,
+                    "average_rating": average_rating,
                     "page": page,
                     "page_size": page_size,
                     "total_items": self.comment_review_repo.get_reviews_count_by_course(course_id)
@@ -382,11 +382,11 @@ class CommentReviewService:
 
         reviews = self.comment_review_repo.get_reviews_by_user(str(user_id), page, page_size)
         reviews_response = [ReviewResponse.model_validate(review) for review in reviews]
-        
+
         return {
             "detail": "User reviews retrieved successfully",
-            "data": reviews_response,
-            "pagination": {
+            "data": {
+                "reviews": reviews_response,
                 "page": page,
                 "page_size": page_size,
                 "total_items": self.comment_review_repo.get_reviews_count_by_user(str(user_id))
@@ -419,15 +419,15 @@ class CommentReviewService:
         try:
             # Get the review to check ownership
             review = self.comment_review_repo.get_review(review_id)
-            
+
             # Check if the user is the author of the review
             if str(review.user_id) != str(user_id):
                 raise ValidationError(detail="You can only update your own reviews")
-            
+
             # Update the review
             updated_review = self.comment_review_repo.update_review(review_id, review_input.rating)
             review_response = ReviewResponse.model_validate(updated_review)
-            
+
             return {
                 "detail": "Review updated successfully",
                 "data": review_response
@@ -456,14 +456,14 @@ class CommentReviewService:
         try:
             # Get the review to check ownership
             review = self.comment_review_repo.get_review(review_id)
-            
+
             # Check if the user is the author of the review
             if str(review.user_id) != str(user_id):
                 raise ValidationError(detail="You can only delete your own reviews")
-            
+
             # Delete the review
             self.comment_review_repo.delete_review(review_id)
-            
+
             return {
                 "detail": "Review deleted successfully"
             }
