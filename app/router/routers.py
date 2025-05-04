@@ -5,6 +5,7 @@ from app.router.endpoints.user_router import user_router, instructor_router
 from app.router.endpoints.course_router import course_router, analysis_router
 from app.router.endpoints.payment_router import payment_router, protected_payment_router
 from app.router.endpoints.lesson_router import lesson_router, protected_lesson_router
+from app.router.endpoints.comment_review_router import comment_router, review_router
 
 routers = APIRouter()
 
@@ -27,6 +28,10 @@ routerList = [
     # Payment endpoints
     payment_router,
     protected_payment_router,
+
+    # Comment and Review endpoints
+    comment_router,
+    review_router,
 
     # Admin endpoints
     admin_router,

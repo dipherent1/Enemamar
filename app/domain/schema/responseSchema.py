@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, List, Generic, TypeVar
 from uuid import UUID
 from datetime import datetime
 from app.domain.schema.authSchema import UserResponse
+from app.domain.schema.comment_review_schema import CommentResponse, ReviewResponse
 
 # Generic type for paginated responses
 T = TypeVar('T')
@@ -11,7 +12,7 @@ T = TypeVar('T')
 class BaseResponse(BaseModel):
     """Base response model with a detail message"""
     detail: str = Field(
-        ..., 
+        ...,
         description="Response message",
         examples=["Operation successful"]
     )
@@ -20,7 +21,7 @@ class BaseResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Error response model"""
     detail: str = Field(
-        ..., 
+        ...,
         description="Error message",
         examples=["An error occurred"]
     )
@@ -41,7 +42,7 @@ class OTPSendResponse(BaseResponse):
 class OTPVerifyResponse(BaseResponse):
     """OTP verification response model"""
     status_code: int = Field(
-        ..., 
+        ...,
         description="HTTP status code",
         examples=[200]
     )
@@ -58,7 +59,7 @@ class OTPVerifyResponse(BaseResponse):
 # Auth response models
 class LogoutResponse(BaseResponse):
     """Logout response model"""
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -70,7 +71,7 @@ class LogoutResponse(BaseResponse):
 class TokenRefreshResponse(BaseModel):
     """Token refresh response model"""
     access_token: str = Field(
-        ..., 
+        ...,
         description="New JWT access token",
         examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."]
     )
@@ -87,10 +88,10 @@ class TokenRefreshResponse(BaseModel):
 class PaginatedResponse(BaseResponse, Generic[T]):
     """Paginated response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Response data containing items and pagination info"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -109,7 +110,7 @@ class PaginatedResponse(BaseResponse, Generic[T]):
 # Course response models
 class CourseListResponse(PaginatedResponse):
     """Course list response model"""
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -136,10 +137,10 @@ class CourseListResponse(PaginatedResponse):
 class CourseDetailResponse(BaseResponse):
     """Course detail response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Course details"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -173,10 +174,10 @@ class CourseDetailResponse(BaseResponse):
 class EnrollmentResponse(BaseResponse):
     """Enrollment response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Enrollment details"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -195,10 +196,10 @@ class EnrollmentResponse(BaseResponse):
 class UserProfileResponse(BaseResponse):
     """User profile response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="User profile details"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -223,10 +224,10 @@ class UserProfileResponse(BaseResponse):
 class UserUpdateResponse(BaseResponse):
     """User update response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Updated user profile"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -249,10 +250,10 @@ class UserUpdateResponse(BaseResponse):
 class PaymentInitiateResponse(BaseResponse):
     """Payment initiation response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Payment initiation details"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -280,10 +281,10 @@ class PaymentInitiateResponse(BaseResponse):
 class PaymentCallbackResponse(BaseResponse):
     """Payment callback response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Payment callback details"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -301,7 +302,7 @@ class PaymentCallbackResponse(BaseResponse):
 # Lesson response models
 class LessonListResponse(PaginatedResponse):
     """Lesson list response model"""
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -328,10 +329,10 @@ class LessonListResponse(PaginatedResponse):
 class LessonDetailResponse(BaseResponse):
     """Lesson detail response model"""
     data: Dict[str, Any] = Field(
-        ..., 
+        ...,
         description="Lesson details"
     )
-    
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -343,6 +344,101 @@ class LessonDetailResponse(BaseResponse):
                     "duration": 30,
                     "order": 1,
                     "video_url": "https://example.com/video.mp4",
+                    "created_at": "2023-01-01T12:00:00Z",
+                    "updated_at": "2023-01-02T12:00:00Z"
+                }
+            }
+        }
+    }
+
+# Comment response models
+class CommentListResponse(PaginatedResponse):
+    """Comment list response model"""
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Comments retrieved successfully",
+                "data": {
+                    "comments": [
+                        {
+                            "id": "123e4567-e89b-12d3-a456-426614174000",
+                            "content": "This course is very informative!",
+                            "user_id": "123e4567-e89b-12d3-a456-426614174001",
+                            "course_id": "123e4567-e89b-12d3-a456-426614174002",
+                            "created_at": "2023-01-01T12:00:00Z"
+                        }
+                    ],
+                    "total": 1,
+                    "page": 1,
+                    "page_size": 10,
+                    "total_pages": 1
+                }
+            }
+        }
+    }
+
+class CommentDetailResponse(BaseResponse):
+    """Comment detail response model"""
+    data: CommentResponse = Field(..., description="Comment details")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Comment retrieved successfully",
+                "data": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "content": "This course is very informative!",
+                    "user_id": "123e4567-e89b-12d3-a456-426614174001",
+                    "course_id": "123e4567-e89b-12d3-a456-426614174002",
+                    "created_at": "2023-01-01T12:00:00Z",
+                    "updated_at": "2023-01-02T12:00:00Z"
+                }
+            }
+        }
+    }
+
+# Review response models
+class ReviewListResponse(PaginatedResponse):
+    """Review list response model"""
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Reviews retrieved successfully",
+                "data": {
+                    "reviews": [
+                        {
+                            "id": "123e4567-e89b-12d3-a456-426614174000",
+                            "rating": 5,
+                            "user_id": "123e4567-e89b-12d3-a456-426614174001",
+                            "course_id": "123e4567-e89b-12d3-a456-426614174002",
+                            "created_at": "2023-01-01T12:00:00Z"
+                        }
+                    ],
+                    "average_rating": 4.5,
+                    "total": 1,
+                    "page": 1,
+                    "page_size": 10,
+                    "total_pages": 1
+                }
+            }
+        }
+    }
+
+class ReviewDetailResponse(BaseResponse):
+    """Review detail response model"""
+    data: ReviewResponse = Field(..., description="Review details")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Review retrieved successfully",
+                "data": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "rating": 5,
+                    "user_id": "123e4567-e89b-12d3-a456-426614174001",
+                    "course_id": "123e4567-e89b-12d3-a456-426614174002",
                     "created_at": "2023-01-01T12:00:00Z",
                     "updated_at": "2023-01-02T12:00:00Z"
                 }
@@ -428,7 +524,7 @@ class LessonDetailResponse(BaseResponse):
 #     }
 # }
 
-# get lesson by id response 
+# get lesson by id response
 # {
 #     "detail": "Lesson fetched successfully",
 #     "data": {
