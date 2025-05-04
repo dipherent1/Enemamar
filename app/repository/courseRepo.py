@@ -198,6 +198,9 @@ class CourseRepository:
 
         return (
             self.db.query(Enrollment)
+            .options(
+                joinedload(Enrollment.user)        # ← eager‐load the user relationship
+            )
             .filter(Enrollment.course_id == course_id)
             .offset((page - 1) * page_size)
             .limit(page_size)
@@ -364,15 +367,15 @@ class CourseRepository:
 
         return query.count()
     
-    
-    
-    
-    
-    # def get_course_revenue(self, course_id: str):
-    #     return self.payment_repo.get_course_revenue(course_id)
+    def get_course_revenue(self, course_id: str):
+        return self.payment_repo.get_course_revenue(course_id)
 
-    # def get_lessons_count(self, course_id: str) -> int:
-    #     return self.lesson_repo.get_lessons_count(course_id)
+    def get_lessons_count(self, course_id: str) -> int:
+        return self.lesson_repo.get_lessons_count(course_id)
+    
+    
+    
+    
     
     # # Lesson methods are now in LessonRepository
     # def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
@@ -444,10 +447,10 @@ class CourseRepository:
     # def get_course_payments_count(self, course_id: str, filter: Optional[str] = None):
     #     return self.payment_repo.get_course_payments_count(course_id, filter)
 
-    
-
-    
 
 
 
-   
+
+
+
+

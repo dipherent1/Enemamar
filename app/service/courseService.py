@@ -192,8 +192,24 @@ class CourseService:
         """
         if not user_id:
             raise ValidationError(detail="User ID is required")
+        
+        #check if user exists
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ValidationError(detail="User not found")
 
         enrollments = self.course_repo.get_enrolled_courses(user_id, page, page_size, search)
+        if not enrollments:
+            return {
+                "detail": "No courses found for the user",
+                "data": [],
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total_items": 0
+                }
+            }
+
         courses_response = [
             CourseResponse.model_validate(enrollment.course).model_dump(exclude={'lessons'})
             for enrollment in enrollments
@@ -227,10 +243,10 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        users = self.course_repo.get_enrolled_users(course_id, page, page_size)
+        enrollments = self.course_repo.get_enrolled_users(course_id, page, page_size)
         users_response = [
-            UserResponse.model_validate(user)
-            for user in users
+            UserResponse.model_validate(enrollment.user)   # unwrap the loaded user
+            for enrollment in enrollments
         ]
 
         return {

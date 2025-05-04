@@ -155,7 +155,7 @@ class LessonService:
                 
         return lessons_responses
     
-    def add_multiple_lessons(self, course_id: str, lessons_input: MultipleLessonInput):
+    def add_multiple_lessons(self, course_id: str, lessons_input):
         """
         Add multiple lessons to a course.
         
@@ -168,7 +168,7 @@ class LessonService:
         """
         return {
             "detail": "Lessons added successfully",
-            "data": self.add_multiple_lessons_helper(course_id, lessons_input.lessons)
+            "data": self.add_multiple_lessons_helper(course_id, lessons_input)
         }
 
     def add_video_to_lesson_helper(self, course_id: str, lesson_id: str, video_input: VideoInput):

@@ -62,6 +62,7 @@ async def payment_callback(
     Returns:
         dict: The enrollment response.
     """
+    print(f"Callback: {callback}")
     payload = CallbackPayload(trx_ref=trx_ref, ref_id=callback, status=status) 
     return payment_service.process_payment_callback(payload)
 

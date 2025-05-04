@@ -61,6 +61,53 @@ async def get_enrolled_courses(
     )
     return response
 
+@course_router.post("/enroll/{course_id}")
+async def enroll_course(
+    course_id: str,
+    decoded_token: dict = Depends(is_logged_in),
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Enroll in a course.
+    
+    Args:
+        course_id (str): The course ID.
+        decoded_token (dict): The decoded JWT token.
+        course_service (CourseService): The course service.
+        
+    Returns:
+        dict: The enrollment response.
+    """
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
+    return course_service.enrollCourse(
+        user_id=user_id,
+        course_id=course_id
+    )
+@course_router.delete("/enroll/{course_id}")
+async def unenroll_course(
+    course_id: str,
+    decoded_token: dict = Depends(is_logged_in),
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Unenroll from a course.
+    
+    Args:
+        course_id (str): The course ID.
+        decoded_token (dict): The decoded JWT token.
+        course_service (CourseService): The course service.
+        
+    Returns:
+        dict: The unenrollment response.
+    """
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
+    return course_service.unenrollCourse(
+        user_id=user_id,
+        course_id=course_id
+    )
+
 @course_router.get("/{course_id}")
 async def get_course(
     course_id: str,

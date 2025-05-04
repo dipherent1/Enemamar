@@ -97,7 +97,7 @@ async def update_user_role(
     """
     return user_service.update_role(user_id, role_request.role)
 
-# get users enrolled in a course
+# get courses enrolled by user
 @admin_router.get("/user/{user_id}/enrolled")
 async def get_users_enrolled_in_course(
     user_id: str,
@@ -105,15 +105,16 @@ async def get_users_enrolled_in_course(
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Get all users enrolled in a course.
-    
+    Retrieve all courses a specific user is enrolled in.
+
     Args:
-        user_id (str): The user ID.
-        search_params (SearchParams): The search parameters.
-        course_service (CourseService): The course service.
-        
+        user_id (str): The ID of the user to query.
+        search_params (SearchParams): Pagination and optional search filters.
+        course_service (CourseService): Service for course-related operations.
+
     Returns:
-        dict: The users enrolled response.
+        dict: Paginated list of courses the user is enrolled in, 
+              including metadata like total count, page, and page_size.
     """
     return course_service.getEnrolledCourses(
         user_id,
