@@ -7,12 +7,12 @@ from app.core.config.env import get_settings, clear_settings_cache
 clear_settings_cache()
 
 settings = get_settings()
-DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{settings.PASSWORD}@{settings.HOST}:{settings.PORT}/{settings.DATABASE}"
+DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{settings.PASSWORD}@{settings.HOST}/{settings.DATABASE}"
 
 # Create the SQLAlchemy engine
 try:
-    engine = create_engine(DATABASE_URL)
     print(f"----database url: {DATABASE_URL}")
+    engine = create_engine(DATABASE_URL)
 except Exception as e:
     print(f"----database connection failed: {e}")
     raise

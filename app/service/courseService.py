@@ -228,15 +228,24 @@ class CourseService:
 
     def getEnrolledUsers(self, course_id: str, page: int = 1, page_size: int = 10):
         """
-        Retrieve a paginated list of users enrolled in a course.
+        Retrieve a paginated list of enrollments for a course, including full enrollment information.
+
+        This method returns detailed enrollment information for a specific course, including:
+        - Enrollment ID
+        - User ID of the enrolled student
+        - Course ID
+        - Enrollment date
 
         Args:
-            course_id (str): ID of the course.
+            course_id (str): ID of the course to get enrollments for.
             page (int): Page number for pagination.
             page_size (int): Number of items per page.
 
         Returns:
-            dict: Response containing enrolled users and pagination metadata.
+            dict: Response containing:
+                - detail: Success message
+                - data: List of enrollment objects with complete enrollment information
+                - pagination: Metadata including page, page_size, and total_items
 
         Raises:
             ValidationError: If the course ID is invalid.
@@ -245,14 +254,14 @@ class CourseService:
             raise ValidationError(detail="Course ID is required")
 
         enrollments = self.course_repo.get_enrolled_users(course_id, page, page_size)
-        users_response = [
-            UserResponse.model_validate(enrollment.user)   # unwrap the loaded user
+        enrollments_response = [
+            EnrollmentResponse.model_validate(enrollment)  # Return the full enrollment object
             for enrollment in enrollments
         ]
 
         return {
-            "detail": "Course users fetched successfully",
-            "data": users_response,
+            "detail": "Course enrollments fetched successfully",
+            "data": enrollments_response,
             "pagination": {
                 "page": page,
                 "page_size": page_size,

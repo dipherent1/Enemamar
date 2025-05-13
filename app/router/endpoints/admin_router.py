@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app.domain.schema.authSchema import UpdateRoleRequest
 from app.domain.schema.courseSchema import (
     CourseInput,
@@ -369,26 +369,69 @@ async def get_payment(
 inst_admin_router = APIRouter(
     prefix="/inst-admin",
     tags=["admin"],
-    dependencies=[Depends(is_admin)]
+    dependencies=[Depends(is_admin_or_instructor)]
 )
 
 @inst_admin_router.get("/courses/{course_id}/enrolled")
 async def get_users_enrolled_in_course(
     course_id: str,
     search_params: SearchParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
+    course_service: CourseService = Depends(get_course_service),
+    current_user: dict = Depends(is_admin_or_instructor)
 ):
     """
-    Get all users enrolled in a course.
+    Get all enrollments for a course, including full enrollment information.
+
+    This endpoint returns detailed enrollment information for a specific course, including:
+    - Enrollment ID
+    - User ID of the enrolled student
+    - Course ID
+    - Enrollment date
+
+    Authorization:
+    - Admin users can access enrollment information for any course
+    - Instructor users can only access enrollment information for courses assigned to them
 
     Args:
-        course_id (str): The course ID.
-        search_params (SearchParams): The search parameters.
-        course_service (CourseService): The course service.
+        course_id (str): The ID of the course to get enrollments for
+        search_params (SearchParams): Pagination parameters (page, page_size)
+        course_service (CourseService): Service for course-related operations
+        current_user (dict): The current authenticated user information
 
     Returns:
-        dict: The enrolled users response.
+        dict: Response containing:
+            - detail: Success message
+            - data: List of enrollment objects with complete enrollment information
+            - pagination: Metadata including page, page_size, and total_items
+
+    Raises:
+        HTTPException:
+            - 403 Forbidden if an instructor tries to access a course not assigned to them
+            - 404 Not Found if the course doesn't exist
     """
+    # If user is an admin, allow access to any course
+    if current_user.get("role") == "admin":
+        return course_service.getEnrolledUsers(
+            course_id,
+            search_params.page,
+            search_params.page_size
+        )
+
+    # For instructors, verify the course belongs to them
+    try:
+        course = course_service.course_repo.get_course(course_id)
+        if str(course.instructor_id) != current_user.get("id"):
+            raise HTTPException(
+                status_code=403,
+                detail="Instructors can only access enrollment information for their own courses"
+            )
+    except Exception:
+        # If course doesn't exist or there's another error, return a 404
+        raise HTTPException(
+            status_code=404,
+            detail="Course not found"
+        )
+
     return course_service.getEnrolledUsers(
         course_id,
         search_params.page,
