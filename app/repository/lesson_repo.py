@@ -6,7 +6,7 @@ from typing import List
 class LessonRepository:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
         """
         Retrieve all lessons for a given course.
@@ -18,14 +18,14 @@ class LessonRepository:
 
         Returns:
             List[Lesson]: A list of lessons for the specified course.
-            
+
         Raises:
             NotFoundError: If the course is not found.
         """
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
-        
+
         return (
             self.db.query(Lesson)
             .filter(Lesson.course_id == course_id)
@@ -34,18 +34,18 @@ class LessonRepository:
             .limit(page_size)
             .all()
         )
-    
+
     def get_lesson_by_id(self, course_id: str, lesson_id: str):
         """
         Get a lesson by ID.
-        
+
         Args:
             course_id (str): The course ID.
             lesson_id (str): The lesson ID.
-            
+
         Returns:
             Lesson: The lesson object.
-            
+
         Raises:
             NotFoundError: If the lesson is not found.
         """
@@ -58,49 +58,49 @@ class LessonRepository:
         if not lesson:
             raise NotFoundError(detail="Lesson not found")
         return lesson
-   
+
     def add_multiple_lessons(self, course_id: str, lessons: List[Lesson]):
         """
         Add multiple lessons to a course.
-        
+
         Args:
             course_id (str): The course ID.
             lessons (List[Lesson]): The list of lesson objects.
-            
+
         Returns:
             List[Lesson]: The list of added lesson objects.
-            
+
         Raises:
             NotFoundError: If the course is not found.
         """
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
-        
+
         # Add all lessons in a single operation
         self.db.add_all(lessons)
         self.db.commit()
-        
+
         return lessons
-    
+
     def add_lesson(self, course_id: str, lesson: Lesson):
         """
         Add a single lesson to a course.
-        
+
         Args:
             course_id (str): The course ID.
             lesson (Lesson): The lesson object.
-            
+
         Returns:
             Lesson: The added lesson object.
-            
+
         Raises:
             NotFoundError: If the course is not found.
         """
         course = self.db.query(Course).filter(Course.id == course_id).first()
         if not course:
             raise NotFoundError(detail="Course not found")
-    
+
         self.db.add(lesson)
         self.db.commit()
         self.db.refresh(lesson)
@@ -109,15 +109,15 @@ class LessonRepository:
     def edit_lesson(self, course_id: str, lesson_id: str, lesson_data: dict):
         """
         Edit a lesson.
-        
+
         Args:
             course_id (str): The course ID.
             lesson_id (str): The lesson ID.
             lesson_data (dict): The lesson data to update.
-            
+
         Returns:
             Lesson: The updated lesson object.
-            
+
         Raises:
             NotFoundError: If the lesson is not found.
         """
@@ -129,26 +129,26 @@ class LessonRepository:
         )
         if not lesson_to_update:
             raise NotFoundError(detail="Lesson not found")
-        
+
         for key, value in lesson_data.items():
             if hasattr(lesson_to_update, key):
                 setattr(lesson_to_update, key, value)
-        
+
         self.db.commit()
         self.db.refresh(lesson_to_update)
         return lesson_to_update
-    
+
     def delete_lesson(self, course_id: str, lesson_id: str):
         """
         Delete a lesson.
-        
+
         Args:
             course_id (str): The course ID.
             lesson_id (str): The lesson ID.
-            
+
         Returns:
             Lesson: The deleted lesson object.
-            
+
         Raises:
             NotFoundError: If the lesson is not found.
         """
@@ -167,10 +167,10 @@ class LessonRepository:
     def get_lessons_count(self, course_id: str) -> int:
         """
         Get the count of lessons for a course.
-        
+
         Args:
             course_id (str): The course ID.
-            
+
         Returns:
             int: The count of lessons.
         """
@@ -183,10 +183,10 @@ class LessonRepository:
     def add_video(self, video: Video):
         """
         Add a video to a lesson.
-        
+
         Args:
             video (Video): The video object.
-            
+
         Returns:
             Video: The added video object.
         """
@@ -194,14 +194,14 @@ class LessonRepository:
         self.db.commit()
         self.db.refresh(video)
         return video
-    
+
     def get_lesson_video(self, lesson_id: str):
         """
         Get the video for a lesson.
-        
+
         Args:
             lesson_id (str): The lesson ID.
-            
+
         Returns:
             Video: The video object if found, None otherwise.
         """
@@ -211,3 +211,33 @@ class LessonRepository:
             .first()
         )
         return video
+
+    def edit_video(self, lesson_id: str, video_data: dict):
+        """
+        Edit a video.
+
+        Args:
+            lesson_id (str): The lesson ID.
+            video_data (dict): The video data to update.
+
+        Returns:
+            Video: The updated video object.
+
+        Raises:
+            NotFoundError: If the video is not found.
+        """
+        video_to_update = (
+            self.db.query(Video)
+            .filter(Video.lesson_id == lesson_id)
+            .first()
+        )
+        if not video_to_update:
+            raise NotFoundError(detail="Video not found")
+
+        for key, value in video_data.items():
+            if hasattr(video_to_update, key) and value is not None:
+                setattr(video_to_update, key, value)
+
+        self.db.commit()
+        self.db.refresh(video_to_update)
+        return video_to_update

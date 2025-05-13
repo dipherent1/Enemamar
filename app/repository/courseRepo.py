@@ -263,7 +263,7 @@ class CourseRepository:
             analysis = self.course_analysis(course.id)
             course_analysis_list.append(analysis)
         return course_analysis_list
-    
+
     def course_analysis(self, course_id: str):
         """
         Perform analysis on a course.
@@ -294,7 +294,7 @@ class CourseRepository:
             no_of_lessons=total_lessons,
             revenue=self.get_course_revenue(course_id)
         )
-    
+
     def get_total_courses_count(self, search: Optional[str] = None, filter_tag: Optional[str] = None):
         """
         Get the total count of courses with search and filter options.
@@ -366,17 +366,68 @@ class CourseRepository:
             )
 
         return query.count()
-    
+
     def get_course_revenue(self, course_id: str):
         return self.payment_repo.get_course_revenue(course_id)
 
     def get_lessons_count(self, course_id: str) -> int:
         return self.lesson_repo.get_lessons_count(course_id)
-    
-    
-    
-    
-    
+
+    def update_course(self, course_id: str, course_data: dict):
+        """
+        Update a course by its ID.
+
+        Args:
+            course_id (str): The ID of the course to update.
+            course_data (dict): The updated course data.
+
+        Returns:
+            Course: The updated course object.
+
+        Raises:
+            NotFoundError: If the course is not found.
+        """
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+
+        # Update course attributes
+        for key, value in course_data.items():
+            if hasattr(course, key):
+                setattr(course, key, value)
+
+        self.db.commit()
+        self.db.refresh(course)
+
+        return course
+
+    def delete_course(self, course_id: str):
+        """
+        Delete a course by its ID.
+
+        Args:
+            course_id (str): The ID of the course to delete.
+
+        Returns:
+            Course: The deleted course object.
+
+        Raises:
+            NotFoundError: If the course is not found.
+        """
+        course = self.db.query(Course).filter(Course.id == course_id).first()
+        if not course:
+            raise NotFoundError(detail="Course not found")
+
+        # Delete the course
+        self.db.delete(course)
+        self.db.commit()
+
+        return course
+
+
+
+
+
     # # Lesson methods are now in LessonRepository
     # def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
     #     return self.lesson_repo.get_lessons(course_id, page, page_size)

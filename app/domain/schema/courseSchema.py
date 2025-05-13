@@ -822,3 +822,128 @@ class ModuleResponse(BaseModel):
         }
     }
 
+class LessonEditInput(BaseModel):
+    """Lesson edit input schema for updating lessons without video"""
+    title: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="Lesson title",
+        examples=["Introduction to Python"]
+    )
+    description: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description="Detailed lesson description",
+        examples=["Learn the basics of Python programming including variables, data types, and control structures."]
+    )
+    duration: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Lesson duration in minutes",
+        examples=[30]
+    )
+    order: Optional[int] = Field(
+        default=None,
+        description="Order of the lesson in the course (1-based)",
+        examples=[1]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Introduction to Python",
+                "description": "Learn the basics of Python programming including variables, data types, and control structures.",
+                "duration": 30,
+                "order": 1
+            }
+        }
+    }
+
+class VideoEditInput(BaseModel):
+    """Video edit input schema for updating video content"""
+    video_id: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description="Video ID from the video hosting service",
+        examples=["3e52de58-dc2b-4269-a0f5-f181f004964a"]
+    )
+    library_id: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description="Library ID from the video hosting service",
+        examples=["393657"]
+    )
+    secret_key: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description="Secret key for generating secure URLs",
+        examples=["e92ea1ea-c032-4870-8792-d92366dbcb29"]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+                "library_id": "393657",
+                "secret_key": "e92ea1ea-c032-4870-8792-d92366dbcb29"
+            }
+        }
+    }
+
+class CourseEditInput(BaseModel):
+    """Course edit input schema for updating courses without lessons"""
+    title: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+        description="Course title",
+        examples=["Python Programming Masterclass"]
+    )
+    description: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description="Detailed course description",
+        examples=["A comprehensive course covering Python from basics to advanced topics."]
+    )
+    tags: Optional[List[str]] = Field(
+        default=None,
+        description="List of tags for categorizing the course",
+        examples=[["Python", "Programming", "Web Development"]]
+    )
+    thumbnail_url: Optional[str] = Field(
+        default=None,
+        description="URL of the course thumbnail image",
+        examples=["https://example.com/thumbnails/python-course.jpg"]
+    )
+    price: Optional[float] = Field(
+        default=None,
+        ge=0,
+        description="Course price in USD",
+        examples=[99.99]
+    )
+    discount: Optional[float] = Field(
+        default=None,
+        description="Discount amount or percentage",
+        examples=[10.0]
+    )
+    instructor_id: UUID = Field(
+        ...,
+        description="UUID of the course instructor",
+        examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Python Programming Masterclass",
+                "description": "A comprehensive course covering Python from basics to advanced topics.",
+                "tags": ["Python", "Programming", "Web Development"],
+                "thumbnail_url": "https://example.com/thumbnails/python-course.jpg",
+                "price": 99.99,
+                "discount": 10.0,
+                "instructor_id": "0c18d25a-dc77-4be7-af62-aea00717077e"
+            }
+        }
+    }
+

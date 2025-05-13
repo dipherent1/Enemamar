@@ -2,6 +2,7 @@ from app.utils.exceptions.exceptions import ValidationError
 import re
 from app.domain.schema.courseSchema import (
     CourseInput,
+    CourseEditInput,
     CourseResponse,
     EnrollmentResponse,
     UserResponse,
@@ -192,7 +193,7 @@ class CourseService:
         """
         if not user_id:
             raise ValidationError(detail="User ID is required")
-        
+
         #check if user exists
         user = self.user_repo.get_user_by_id(user_id)
         if not user:
@@ -314,7 +315,77 @@ class CourseService:
             "data": courses
         }
 
+    def updateCourse(self, course_id: str, course_info: CourseEditInput):
+        """
+        Update an existing course without modifying lessons.
 
+        Args:
+            course_id (str): ID of the course to update.
+            course_info (CourseEditInput): Input data for updating the course.
+
+        Returns:
+            dict: Response containing course update details and data.
+
+        Raises:
+            ValidationError: If the course ID is invalid, instructor is invalid, or course update fails.
+        """
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        # Verify the course exists
+        existing_course = self.course_repo.get_course(course_id)
+        if not existing_course:
+            raise ValidationError(detail="Course not found")
+
+        # Verify the instructor
+        instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
+        if not instructor or not instructor.role == "instructor":
+            raise ValidationError(detail="Invalid instructor ID or not an instructor")
+
+        # Update course data
+        course_data = course_info.model_dump()
+        updated_course = self.course_repo.update_course(course_id, course_data)
+        if not updated_course:
+            raise ValidationError(detail="Failed to update course")
+
+        # Get the updated course with lessons
+        updated_course = self.course_repo.get_course_with_lessons(course_id)
+        if not updated_course:
+            raise ValidationError(detail="Failed to fetch updated course with lessons")
+
+        course_response = CourseResponse.model_validate(updated_course)
+
+        return {
+            "detail": "Course updated successfully",
+            "data": course_response
+        }
+
+    def deleteCourse(self, course_id: str):
+        """
+        Delete a course by its ID.
+
+        Args:
+            course_id (str): ID of the course to delete.
+
+        Returns:
+            dict: Response containing course deletion details.
+
+        Raises:
+            ValidationError: If the course ID is invalid or the course is not found.
+        """
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        try:
+            # Delete the course
+            deleted_course = self.course_repo.delete_course(course_id)
+
+            return {
+                "detail": "Course deleted successfully",
+                "data": CourseResponse.model_validate(deleted_course)
+            }
+        except Exception as e:
+            raise ValidationError(detail=f"Failed to delete course: {str(e)}")
 
 
 def get_course_service(db: Session = Depends(get_db)):

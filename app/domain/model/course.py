@@ -31,16 +31,16 @@ class Course(Base):
     view_count = Column(Integer, default=0)
 
     # Relationships
-    enrollments = relationship("Enrollment", back_populates="course")
-    lessons = relationship("Lesson", back_populates="course")  # Changed from modules to lessons
+    enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
+    lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan")  # Changed from modules to lessons
     instructor: Mapped["User"] = relationship(
         "User",
         back_populates="courses_taught",
         foreign_keys=[instructor_id]
     )
-    payment = relationship("Payment", back_populates="course")
-    comments = relationship("Comment", back_populates="course")
-    reviews = relationship("Review", back_populates="course")
+    payment = relationship("Payment", back_populates="course", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="course", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="course", cascade="all, delete-orphan")
 
 
 class Enrollment(Base):
@@ -76,7 +76,7 @@ class Lesson(Base):
 
     # Relationships
     course = relationship("Course", back_populates="lessons")
-    video = relationship("Video", back_populates="lesson", uselist=False)  # Changed to one-to-one
+    video = relationship("Video", back_populates="lesson", uselist=False, cascade="all, delete-orphan")  # Changed to one-to-one
 
 class Video(Base):
     __tablename__ = "videos"
