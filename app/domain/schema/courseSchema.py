@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from uuid import UUID
 from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
+from app.domain.schema.enums import CourseStatus, CourseFilterOption, LessonType, PaymentStatus
+from app.domain.schema.validators import CourseValidators, LessonValidators, VideoValidators
 
 class VideoInput(BaseModel):
     """Video input schema for creating or updating video content"""
@@ -24,6 +26,21 @@ class VideoInput(BaseModel):
         description="Secret key for generating secure URLs",
         examples=["e92ea1ea-c032-4870-8792-d92366dbcb29"]
     )
+
+    @field_validator('video_id')
+    @classmethod
+    def validate_video_id(cls, v):
+        return VideoValidators.validate_video_id(v)
+
+    @field_validator('library_id')
+    @classmethod
+    def validate_library_id(cls, v):
+        return VideoValidators.validate_library_id(v)
+
+    @field_validator('secret_key')
+    @classmethod
+    def validate_secret_key(cls, v):
+        return VideoValidators.validate_secret_key(v)
 
     model_config = {
         "json_schema_extra": {
@@ -114,10 +131,30 @@ class LessonInput(BaseModel):
         description="Order of the lesson in the course (1-based)",
         examples=[1]
     )
+    lesson_type: Optional[str] = Field(
+        default=LessonType.VIDEO.value,
+        description=f"Type of lesson ({', '.join(LessonType.list())})",
+        examples=[LessonType.VIDEO.value]
+    )
     video: Optional[VideoInput] = Field(
         default=None,
         description="Video content information"
     )
+
+    @field_validator('duration')
+    @classmethod
+    def validate_duration(cls, v):
+        return LessonValidators.validate_duration(v)
+
+    @field_validator('order')
+    @classmethod
+    def validate_order(cls, v):
+        return LessonValidators.validate_order(v)
+
+    @field_validator('lesson_type')
+    @classmethod
+    def validate_lesson_type(cls, v):
+        return LessonValidators.validate_lesson_type(v)
 
     model_config = {
         "json_schema_extra": {
@@ -282,6 +319,11 @@ class CourseInput(BaseModel):
         description="Discount amount or percentage",
         examples=[10.0]
     )
+    status: Optional[str] = Field(
+        default=CourseStatus.DRAFT.value,
+        description=f"Course publication status ({', '.join(CourseStatus.list())})",
+        examples=[CourseStatus.PUBLISHED.value]
+    )
     instructor_id: UUID = Field(
         ...,
         description="UUID of the course instructor",
@@ -291,6 +333,26 @@ class CourseInput(BaseModel):
         default=None,
         description="List of lessons to include in the course"
     )
+
+    @field_validator('price')
+    @classmethod
+    def validate_price(cls, v):
+        return CourseValidators.validate_price(v)
+
+    @field_validator('discount')
+    @classmethod
+    def validate_discount(cls, v):
+        return CourseValidators.validate_discount(v)
+
+    @field_validator('tags')
+    @classmethod
+    def validate_tags(cls, v):
+        return CourseValidators.validate_tags(v)
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        return CourseValidators.validate_course_status(v)
 
     model_config = {
         "json_schema_extra": {
@@ -571,8 +633,8 @@ class PaymentResponse(BaseModel):
     )
     status: str = Field(
         ...,
-        description="Payment status (pending, completed, failed)",
-        examples=["completed"]
+        description=f"Payment status ({', '.join(PaymentStatus.list())})",
+        examples=[PaymentStatus.COMPLETED.value]
     )
     created_at: Optional[datetime] = Field(
         None,
@@ -683,9 +745,25 @@ class CallbackPayload(BaseModel):
     )
     status: str = Field(
         ...,
-        description="Payment status (success, failed, pending)",
-        examples=["success"]
+        description=f"Payment status ({', '.join(PaymentStatus.list())})",
+        examples=[PaymentStatus.COMPLETED.value]
     )
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        try:
+            return PaymentStatus(v).value
+        except ValueError:
+            # Map external payment provider status to our internal status
+            status_mapping = {
+                "success": PaymentStatus.COMPLETED.value,
+                "failed": PaymentStatus.FAILED.value,
+                "pending": PaymentStatus.PENDING.value
+            }
+            if v in status_mapping:
+                return status_mapping[v]
+            raise ValueError(f"Invalid payment status. Valid statuses are: {', '.join(PaymentStatus.list())}")
 
     model_config = {
         "json_schema_extra": {
@@ -731,9 +809,14 @@ class SearchParams(PaginationParams):
     )
     filter: Optional[str] = Field(
         default=None,
-        description="Filter term for additional filtering (e.g., by category, price range)",
-        examples=["price_low", "newest"]
+        description=f"Filter term for sorting results ({', '.join(CourseFilterOption.list())})",
+        examples=[CourseFilterOption.PRICE_LOW.value, CourseFilterOption.NEWEST.value]
     )
+
+    @field_validator('filter')
+    @classmethod
+    def validate_filter(cls, v):
+        return CourseValidators.validate_filter_option(v)
 
     model_config = {
         "json_schema_extra": {
@@ -751,11 +834,14 @@ class ModuleInput(BaseModel):
     """Input schema for creating or updating modules"""
     title: str = Field(
         ...,
+        min_length=1,
+        max_length=100,
         description="Module title",
         examples=["Python Basics"]
     )
     description: str = Field(
         ...,
+        min_length=1,
         description="Module description",
         examples=["Fundamental concepts of Python programming"]
     )
@@ -764,6 +850,16 @@ class ModuleInput(BaseModel):
         description="Whether the module is published and visible to students",
         examples=[True]
     )
+    status: Optional[str] = Field(
+        default=CourseStatus.DRAFT.value,
+        description=f"Module status ({', '.join(CourseStatus.list())})",
+        examples=[CourseStatus.PUBLISHED.value]
+    )
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        return CourseValidators.validate_course_status(v)
 
     model_config = {
         "json_schema_extra": {
@@ -848,6 +944,32 @@ class LessonEditInput(BaseModel):
         description="Order of the lesson in the course (1-based)",
         examples=[1]
     )
+    lesson_type: Optional[str] = Field(
+        default=None,
+        description=f"Type of lesson ({', '.join(LessonType.list())})",
+        examples=[LessonType.VIDEO.value]
+    )
+
+    @field_validator('duration')
+    @classmethod
+    def validate_duration(cls, v):
+        if v is not None:
+            return LessonValidators.validate_duration(v)
+        return v
+
+    @field_validator('order')
+    @classmethod
+    def validate_order(cls, v):
+        if v is not None:
+            return LessonValidators.validate_order(v)
+        return v
+
+    @field_validator('lesson_type')
+    @classmethod
+    def validate_lesson_type(cls, v):
+        if v is not None:
+            return LessonValidators.validate_lesson_type(v)
+        return v
 
     model_config = {
         "json_schema_extra": {
@@ -880,6 +1002,27 @@ class VideoEditInput(BaseModel):
         description="Secret key for generating secure URLs",
         examples=["e92ea1ea-c032-4870-8792-d92366dbcb29"]
     )
+
+    @field_validator('video_id')
+    @classmethod
+    def validate_video_id(cls, v):
+        if v is not None:
+            return VideoValidators.validate_video_id(v)
+        return v
+
+    @field_validator('library_id')
+    @classmethod
+    def validate_library_id(cls, v):
+        if v is not None:
+            return VideoValidators.validate_library_id(v)
+        return v
+
+    @field_validator('secret_key')
+    @classmethod
+    def validate_secret_key(cls, v):
+        if v is not None:
+            return VideoValidators.validate_secret_key(v)
+        return v
 
     model_config = {
         "json_schema_extra": {
@@ -927,11 +1070,42 @@ class CourseEditInput(BaseModel):
         description="Discount amount or percentage",
         examples=[10.0]
     )
+    status: Optional[str] = Field(
+        default=None,
+        description=f"Course publication status ({', '.join(CourseStatus.list())})",
+        examples=[CourseStatus.PUBLISHED.value]
+    )
     instructor_id: UUID = Field(
         ...,
         description="UUID of the course instructor",
         examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
     )
+
+    @field_validator('price')
+    @classmethod
+    def validate_price(cls, v):
+        if v is not None:
+            return CourseValidators.validate_price(v)
+        return v
+
+    @field_validator('discount')
+    @classmethod
+    def validate_discount(cls, v):
+        if v is not None:
+            return CourseValidators.validate_discount(v)
+        return v
+
+    @field_validator('tags')
+    @classmethod
+    def validate_tags(cls, v):
+        return CourseValidators.validate_tags(v)
+
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v):
+        if v is not None:
+            return CourseValidators.validate_course_status(v)
+        return v
 
     model_config = {
         "json_schema_extra": {

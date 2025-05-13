@@ -1,8 +1,10 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, Dict, Any
 from uuid import UUID
 from app.domain.model.user import User
 from datetime import datetime
+from app.domain.schema.enums import UserRole
+from app.domain.schema.validators import UserValidators
 
 
 class signUp(BaseModel):
@@ -12,6 +14,12 @@ class signUp(BaseModel):
         description="User's email address",
         examples=["john.doe@example.com"]
     )
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        return UserValidators.validate_email(v)
+
     username: Optional[str] = Field(
         None,
         description="Unique username",
@@ -19,10 +27,16 @@ class signUp(BaseModel):
     )
     password: str = Field(
         ...,
-        description="User's password (min 8 characters)",
+        description="User's password (min 8 characters, must include uppercase, lowercase, and digit)",
         min_length=8,
-        examples=["securepassword123"]
+        examples=["SecurePass123"]
     )
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v):
+        return UserValidators.validate_password(v)
+
     first_name: str = Field(
         ...,
         description="User's first name",
@@ -38,11 +52,22 @@ class signUp(BaseModel):
         description="User's phone number (format: 09XXXXXXXX or +251XXXXXXXXX)",
         examples=["0912345678", "+251912345678"]
     )
+
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone_number(cls, v):
+        return UserValidators.validate_phone_number(v)
+
     role: Optional[str] = Field(
-        None,
-        description="User role (student, instructor, admin)",
-        examples=["student"]
+        default=UserRole.STUDENT.value,
+        description=f"User role ({', '.join(UserRole.list())})",
+        examples=[UserRole.STUDENT.value]
     )
+
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v):
+        return UserValidators.validate_role(v)
 
     model_config = {
         "from_attributes": True,
@@ -69,13 +94,27 @@ class login(BaseModel):
     password: str = Field(
         ...,
         description="User's password",
-        examples=["securepassword123"]
+        examples=["SecurePass123"]
     )
     phone_number: Optional[str] = Field(
         None,
         description="User's phone number (alternative to email)",
         examples=["0912345678", "+251912345678"]
     )
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        if v is not None:
+            return UserValidators.validate_email(v)
+        return v
+
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone_number(cls, v):
+        if v is not None:
+            return UserValidators.validate_phone_number(v)
+        return v
 
     def validate(self):
         """Validate login credentials"""
@@ -352,9 +391,14 @@ class UpdateRoleRequest(BaseModel):
     """Role update request schema"""
     role: str = Field(
         ...,
-        description="New role to assign",
-        examples=["instructor", "admin", "student"]
+        description=f"New role to assign ({', '.join(UserRole.list())})",
+        examples=[role for role in UserRole.list()]
     )
+
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v):
+        return UserValidators.validate_role(v)
 
     model_config = {
         "from_attributes": True,
