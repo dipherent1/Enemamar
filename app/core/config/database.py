@@ -8,7 +8,7 @@ from app.core.config.env import get_settings
 
 
 settings = get_settings()
-DATABASE_URL = f"postgresql://{settings.USERNAME}:{settings.PASSWORD}@{settings.HOST}:{int(settings.PORT)}/{settings.DATABASE}"
+DATABASE_URL = f"postgresql://{settings.USERNAME}:{settings.PASSWORD}@{settings.HOST}/{settings.DATABASE}"
 
 
 # Create the SQLAlchemy engine
