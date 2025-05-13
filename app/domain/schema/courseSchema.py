@@ -1,65 +1,217 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from uuid import UUID
-from app.domain.model.user import User
 from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
 
 class VideoInput(BaseModel):
-    video_id: str = Field(..., min_length=1)
-    library_id: str = Field(..., min_length=1)
-    secret_key: str = Field(..., min_length=1)
-
-class videoResponse(BaseModel):
-    id: UUID
-    video_id: str
-    library_id: str
-    secret_key: str
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    """Video input schema for creating or updating video content"""
+    video_id: str = Field(
+        ...,
+        min_length=1,
+        description="Video ID from the video hosting service",
+        examples=["3e52de58-dc2b-4269-a0f5-f181f004964a"]
+    )
+    library_id: str = Field(
+        ...,
+        min_length=1,
+        description="Library ID from the video hosting service",
+        examples=["393657"]
+    )
+    secret_key: str = Field(
+        ...,
+        min_length=1,
+        description="Secret key for generating secure URLs",
+        examples=["e92ea1ea-c032-4870-8792-d92366dbcb29"]
+    )
 
     model_config = {
-        "from_attributes": True
+        "json_schema_extra": {
+            "example": {
+                "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+                "library_id": "393657",
+                "secret_key": "e92ea1ea-c032-4870-8792-d92366dbcb29"
+            }
+        }
+    }
+
+class videoResponse(BaseModel):
+    """Video response schema for retrieving video content"""
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for the video",
+        examples=["0b98bfd7-2460-4e08-a37c-725e14c497bb"]
+    )
+    video_id: str = Field(
+        ...,
+        description="Video ID from the video hosting service",
+        examples=["3e52de58-dc2b-4269-a0f5-f181f004964a"]
+    )
+    library_id: str = Field(
+        ...,
+        description="Library ID from the video hosting service",
+        examples=["393657"]
+    )
+    secret_key: str = Field(
+        ...,
+        description="Encrypted secret key for generating secure URLs",
+        examples=["gAAAAABoFx3wyLT5UwPjdYwbe_HJY4T0MmPzyq-BDPvkdoH-rZi1JlYvuN3fQH2sRFhH06tJaeyZUplI1hefW-VWmrcobjBUouW8B6njxpiN7WP4_2P5Q90BLeI5_mYt3OnF6WnPATO2"]
+    )
+    lesson_id: Optional[UUID] = Field(
+        None,
+        description="ID of the associated lesson",
+        examples=["8d854347-ba90-422d-901e-2752ba47a6f1"]
+    )
+    created_at: Optional[datetime] = Field(
+        None,
+        description="Creation timestamp",
+        examples=["2023-01-01T12:00:00Z"]
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Last update timestamp",
+        examples=["2023-01-02T12:00:00Z"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": "0b98bfd7-2460-4e08-a37c-725e14c497bb",
+                "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+                "library_id": "393657",
+                "secret_key": "gAAAAABoFx3wyLT5UwPjdYwbe_HJY4T0MmPzyq-BDPvkdoH-rZi1JlYvuN3fQH2sRFhH06tJaeyZUplI1hefW-VWmrcobjBUouW8B6njxpiN7WP4_2P5Q90BLeI5_mYt3OnF6WnPATO2",
+                "lesson_id": "8d854347-ba90-422d-901e-2752ba47a6f1",
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-02T12:00:00Z"
+            }
+        }
     }
 
 class LessonInput(BaseModel):
-    title: str = Field(..., min_length=1, max_length=100)
-    description: str = Field(..., min_length=1)
-    duration: int = Field(..., gt=0)
-    order: int = Field(default=None)
-    video: Optional[VideoInput] = Field(default=None)
+    """Lesson input schema for creating or updating lessons"""
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Lesson title",
+        examples=["Introduction to Python"]
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        description="Detailed lesson description",
+        examples=["Learn the basics of Python programming including variables, data types, and control structures."]
+    )
+    duration: int = Field(
+        ...,
+        gt=0,
+        description="Lesson duration in minutes",
+        examples=[30]
+    )
+    order: int = Field(
+        default=None,
+        description="Order of the lesson in the course (1-based)",
+        examples=[1]
+    )
+    video: Optional[VideoInput] = Field(
+        default=None,
+        description="Video content information"
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "title": "Introduction to Python",
-                "description": "Learn the basics of Python programming",
+                "description": "Learn the basics of Python programming including variables, data types, and control structures.",
                 "duration": 30,
-                "video_url": "https://example.com/video.mp4"
+                "order": 1,
+                "video": {
+                    "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+                    "library_id": "393657",
+                    "secret_key": "e92ea1ea-c032-4870-8792-d92366dbcb29"
+                }
             }
         }
     }
 
 
 class LessonResponse(BaseModel):
-    id: UUID
-    title: str
-    description: str
-    duration: int
-    video_url: Optional[str] = None
-    order: int 
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    video: Optional[videoResponse] = Field(default=None)
+    """Lesson response schema for retrieving lesson information"""
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for the lesson",
+        examples=["8d854347-ba90-422d-901e-2752ba47a6f1"]
+    )
+    title: str = Field(
+        ...,
+        description="Lesson title",
+        examples=["Introduction to Python"]
+    )
+    description: str = Field(
+        ...,
+        description="Detailed lesson description",
+        examples=["Learn the basics of Python programming including variables, data types, and control structures."]
+    )
+    duration: int = Field(
+        ...,
+        description="Lesson duration in minutes",
+        examples=[30]
+    )
+    video_url: Optional[str] = Field(
+        None,
+        description="Generated secure video URL for playback",
+        examples=["https://iframe.mediadelivery.net/embed/393657/3e52de58-dc2b-4269-a0f5-f181f004964a?token=37430fd202c1738a588a156ae76278c4fd88ece01bea21cc47f2abf83e88ead5&expires=1746350479"]
+    )
+    order: int = Field(
+        ...,
+        description="Order of the lesson in the course (1-based)",
+        examples=[1]
+    )
+    course_id: Optional[UUID] = Field(
+        None,
+        description="ID of the course this lesson belongs to",
+        examples=["9a05d7bb-757f-44b5-9a9a-84e1e8d038df"]
+    )
+    created_at: Optional[datetime] = Field(
+        None,
+        description="Creation timestamp",
+        examples=["2023-01-01T12:00:00Z"]
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Last update timestamp",
+        examples=["2023-01-02T12:00:00Z"]
+    )
+    video: Optional[videoResponse] = Field(
+        default=None,
+        description="Video content information"
+    )
 
     model_config = {
-        "from_attributes": True
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
+                "title": "Introduction to Python",
+                "description": "Learn the basics of Python programming",
+                "duration": 30,
+                "video_url": "https://iframe.mediadelivery.net/embed/393657/3e52de58-dc2b-4269-a0f5-f181f004964a?token=37430fd202c1738a588a156ae76278c4fd88ece01bea21cc47f2abf83e88ead5&expires=1746350479",
+                "order": 1,
+                "course_id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-02T12:00:00Z"
+            }
+        }
     }
 
 class MultipleLessonInput(BaseModel):
-    lessons: List[LessonInput]
+    """Input schema for adding multiple lessons to a course at once"""
+    lessons: List[LessonInput] = Field(
+        ...,
+        description="List of lessons to add to the course",
+        min_items=1
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -69,13 +221,23 @@ class MultipleLessonInput(BaseModel):
                         "title": "Introduction to Python",
                         "description": "Learn the basics of Python programming",
                         "duration": 30,
-                        "video_url": "https://example.com/video1.mp4"
+                        "order": 1,
+                        "video": {
+                            "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+                            "library_id": "393657",
+                            "secret_key": "e92ea1ea-c032-4870-8792-d92366dbcb29"
+                        }
                     },
                     {
                         "title": "Advanced Python",
                         "description": "Learn advanced Python concepts",
                         "duration": 45,
-                        "video_url": "https://example.com/video2.mp4"
+                        "order": 2,
+                        "video": {
+                            "video_id": "4f63ef59-ed3c-5370-b1f6-g292f115075b",
+                            "library_id": "393657",
+                            "secret_key": "f03fb2fb-d143-5981-9903-e03477dcb30a"
+                        }
                     }
                 ]
             }
@@ -85,29 +247,72 @@ class MultipleLessonInput(BaseModel):
 
 
 class CourseInput(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
-    description: str = Field(..., min_length=1)
-    tags: Optional[List[str]] = Field(default=None, description="List of tags for the course")
-    thumbnail_url: Optional[str] = Field(default=None, description="URL of the course thumbnail")
-    price: float = Field(..., ge=0)
-    discount: Optional[float] = Field(default=None, description="Special offer price")
-    instructor_id: UUID = Field(..., description="UUID of the instructor")
-    lessons: Optional[List[LessonInput]] = Field(default=None, description="List of lessons for the course")
+    """Course input schema for creating or updating courses"""
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Course title",
+        examples=["Python Programming Masterclass"]
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        description="Detailed course description",
+        examples=["A comprehensive course covering Python from basics to advanced topics including web development, data science, and automation."]
+    )
+    tags: Optional[List[str]] = Field(
+        default=None,
+        description="List of tags for categorizing the course",
+        examples=[["Python", "Programming", "Web Development"]]
+    )
+    thumbnail_url: Optional[str] = Field(
+        default=None,
+        description="URL of the course thumbnail image",
+        examples=["https://example.com/thumbnails/python-course.jpg"]
+    )
+    price: float = Field(
+        ...,
+        ge=0,
+        description="Course price in USD",
+        examples=[99.99]
+    )
+    discount: Optional[float] = Field(
+        default=0.0,
+        description="Discount amount or percentage",
+        examples=[10.0]
+    )
+    instructor_id: UUID = Field(
+        ...,
+        description="UUID of the course instructor",
+        examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
+    )
+    lessons: Optional[List[LessonInput]] = Field(
+        default=None,
+        description="List of lessons to include in the course"
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "title": "Python Programming",
-                "description": "Learn Python from scratch",
-                "tags": ["Python", "Programming"],
+                "title": "Python Programming Masterclass",
+                "description": "A comprehensive course covering Python from basics to advanced topics.",
+                "tags": ["Python", "Programming", "Web Development"],
+                "thumbnail_url": "https://example.com/thumbnails/python-course.jpg",
                 "price": 99.99,
-                "instructor_id": "123e4567-e89b-12d3-a456-426614174000",
+                "discount": 10.0,
+                "instructor_id": "0c18d25a-dc77-4be7-af62-aea00717077e",
                 "lessons": [
                     {
                         "title": "Introduction to Python",
                         "description": "Learn the basics of Python programming",
                         "duration": 30,
-                        "video_url": "https://example.com/video1.mp4"
+                        "order": 1,
+                        "video": {
+                            "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+                            "library_id": "393657",
+                            "secret_key": "e92ea1ea-c032-4870-8792-d92366dbcb29"
+                        }
                     }
                 ]
             }
@@ -115,104 +320,505 @@ class CourseInput(BaseModel):
     }
 
 class CourseResponse(BaseModel):
-    id: UUID
-    title: str
-    description: str
-    tags: Optional[List[str]]
-    price: float
-    discount: Optional[float] = None
-    thumbnail_url: Optional[str] = None
-    instructor_id: UUID
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    instructor: Optional[UserResponse] = Field(default=None)
-    lessons: Optional[List[LessonResponse]] = Field(default=None)
+    """Course response schema for retrieving course information"""
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for the course",
+        examples=["9a05d7bb-757f-44b5-9a9a-84e1e8d038df"]
+    )
+    title: str = Field(
+        ...,
+        description="Course title",
+        examples=["Python Programming Masterclass"]
+    )
+    description: str = Field(
+        ...,
+        description="Detailed course description",
+        examples=["A comprehensive course covering Python from basics to advanced topics."]
+    )
+    tags: Optional[List[str]] = Field(
+        None,
+        description="List of tags categorizing the course",
+        examples=[["Python", "Programming", "Web Development"]]
+    )
+    price: float = Field(
+        ...,
+        description="Course price in USD",
+        examples=[99.99]
+    )
+    discount: Optional[float] = Field(
+        None,
+        description="Discount amount or percentage",
+        examples=[10.0]
+    )
+    thumbnail_url: Optional[str] = Field(
+        None,
+        description="URL of the course thumbnail image",
+        examples=["https://example.com/thumbnails/python-course.jpg"]
+    )
+    instructor_id: UUID = Field(
+        ...,
+        description="UUID of the course instructor",
+        examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
+    )
+    view_count: Optional[int] = Field(
+        None,
+        description="Number of times the course has been viewed",
+        examples=[1250]
+    )
+    created_at: Optional[datetime] = Field(
+        None,
+        description="Creation timestamp",
+        examples=["2023-01-01T12:00:00Z"]
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Last update timestamp",
+        examples=["2023-01-02T12:00:00Z"]
+    )
+    instructor: Optional[UserResponse] = Field(
+        default=None,
+        description="Detailed information about the course instructor"
+    )
+    lessons: Optional[List[LessonResponse]] = Field(
+        default=None,
+        description="List of lessons included in the course"
+    )
 
     model_config = {
-        "from_attributes": True
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                "title": "Python Programming Masterclass",
+                "description": "A comprehensive course covering Python from basics to advanced topics.",
+                "tags": ["Python", "Programming", "Web Development"],
+                "price": 99.99,
+                "discount": 10.0,
+                "thumbnail_url": "https://example.com/thumbnails/python-course.jpg",
+                "instructor_id": "0c18d25a-dc77-4be7-af62-aea00717077e",
+                "view_count": 1250,
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-02T12:00:00Z"
+            }
+        }
     }
 
 class CourseAnalysisResponse(BaseModel):
-    view_count: int
-    no_of_enrollments: int
-    no_of_lessons: int
-    revenue: float
-    course: Optional[CourseResponse] = Field(default=None)
+    """Response schema for course analytics data"""
+    view_count: int = Field(
+        ...,
+        description="Number of times the course has been viewed",
+        examples=[1250]
+    )
+    no_of_enrollments: int = Field(
+        ...,
+        description="Number of students enrolled in the course",
+        examples=[85]
+    )
+    no_of_lessons: int = Field(
+        ...,
+        description="Total number of lessons in the course",
+        examples=[12]
+    )
+    revenue: float = Field(
+        ...,
+        description="Total revenue generated by the course in USD",
+        examples=[8499.15]
+    )
+    course: Optional[CourseResponse] = Field(
+        default=None,
+        description="Detailed course information"
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "view_count": 1250,
+                "no_of_enrollments": 85,
+                "no_of_lessons": 12,
+                "revenue": 8499.15,
+                "course": {
+                    "id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                    "title": "Python Programming Masterclass",
+                    "description": "A comprehensive course covering Python from basics to advanced topics.",
+                    "price": 99.99
+                }
+            }
+        }
+    }
 
 
 class CreateCourseResponse(BaseModel):
-    detail: str
-    course: CourseResponse
+    """Response schema for course creation"""
+    detail: str = Field(
+        ...,
+        description="Response message",
+        examples=["Course created successfully"]
+    )
+    course: CourseResponse = Field(
+        ...,
+        description="Created course details"
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Course created successfully",
+                "course": {
+                    "id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                    "title": "Python Programming Masterclass",
+                    "description": "A comprehensive course covering Python from basics to advanced topics.",
+                    "price": 99.99
+                }
+            }
+        }
+    }
 
 class EnrollmentResponse(BaseModel):
-    id: UUID
-    user_id: UUID
-    course_id: UUID
-    enrolled_at: Optional[datetime] = None
-    class Config:
-        from_attributes = True 
+    """Response schema for course enrollment details"""
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for the enrollment",
+        examples=["123e4567-e89b-12d3-a456-426614174000"]
+    )
+    user_id: UUID = Field(
+        ...,
+        description="ID of the enrolled user",
+        examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
+    )
+    course_id: UUID = Field(
+        ...,
+        description="ID of the course enrolled in",
+        examples=["9a05d7bb-757f-44b5-9a9a-84e1e8d038df"]
+    )
+    enrolled_at: Optional[datetime] = Field(
+        None,
+        description="Enrollment timestamp",
+        examples=["2023-01-01T12:00:00Z"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "user_id": "0c18d25a-dc77-4be7-af62-aea00717077e",
+                "course_id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                "enrolled_at": "2023-01-01T12:00:00Z"
+            }
+        }
+    }
 
 class EnrollResponse(BaseModel):
-    detail: str
-    enrollment: EnrollmentResponse
+    """Response schema for course enrollment"""
+    detail: str = Field(
+        ...,
+        description="Response message",
+        examples=["Successfully enrolled in course"]
+    )
+    enrollment: EnrollmentResponse = Field(
+        ...,
+        description="Enrollment details"
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Successfully enrolled in course",
+                "enrollment": {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "user_id": "0c18d25a-dc77-4be7-af62-aea00717077e",
+                    "course_id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                    "enrolled_at": "2023-01-01T12:00:00Z"
+                }
+            }
+        }
+    }
 
 class PaymentResponse(BaseModel):
-    id: UUID
-    tx_ref: str
-    ref_id: Optional[str]  # Fixed the type hint to Optional[str]
-    user_id: UUID
-    course_id: UUID
-    amount: float
-    status: str
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    class Config:
-        from_attributes = True
+    """Response schema for payment transaction details"""
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for the payment transaction",
+        examples=["123e4567-e89b-12d3-a456-426614174000"]
+    )
+    tx_ref: str = Field(
+        ...,
+        description="Transaction reference ID",
+        examples=["tx-1234567890"]
+    )
+    ref_id: Optional[str] = Field(
+        None,
+        description="Payment provider reference ID",
+        examples=["pay-9876543210"]
+    )
+    user_id: UUID = Field(
+        ...,
+        description="ID of the user making the payment",
+        examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
+    )
+    course_id: UUID = Field(
+        ...,
+        description="ID of the course being purchased",
+        examples=["9a05d7bb-757f-44b5-9a9a-84e1e8d038df"]
+    )
+    amount: float = Field(
+        ...,
+        description="Payment amount in USD",
+        examples=[99.99]
+    )
+    status: str = Field(
+        ...,
+        description="Payment status (pending, completed, failed)",
+        examples=["completed"]
+    )
+    created_at: Optional[datetime] = Field(
+        None,
+        description="Payment creation timestamp",
+        examples=["2023-01-01T12:00:00Z"]
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Payment last update timestamp",
+        examples=["2023-01-01T12:05:30Z"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "tx_ref": "tx-1234567890",
+                "ref_id": "pay-9876543210",
+                "user_id": "0c18d25a-dc77-4be7-af62-aea00717077e",
+                "course_id": "9a05d7bb-757f-44b5-9a9a-84e1e8d038df",
+                "amount": 99.99,
+                "status": "completed",
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-01T12:05:30Z"
+            }
+        }
+    }
 
 class PaymentData(BaseModel):
-    amount: float
-    phone_number: str
-    tx_ref: Optional[str] = None
-    user_id: Optional[UUID] = None
-    course_id: Optional[UUID] = None
-    email: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    title: Optional[str] = None
-    callback_url: Optional[str] = None
+    """Input schema for initiating a payment"""
+    amount: float = Field(
+        ...,
+        description="Payment amount in USD",
+        examples=[99.99]
+    )
+    phone_number: str = Field(
+        ...,
+        description="User's phone number for payment notifications",
+        examples=["0912345678"]
+    )
+    tx_ref: Optional[str] = Field(
+        None,
+        description="Transaction reference ID (generated if not provided)",
+        examples=["tx-1234567890"]
+    )
+    user_id: Optional[UUID] = Field(
+        None,
+        description="ID of the user making the payment",
+        examples=["0c18d25a-dc77-4be7-af62-aea00717077e"]
+    )
+    course_id: Optional[UUID] = Field(
+        None,
+        description="ID of the course being purchased",
+        examples=["9a05d7bb-757f-44b5-9a9a-84e1e8d038df"]
+    )
+    email: Optional[str] = Field(
+        None,
+        description="User's email address for payment notifications",
+        examples=["john.doe@example.com"]
+    )
+    first_name: Optional[str] = Field(
+        None,
+        description="User's first name",
+        examples=["John"]
+    )
+    last_name: Optional[str] = Field(
+        None,
+        description="User's last name",
+        examples=["Doe"]
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Payment title or description",
+        examples=["Purchase of Python Programming Masterclass"]
+    )
+    callback_url: Optional[str] = Field(
+        None,
+        description="URL to redirect after payment completion",
+        examples=["https://example.com/payment/callback"]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "amount": 99.99,
+                "phone_number": "0912345678",
+                "email": "john.doe@example.com",
+                "first_name": "John",
+                "last_name": "Doe",
+                "title": "Purchase of Python Programming Masterclass",
+                "callback_url": "https://example.com/payment/callback"
+            }
+        }
+    }
 
 class CallbackPayload(BaseModel):
-    trx_ref: str
-    ref_id: str
-    status: str
+    """Payload schema for payment callback from payment provider"""
+    trx_ref: str = Field(
+        ...,
+        description="Transaction reference ID",
+        examples=["tx-1234567890"]
+    )
+    ref_id: str = Field(
+        ...,
+        description="Payment provider reference ID",
+        examples=["pay-9876543210"]
+    )
+    status: str = Field(
+        ...,
+        description="Payment status (success, failed, pending)",
+        examples=["success"]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "trx_ref": "tx-1234567890",
+                "ref_id": "pay-9876543210",
+                "status": "success"
+            }
+        }
+    }
 
 class PaginationParams(BaseModel):
-    page: int = Field(default=1, ge=1, description="Page number (1-based)")
-    page_size: int = Field(default=10, ge=1, le=100, description="Number of items per page")
+    """Base pagination parameters for list endpoints"""
+    page: int = Field(
+        default=1,
+        ge=1,
+        description="Page number (1-based)",
+        examples=[1]
+    )
+    page_size: int = Field(
+        default=10,
+        ge=1,
+        le=100,
+        description="Number of items per page",
+        examples=[10]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "page": 1,
+                "page_size": 10
+            }
+        }
+    }
 
 class SearchParams(PaginationParams):
+    """Extended pagination parameters with search and filter options"""
     search: Optional[str] = Field(
         default=None,
-        description="Fuzzy search term"
+        description="Search term for filtering results by title, description, etc.",
+        examples=["python"]
     )
     filter: Optional[str] = Field(
         default=None,
-        description="Filter term"
+        description="Filter term for additional filtering (e.g., by category, price range)",
+        examples=["price_low", "newest"]
     )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "page": 1,
+                "page_size": 10,
+                "search": "python",
+                "filter": "price_low"
+            }
+        }
+    }
 
 
 class ModuleInput(BaseModel):
-    title: str
-    description: str
-    is_published: Optional[bool] = False
+    """Input schema for creating or updating modules"""
+    title: str = Field(
+        ...,
+        description="Module title",
+        examples=["Python Basics"]
+    )
+    description: str = Field(
+        ...,
+        description="Module description",
+        examples=["Fundamental concepts of Python programming"]
+    )
+    is_published: Optional[bool] = Field(
+        default=False,
+        description="Whether the module is published and visible to students",
+        examples=[True]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Python Basics",
+                "description": "Fundamental concepts of Python programming",
+                "is_published": True
+            }
+        }
+    }
 
 class ModuleResponse(BaseModel):
-    id: UUID
-    title: str
-    description: str
-    is_published: bool
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    class Config:
-        from_attributes = True
+    """Response schema for module information"""
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for the module",
+        examples=["123e4567-e89b-12d3-a456-426614174000"]
+    )
+    title: str = Field(
+        ...,
+        description="Module title",
+        examples=["Python Basics"]
+    )
+    description: str = Field(
+        ...,
+        description="Module description",
+        examples=["Fundamental concepts of Python programming"]
+    )
+    is_published: bool = Field(
+        ...,
+        description="Whether the module is published and visible to students",
+        examples=[True]
+    )
+    created_at: Optional[datetime] = Field(
+        None,
+        description="Creation timestamp",
+        examples=["2023-01-01T12:00:00Z"]
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Last update timestamp",
+        examples=["2023-01-02T12:00:00Z"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "title": "Python Basics",
+                "description": "Fundamental concepts of Python programming",
+                "is_published": True,
+                "created_at": "2023-01-01T12:00:00Z",
+                "updated_at": "2023-01-02T12:00:00Z"
+            }
+        }
+    }
 

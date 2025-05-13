@@ -133,6 +133,11 @@ class UserResponse(BaseModel):
         description="User's role (student, instructor, admin)",
         examples=["student"]
     )
+    profession: Optional[str] = Field(
+        None,
+        description="User's profession",
+        examples=["Software Developer"]
+    )
     is_active: bool = Field(
         ...,
         description="Whether the user account is active",
@@ -165,6 +170,7 @@ class UserResponse(BaseModel):
                 "last_name": "Doe",
                 "phone_number": "0912345678",
                 "role": "student",
+                "profession": "Software Developer",
                 "is_active": True,
                 "profile_picture": "https://example.com/profile.jpg",
                 "created_at": "2023-01-01T12:00:00Z",
@@ -200,6 +206,16 @@ class editUser(BaseModel):
         description="New phone number",
         examples=["0987654321"]
     )
+    profession: Optional[str] = Field(
+        None,
+        description="User's profession",
+        examples=["Software Developer"]
+    )
+    profile_picture: Optional[str] = Field(
+        None,
+        description="URL to user's profile picture",
+        examples=["https://example.com/profile.jpg"]
+    )
 
     model_config = {
         "from_attributes": True,
@@ -209,7 +225,9 @@ class editUser(BaseModel):
                 "email": "john.doe.updated@example.com",
                 "first_name": "Johnny",
                 "last_name": "Doe",
-                "phone_number": "0987654321"
+                "phone_number": "0987654321",
+                "profession": "Software Developer",
+                "profile_picture": "https://example.com/profile.jpg"
             }
         }
     }
