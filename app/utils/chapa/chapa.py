@@ -15,7 +15,7 @@ def pay_course(payment_data):
     print(payment_data.title)
     data = {
         # Required fields
-        'email': payment_data.email,  # Use attribute-style access
+        'phone_number': payment_data.phone_number,  # Use attribute-style access
         'amount': payment_data.amount,  # Use attribute-style access
         'first_name': payment_data.first_name,  # Use attribute-style access
         'last_name': payment_data.last_name,  # Use attribute-style access
@@ -28,6 +28,9 @@ def pay_course(payment_data):
             'description': f'Payment for your course {payment_data.title}',  # Use attribute-style access
         }
     }
+
+    if payment_data.email:
+        data['email'] = payment_data.email
     
     
     chapa = Chapa(settings.CHAPA_SECRET_KEY)

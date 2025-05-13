@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 class Course(Base):
     __tablename__ = "courses"
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
-        default=uuid.uuid4, 
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
         index=True
     )
     title = Column(String)
@@ -34,19 +34,21 @@ class Course(Base):
     enrollments = relationship("Enrollment", back_populates="course")
     lessons = relationship("Lesson", back_populates="course")  # Changed from modules to lessons
     instructor: Mapped["User"] = relationship(
-        "User", 
+        "User",
         back_populates="courses_taught",
         foreign_keys=[instructor_id]
     )
     payment = relationship("Payment", back_populates="course")
+    comments = relationship("Comment", back_populates="course")
+    reviews = relationship("Review", back_populates="course")
 
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
-        default=uuid.uuid4, 
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
         index=True
     )
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
@@ -60,8 +62,8 @@ class Enrollment(Base):
 class Lesson(Base):
     __tablename__ = "lessons"
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
+        UUID(as_uuid=True),
+        primary_key=True,
         default=uuid.uuid4
     )
     title: Mapped[str]
@@ -71,7 +73,7 @@ class Lesson(Base):
     order = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # Relationships
     course = relationship("Course", back_populates="lessons")
     video = relationship("Video", back_populates="lesson", uselist=False)  # Changed to one-to-one
@@ -79,22 +81,22 @@ class Lesson(Base):
 class Video(Base):
     __tablename__ = "videos"
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
-        default=uuid.uuid4, 
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
         index=True
     )
-    
+
     library_id = Column(String)
     video_id = Column(String)
     secret_key = Column(String)
-    
+
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
+        DateTime(timezone=True),
         server_default=func.now(),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
+        DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
     )
@@ -106,9 +108,9 @@ class Video(Base):
 class Payment(Base):
     __tablename__="payment"
     id: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
-        default=uuid.uuid4, 
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
         index=True
     )
     tx_ref = Column(String, unique=True)
@@ -124,3 +126,41 @@ class Payment(Base):
     # Relationships
     course = relationship("Course", back_populates="payment")
     user = relationship("User", back_populates="payments")  # M:N (Student ↔ Courses)
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True
+    )
+    content = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+
+    # Relationships
+    user = relationship("User", back_populates="comments")
+    course = relationship("Course", back_populates="comments")
+
+class Review(Base):
+    __tablename__ = "reviews"
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True
+    )
+    rating = Column(Integer, nullable=False)  # Rating out of 5
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+
+    # Relationships
+    user = relationship("User", back_populates="reviews")
+    course = relationship("Course", back_populates="reviews")

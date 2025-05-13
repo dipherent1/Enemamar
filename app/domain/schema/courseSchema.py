@@ -4,6 +4,8 @@ from uuid import UUID
 from app.domain.model.user import User
 from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel
 
 class VideoInput(BaseModel):
     video_id: str = Field(..., min_length=1)
@@ -168,15 +170,16 @@ class PaymentResponse(BaseModel):
         from_attributes = True
 
 class PaymentData(BaseModel):
-    tx_ref: str
     amount: float
-    user_id: UUID
-    course_id: UUID
-    email: str
-    first_name: str
-    last_name: str
-    title: str
-    callback_url: str
+    phone_number: str
+    tx_ref: Optional[str] = None
+    user_id: Optional[UUID] = None
+    course_id: Optional[UUID] = None
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    title: Optional[str] = None
+    callback_url: Optional[str] = None
 
 class CallbackPayload(BaseModel):
     trx_ref: str
