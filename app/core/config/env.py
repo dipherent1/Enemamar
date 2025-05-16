@@ -4,7 +4,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     DATABASE: str
     PORT: int
-    USERNAME: str
+    DB_USERNAME: str
     PASSWORD: str
     HOST: str
 
