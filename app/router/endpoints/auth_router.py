@@ -15,36 +15,36 @@ auth_router = APIRouter(
 
 @auth_router.post(
     "/otp/send",
-    response_model=OTPSendResponse,
+    # response_model=OTPSendResponse,
     status_code=status.HTTP_200_OK,
     summary="Send OTP",
     description="Send a one-time password (OTP) to the provided phone number for verification.",
-    responses={
-        200: {
-            "description": "OTP sent successfully",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "OTP sent successfully"}
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid phone number format"}
-                }
-            }
-        },
-        500: {
-            "description": "Internal server error",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Failed to send OTP"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "OTP sent successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "OTP sent successfully"}
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid phone number format"}
+    #             }
+    #         }
+    #     },
+    #     500: {
+    #         "description": "Internal server error",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Failed to send OTP"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def send_otp(phone_number: str, auth_service: AuthService = Depends(get_auth_service)):
     """
@@ -58,36 +58,36 @@ async def send_otp(phone_number: str, auth_service: AuthService = Depends(get_au
 
 @auth_router.post(
     "/otp/verify",
-    response_model=OTPVerifyResponse,
+    # response_model=OTPVerifyResponse,
     status_code=status.HTTP_200_OK,
     summary="Verify OTP",
     description="Verify the OTP code sent to the provided phone number.",
-    responses={
-        200: {
-            "description": "OTP verified successfully",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "OTP verified successfully", "status_code": 200}
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid OTP code"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User with this phone number does not exist"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "OTP verified successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "OTP verified successfully", "status_code": 200}
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid OTP code"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "User with this phone number does not exist"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def verify_otp(phone_number: str, code: str, auth_service: AuthService = Depends(get_auth_service)):
     """
@@ -102,48 +102,48 @@ async def verify_otp(phone_number: str, code: str, auth_service: AuthService = D
 
 @auth_router.post(
     "/signup",
-    response_model=signUpResponse,
+    # response_model=signUpResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
     description="Create a new user account with the provided information.",
-    responses={
-        201: {
-            "description": "User created successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "User created successfully",
-                        "user": {
-                            "id": "123e4567-e89b-12d3-a456-426614174000",
-                            "username": "johndoe",
-                            "email": "john.doe@example.com",
-                            "first_name": "John",
-                            "last_name": "Doe",
-                            "phone_number": "0912345678",
-                            "role": "student",
-                            "is_active": True
-                        }
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid email or phone number"}
-                }
-            }
-        },
-        409: {
-            "description": "Conflict",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User with this email or phone number already exists"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     201: {
+    #         "description": "User created successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "User created successfully",
+    #                     "user": {
+    #                         "id": "123e4567-e89b-12d3-a456-426614174000",
+    #                         "username": "johndoe",
+    #                         "email": "john.doe@example.com",
+    #                         "first_name": "John",
+    #                         "last_name": "Doe",
+    #                         "phone_number": "0912345678",
+    #                         "role": "student",
+    #                         "is_active": True
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid email or phone number"}
+    #             }
+    #         }
+    #     },
+    #     409: {
+    #         "description": "Conflict",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "User with this email or phone number already exists"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_auth_service)):
     """
@@ -159,58 +159,58 @@ async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_a
 
 @auth_router.post(
     "/login",
-    response_model=loginResponse,
+    # response_model=loginResponse,
     status_code=status.HTTP_200_OK,
     summary="Authenticate a user",
     description="Log in a user with email/phone and password to get access tokens.",
-    responses={
-        200: {
-            "description": "Login successful",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Login successful",
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "user": {
-                            "id": "123e4567-e89b-12d3-a456-426614174000",
-                            "username": "johndoe",
-                            "email": "john.doe@example.com",
-                            "first_name": "John",
-                            "last_name": "Doe",
-                            "phone_number": "0912345678",
-                            "role": "student",
-                            "is_active": True
-                        }
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Either email or phone_number must be provided"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Incorrect password"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Login successful",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Login successful",
+    #                     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    #                     "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    #                     "user": {
+    #                         "id": "123e4567-e89b-12d3-a456-426614174000",
+    #                         "username": "johndoe",
+    #                         "email": "john.doe@example.com",
+    #                         "first_name": "John",
+    #                         "last_name": "Doe",
+    #                         "phone_number": "0912345678",
+    #                         "role": "student",
+    #                         "is_active": True
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Either email or phone_number must be provided"}
+    #             }
+    #         }
+    #     },
+    #     401: {
+    #         "description": "Unauthorized",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Incorrect password"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "User not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def login_endpoint(
     login_info: login,
@@ -233,36 +233,36 @@ async def login_endpoint(
 
 @auth_router.post(
     "/logout",
-    response_model=LogoutResponse,
+    # response_model=LogoutResponse,
     status_code=status.HTTP_200_OK,
     summary="Log out a user",
     description="Invalidate the user's refresh token to log them out.",
-    responses={
-        200: {
-            "description": "Logout successful",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Successfully logged out"}
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Failed to logout, refresh token not found"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid refresh token"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Logout successful",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Successfully logged out"}
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Failed to logout, refresh token not found"}
+    #             }
+    #         }
+    #     },
+    #     401: {
+    #         "description": "Unauthorized",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid refresh token"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def logout(refresh_token: str = Header(None), auth_service: AuthService = Depends(get_auth_service)):
     """
@@ -277,36 +277,36 @@ async def logout(refresh_token: str = Header(None), auth_service: AuthService = 
 
 @auth_router.post(
     "/refresh",
-    response_model=TokenRefreshResponse,
+    # response_model=TokenRefreshResponse,
     status_code=status.HTTP_200_OK,
     summary="Refresh access token",
     description="Generate a new access token using a valid refresh token.",
-    responses={
-        200: {
-            "description": "Token refreshed successfully",
-            "content": {
-                "application/json": {
-                    "example": {"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid refresh token, user has been logged out"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid refresh token"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Token refreshed successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid refresh token, user has been logged out"}
+    #             }
+    #         }
+    #     },
+    #     401: {
+    #         "description": "Unauthorized",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid refresh token"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def refresh_token(
     refresh_token_request: RefreshTokenRequest,

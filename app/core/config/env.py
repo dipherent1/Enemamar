@@ -2,11 +2,7 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    DATABASE: str
-    PORT: int
-    DB_USERNAME: str
-    PASSWORD: str
-    HOST: str
+    DATABASE_URL: str
 
     ACCESS_SECRET_KEY: str
     REFRESH_SECRET_KEY: str

@@ -8,7 +8,7 @@ from app.core.config.env import get_settings
 
 
 settings = get_settings()
-DATABASE_URL = f"postgresql://{settings.DB_USERNAME}:{settings.PASSWORD}@{settings.HOST}/{settings.DATABASE}"
+DATABASE_URL = settings.DATABASE_URL
 print(DATABASE_URL)
 
 

@@ -27,74 +27,74 @@ protected_lesson_router = APIRouter(
 
 @lesson_router.get(
     "/{course_id}",
-    response_model=LessonListResponse,
+    # response_model=LessonListResponse,
     status_code=status.HTTP_200_OK,
     summary="Get all lessons for a course",
     description="Retrieve a paginated list of all lessons for a specific course with generated video URLs.",
-    responses={
-        200: {
-            "description": "Lessons retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Lessons fetched successfully",
-                        "data": [
-                            {
-                                "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
-                                "title": "Introduction to Python",
-                                "description": "Learn the basics of Python programming",
-                                "duration": 30,
-                                "video_url": "https://iframe.mediadelivery.net/embed/393657/3e52de58-dc2b-4269-a0f5-f181f004964a?token=37430fd202c1738a588a156ae76278c4fd88ece01bea21cc47f2abf83e88ead5&expires=1746350479",
-                                "order": 1,
-                                "created_at": "2025-05-04T10:57:36.144121+03:00",
-                                "updated_at": None
-                            },
-                            {
-                                "id": "9e965458-cb91-533e-b12f-3863ba58b7g2",
-                                "title": "Python Data Types",
-                                "description": "Learn about Python data types and structures",
-                                "duration": 45,
-                                "video_url": "https://iframe.mediadelivery.net/embed/393657/4f63ef69-ed3c-5370-b1g6-g292g115075b?token=48541ge313d2849b699b267bf87389d5ge99fdf12cfb32dd58g3bcg94f99fbe6&expires=1746350479",
-                                "order": 2,
-                                "created_at": "2025-05-04T11:30:22.144121+03:00",
-                                "updated_at": None
-                            }
-                        ],
-                        "pagination": {
-                            "total": 10,
-                            "page": 1,
-                            "page_size": 10,
-                            "total_pages": 1
-                        }
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        403: {
-            "description": "Forbidden",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Not enrolled in this course"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Course not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Lessons retrieved successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Lessons fetched successfully",
+    #                     "data": [
+    #                         {
+    #                             "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
+    #                             "title": "Introduction to Python",
+    #                             "description": "Learn the basics of Python programming",
+    #                             "duration": 30,
+    #                             "video_url": "https://iframe.mediadelivery.net/embed/393657/3e52de58-dc2b-4269-a0f5-f181f004964a?token=37430fd202c1738a588a156ae76278c4fd88ece01bea21cc47f2abf83e88ead5&expires=1746350479",
+    #                             "order": 1,
+    #                             "created_at": "2025-05-04T10:57:36.144121+03:00",
+    #                             "updated_at": None
+    #                         },
+    #                         {
+    #                             "id": "9e965458-cb91-533e-b12f-3863ba58b7g2",
+    #                             "title": "Python Data Types",
+    #                             "description": "Learn about Python data types and structures",
+    #                             "duration": 45,
+    #                             "video_url": "https://iframe.mediadelivery.net/embed/393657/4f63ef69-ed3c-5370-b1g6-g292g115075b?token=48541ge313d2849b699b267bf87389d5ge99fdf12cfb32dd58g3bcg94f99fbe6&expires=1746350479",
+    #                             "order": 2,
+    #                             "created_at": "2025-05-04T11:30:22.144121+03:00",
+    #                             "updated_at": None
+    #                         }
+    #                     ],
+    #                     "pagination": {
+    #                         "total": 10,
+    #                         "page": 1,
+    #                         "page_size": 10,
+    #                         "total_pages": 1
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     401: {
+    #         "description": "Unauthorized",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Missing or invalid token"}
+    #             }
+    #         }
+    #     },
+    #     403: {
+    #         "description": "Forbidden",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Not enrolled in this course"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Course not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def get_lessons(
     course_id: str,
@@ -124,64 +124,64 @@ async def get_lessons(
 
 @lesson_router.get(
     "/{course_id}/{lesson_id}",
-    response_model=LessonDetailResponse,
+    # response_model=LessonDetailResponse,
     status_code=status.HTTP_200_OK,
     summary="Get lesson by ID",
     description="Retrieve detailed information about a specific lesson with generated video URL.",
-    responses={
-        200: {
-            "description": "Lesson retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Lesson fetched successfully",
-                        "data": {
-                            "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
-                            "title": "Introduction to Python",
-                            "description": "Learn the basics of Python programming",
-                            "duration": 30,
-                            "video_url": "https://iframe.mediadelivery.net/embed/393657/3e52de58-dc2b-4269-a0f5-f181f004964a?token=37430fd202c1738a588a156ae76278c4fd88ece01bea21cc47f2abf83e88ead5&expires=1746350479",
-                            "order": 1,
-                            "created_at": "2025-05-04T10:57:36.144121+03:00",
-                            "updated_at": None,
-                            "video": {
-                                "id": "0b98bfd7-2460-4e08-a37c-725e14c497bb",
-                                "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
-                                "library_id": "393657",
-                                "secret_key": "gAAAAABoFx3wyLT5UwPjdYwbe_HJY4T0MmPzyq-BDPvkdoH-rZi1JlYvuN3fQH2sRFhH06tJaeyZUplI1hefW-VWmrcobjBUouW8B6njxpiN7WP4_2P5Q90BLeI5_mYt3OnF6WnPATO2",
-                                "created_at": "2025-05-04T10:57:36.152502+03:00",
-                                "updated_at": "2025-05-04T10:57:36.152502+03:00"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        403: {
-            "description": "Forbidden",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Not enrolled in this course"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Lesson not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Lesson retrieved successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Lesson fetched successfully",
+    #                     "data": {
+    #                         "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
+    #                         "title": "Introduction to Python",
+    #                         "description": "Learn the basics of Python programming",
+    #                         "duration": 30,
+    #                         "video_url": "https://iframe.mediadelivery.net/embed/393657/3e52de58-dc2b-4269-a0f5-f181f004964a?token=37430fd202c1738a588a156ae76278c4fd88ece01bea21cc47f2abf83e88ead5&expires=1746350479",
+    #                         "order": 1,
+    #                         "created_at": "2025-05-04T10:57:36.144121+03:00",
+    #                         "updated_at": None,
+    #                         "video": {
+    #                             "id": "0b98bfd7-2460-4e08-a37c-725e14c497bb",
+    #                             "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+    #                             "library_id": "393657",
+    #                             "secret_key": "gAAAAABoFx3wyLT5UwPjdYwbe_HJY4T0MmPzyq-BDPvkdoH-rZi1JlYvuN3fQH2sRFhH06tJaeyZUplI1hefW-VWmrcobjBUouW8B6njxpiN7WP4_2P5Q90BLeI5_mYt3OnF6WnPATO2",
+    #                             "created_at": "2025-05-04T10:57:36.152502+03:00",
+    #                             "updated_at": "2025-05-04T10:57:36.152502+03:00"
+    #                         }
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     401: {
+    #         "description": "Unauthorized",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Missing or invalid token"}
+    #             }
+    #         }
+    #     },
+    #     403: {
+    #         "description": "Forbidden",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Not enrolled in this course"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Lesson not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def get_lesson_by_id(
     course_id: str,
@@ -206,60 +206,60 @@ async def get_lesson_by_id(
 
 @protected_lesson_router.post(
     "/{course_id}",
-    response_model=BaseResponse,
+    # response_model=BaseResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add multiple lessons to a course",
     description="Create multiple lessons for a course, optionally with video information.",
-    responses={
-        201: {
-            "description": "Lessons created successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Lessons added successfully",
-                        "data": [
-                            {
-                                "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
-                                "title": "Introduction to Python",
-                                "description": "Learn the basics of Python programming",
-                                "duration": 30,
-                                "video_url": None,
-                                "order": 1,
-                                "created_at": "2025-05-04T10:57:36.144121+03:00",
-                                "updated_at": None
-                            },
-                            {
-                                "id": "9e965458-cb91-533e-b12f-3863ba58b7g2",
-                                "title": "Python Data Types",
-                                "description": "Learn about Python data types and structures",
-                                "duration": 45,
-                                "video_url": None,
-                                "order": 2,
-                                "created_at": "2025-05-04T11:30:22.144121+03:00",
-                                "updated_at": None
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Failed to add lesson, invalid data"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Course not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     201: {
+    #         "description": "Lessons created successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Lessons added successfully",
+    #                     "data": [
+    #                         {
+    #                             "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
+    #                             "title": "Introduction to Python",
+    #                             "description": "Learn the basics of Python programming",
+    #                             "duration": 30,
+    #                             "video_url": None,
+    #                             "order": 1,
+    #                             "created_at": "2025-05-04T10:57:36.144121+03:00",
+    #                             "updated_at": None
+    #                         },
+    #                         {
+    #                             "id": "9e965458-cb91-533e-b12f-3863ba58b7g2",
+    #                             "title": "Python Data Types",
+    #                             "description": "Learn about Python data types and structures",
+    #                             "duration": 45,
+    #                             "video_url": None,
+    #                             "order": 2,
+    #                             "created_at": "2025-05-04T11:30:22.144121+03:00",
+    #                             "updated_at": None
+    #                         }
+    #                     ]
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Failed to add lesson, invalid data"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Course not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def add_multiple_lessons(
     course_id: str,
@@ -291,46 +291,46 @@ async def add_multiple_lessons(
 
 @protected_lesson_router.post(
     "/{course_id}/{lesson_id}/video",
-    response_model=BaseResponse,
+    # response_model=BaseResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add video to lesson",
     description="Add video information to a lesson for generating secure video URLs.",
-    responses={
-        201: {
-            "description": "Video added successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Video added successfully",
-                        "data": {
-                            "id": "123e4567-e89b-12d3-a456-426614174000",
-                            "video_id": "abc123",
-                            "library_id": "lib123",
-                            "secret_key": "encrypted-secret-key",
-                            "created_at": "2023-01-01T12:00:00Z",
-                            "updated_at": "2023-01-01T12:00:00Z"
-                        }
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Failed to add video, video already exists"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Lesson not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     201: {
+    #         "description": "Video added successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Video added successfully",
+    #                     "data": {
+    #                         "id": "123e4567-e89b-12d3-a456-426614174000",
+    #                         "video_id": "abc123",
+    #                         "library_id": "lib123",
+    #                         "secret_key": "encrypted-secret-key",
+    #                         "created_at": "2023-01-01T12:00:00Z",
+    #                         "updated_at": "2023-01-01T12:00:00Z"
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Failed to add video, video already exists"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Lesson not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def add_video_to_lesson(
     course_id: str,
@@ -358,38 +358,38 @@ async def add_video_to_lesson(
 
 @protected_lesson_router.get(
     "/{course_id}/{lesson_id}/video",
-    response_model=BaseResponse,
+    # response_model=BaseResponse,
     status_code=status.HTTP_200_OK,
     summary="Get video metadata for a lesson",
     description="Retrieve the video metadata associated with a lesson (not the generated URL).",
-    responses={
-        200: {
-            "description": "Video metadata retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Video fetched successfully",
-                        "data": {
-                            "id": "0b98bfd7-2460-4e08-a37c-725e14c497bb",
-                            "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
-                            "library_id": "393657",
-                            "secret_key": "gAAAAABoFx3wyLT5UwPjdYwbe_HJY4T0MmPzyq-BDPvkdoH-rZi1JlYvuN3fQH2sRFhH06tJaeyZUplI1hefW-VWmrcobjBUouW8B6njxpiN7WP4_2P5Q90BLeI5_mYt3OnF6WnPATO2",
-                            "created_at": "2025-05-04T10:57:36.152502+03:00",
-                            "updated_at": "2025-05-04T10:57:36.152502+03:00"
-                        }
-                    }
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "No video found for this lesson"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Video metadata retrieved successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Video fetched successfully",
+    #                     "data": {
+    #                         "id": "0b98bfd7-2460-4e08-a37c-725e14c497bb",
+    #                         "video_id": "3e52de58-dc2b-4269-a0f5-f181f004964a",
+    #                         "library_id": "393657",
+    #                         "secret_key": "gAAAAABoFx3wyLT5UwPjdYwbe_HJY4T0MmPzyq-BDPvkdoH-rZi1JlYvuN3fQH2sRFhH06tJaeyZUplI1hefW-VWmrcobjBUouW8B6njxpiN7WP4_2P5Q90BLeI5_mYt3OnF6WnPATO2",
+    #                         "created_at": "2025-05-04T10:57:36.152502+03:00",
+    #                         "updated_at": "2025-05-04T10:57:36.152502+03:00"
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "No video found for this lesson"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def get_lesson_video(
     course_id: str,
@@ -413,47 +413,47 @@ async def get_lesson_video(
 
 @protected_lesson_router.put(
     "/{course_id}/{lesson_id}",
-    response_model=BaseResponse,
+    # response_model=BaseResponse,
     status_code=status.HTTP_200_OK,
     summary="Update a lesson",
     description="Update a lesson's information (does not affect video metadata).",
-    responses={
-        200: {
-            "description": "Lesson updated successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Lesson updated successfully",
-                        "data": {
-                            "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
-                            "title": "Updated Python Introduction",
-                            "description": "Updated description for Python basics",
-                            "duration": 35,
-                            "order": 1,
-                            "created_at": "2025-05-04T10:57:36.144121+03:00",
-                            "updated_at": "2025-05-05T09:12:45.123456+03:00"
-                        }
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Bad request",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid lesson data"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Lesson not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Lesson updated successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Lesson updated successfully",
+    #                     "data": {
+    #                         "id": "8d854347-ba90-422d-901e-2752ba47a6f1",
+    #                         "title": "Updated Python Introduction",
+    #                         "description": "Updated description for Python basics",
+    #                         "duration": 35,
+    #                         "order": 1,
+    #                         "created_at": "2025-05-04T10:57:36.144121+03:00",
+    #                         "updated_at": "2025-05-05T09:12:45.123456+03:00"
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     400: {
+    #         "description": "Bad request",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Invalid lesson data"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Lesson not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def edit_lesson(
     course_id: str,
@@ -482,30 +482,30 @@ async def edit_lesson(
 
 @protected_lesson_router.delete(
     "/{course_id}/{lesson_id}",
-    response_model=BaseResponse,
+    # response_model=BaseResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete a lesson",
     description="Delete a lesson and its associated video metadata.",
-    responses={
-        200: {
-            "description": "Lesson deleted successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Lesson deleted successfully"
-                    }
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Lesson not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "Lesson deleted successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Lesson deleted successfully"
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Lesson not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def delete_lesson(
     course_id: str,
