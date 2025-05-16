@@ -18,34 +18,34 @@ user_router = APIRouter(
 
 @user_router.get(
     "/me",
-    response_model=UserProfileResponse,
+    # response_model=UserProfileResponse,
     status_code=status.HTTP_200_OK,
     summary="Get current user profile",
     description="Retrieve the profile information of the currently authenticated user.",
-    responses={
-        200: {
-            "description": "User profile retrieved successfully",
-            "model": UserProfileResponse
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        404: {
-            "description": "User not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User not found"}
-                }
-            }
-        }
-    }
+    # responses={
+    #     200: {
+    #         "description": "User profile retrieved successfully",
+    #         "model": UserProfileResponse
+    #     },
+    #     401: {
+    #         "description": "Unauthorized",
+    #         "model": ErrorResponse,
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Missing or invalid token"}
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "User not found",
+    #         "model": ErrorResponse,
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "User not found"}
+    #             }
+    #         }
+    #     }
+    # }
 )
 async def read_users_me(
     decoded_token: dict = Depends(is_logged_in),
