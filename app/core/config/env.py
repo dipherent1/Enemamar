@@ -3,8 +3,8 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     DATABASE: str
-    PORT: int
-    USERNAME: str
+    # PORT: int
+    DB_USERNAME: str
     PASSWORD: str
     HOST: str
 

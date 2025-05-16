@@ -1,14 +1,9 @@
-from fastapi import APIRouter, Depends, status, HTTPException
-from app.domain.schema.authSchema import editUser, UserResponse
+from fastapi import APIRouter, Depends, status
+from app.domain.schema.authSchema import editUser
 from app.domain.schema.courseSchema import SearchParams
-from app.domain.schema.responseSchema import (
-    UserProfileResponse, UserUpdateResponse, BaseResponse,
-    ErrorResponse, PaginatedResponse
-)
 from app.service.userService import UserService, get_user_service
 from app.utils.middleware.dependancies import is_logged_in
 from uuid import UUID
-from typing import Dict, Any, List
 
 # User router for profile management
 user_router = APIRouter(
@@ -18,34 +13,9 @@ user_router = APIRouter(
 
 @user_router.get(
     "/me",
-    response_model=UserProfileResponse,
     status_code=status.HTTP_200_OK,
     summary="Get current user profile",
-    description="Retrieve the profile information of the currently authenticated user.",
-    responses={
-        200: {
-            "description": "User profile retrieved successfully",
-            "model": UserProfileResponse
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        404: {
-            "description": "User not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User not found"}
-                }
-            }
-        }
-    }
+    description="Retrieve the profile information of the currently authenticated user."
 )
 async def read_users_me(
     decoded_token: dict = Depends(is_logged_in),
@@ -66,52 +36,9 @@ async def read_users_me(
 
 @user_router.put(
     "/me",
-    response_model=UserUpdateResponse,
     status_code=status.HTTP_200_OK,
     summary="Update current user profile",
-    description="Update the profile information of the currently authenticated user.",
-    responses={
-        200: {
-            "description": "User profile updated successfully",
-            "model": UserUpdateResponse
-        },
-        400: {
-            "description": "Bad request",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid email format"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        404: {
-            "description": "User not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User not found"}
-                }
-            }
-        },
-        409: {
-            "description": "Conflict",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Username or email already exists"}
-                }
-            }
-        }
-    }
+    description="Update the profile information of the currently authenticated user."
 )
 async def edit_me(
     edit_user: editUser,
@@ -135,39 +62,9 @@ async def edit_me(
 
 @user_router.delete(
     "/me",
-    response_model=BaseResponse,
     status_code=status.HTTP_200_OK,
     summary="Deactivate user account",
-    description="Deactivate the current user's account.",
-    responses={
-        200: {
-            "description": "Account deactivated successfully",
-            "model": BaseResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Account deactivated successfully"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        404: {
-            "description": "User not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User not found"}
-                }
-            }
-        }
-    }
+    description="Deactivate the current user's account."
 )
 async def delete_me(
     decoded_token: dict = Depends(is_logged_in),
@@ -209,25 +106,9 @@ async def delete_me(
 
 @user_router.get(
     "/{user_id}",
-    response_model=UserProfileResponse,
     status_code=status.HTTP_200_OK,
     summary="Get user by ID",
-    description="Retrieve a user's profile by their ID.",
-    responses={
-        200: {
-            "description": "User profile retrieved successfully",
-            "model": UserProfileResponse
-        },
-        404: {
-            "description": "User not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User not found"}
-                }
-            }
-        }
-    }
+    description="Retrieve a user's profile by their ID."
 )
 async def get_user_by_id(
     user_id: str,

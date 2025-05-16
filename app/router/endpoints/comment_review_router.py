@@ -3,11 +3,6 @@ from app.domain.schema.comment_review_schema import (
     CommentInput,
     ReviewInput
 )
-from app.domain.schema.responseSchema import (
-    CommentListResponse, CommentDetailResponse,
-    ReviewListResponse, ReviewDetailResponse,
-    BaseResponse, ErrorResponse
-)
 from app.service.comment_review_service import CommentReviewService, get_comment_review_service
 from app.utils.middleware.dependancies import is_logged_in
 from uuid import UUID
@@ -21,43 +16,9 @@ comment_router = APIRouter(
 
 @comment_router.post(
     "/course/{course_id}",
-    response_model=CommentDetailResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add a comment to a course",
-    description="Add a new comment to a specific course.",
-    responses={
-        201: {
-            "description": "Comment added successfully",
-            "model": CommentDetailResponse
-        },
-        400: {
-            "description": "Bad request",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid input data"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Course not found"}
-                }
-            }
-        }
-    }
+    description="Add a new comment to a specific course."
 )
 async def add_comment(
     course_id: str,
@@ -85,25 +46,9 @@ async def add_comment(
 
 @comment_router.get(
     "/course/{course_id}",
-    response_model=CommentListResponse,
     status_code=status.HTTP_200_OK,
     summary="Get course comments",
-    description="Retrieve a paginated list of comments for a specific course.",
-    responses={
-        200: {
-            "description": "Comments retrieved successfully",
-            "model": CommentListResponse
-        },
-        404: {
-            "description": "Course not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Course not found"}
-                }
-            }
-        }
-    }
+    description="Retrieve a paginated list of comments for a specific course."
 )
 async def get_course_comments(
     course_id: str,
@@ -129,25 +74,9 @@ async def get_course_comments(
 
 @comment_router.get(
     "/user",
-    response_model=CommentListResponse,
     status_code=status.HTTP_200_OK,
     summary="Get user comments",
-    description="Retrieve a paginated list of comments by the current user.",
-    responses={
-        200: {
-            "description": "Comments retrieved successfully",
-            "model": CommentListResponse
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        }
-    }
+    description="Retrieve a paginated list of comments by the current user."
 )
 async def get_user_comments(
     page: int = 1,
@@ -176,25 +105,9 @@ async def get_user_comments(
 
 @comment_router.get(
     "/{comment_id}",
-    response_model=CommentDetailResponse,
     status_code=status.HTTP_200_OK,
     summary="Get comment by ID",
-    description="Retrieve a specific comment by its ID.",
-    responses={
-        200: {
-            "description": "Comment retrieved successfully",
-            "model": CommentDetailResponse
-        },
-        404: {
-            "description": "Comment not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Comment not found"}
-                }
-            }
-        }
-    }
+    description="Retrieve a specific comment by its ID."
 )
 async def get_comment(
     comment_id: str,
@@ -211,52 +124,9 @@ async def get_comment(
 
 @comment_router.put(
     "/{comment_id}",
-    response_model=CommentDetailResponse,
     status_code=status.HTTP_200_OK,
     summary="Update comment",
-    description="Update a specific comment by its ID.",
-    responses={
-        200: {
-            "description": "Comment updated successfully",
-            "model": CommentDetailResponse
-        },
-        400: {
-            "description": "Bad request",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Invalid input data"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        403: {
-            "description": "Forbidden",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "You can only update your own comments"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Comment not found"}
-                }
-            }
-        }
-    }
+    description="Update a specific comment by its ID."
 )
 async def update_comment(
     comment_id: str,
@@ -285,48 +155,9 @@ async def update_comment(
 
 @comment_router.delete(
     "/{comment_id}",
-    response_model=BaseResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete comment",
-    description="Delete a specific comment by its ID.",
-    responses={
-        200: {
-            "description": "Comment deleted successfully",
-            "model": BaseResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Comment deleted successfully"}
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Missing or invalid token"}
-                }
-            }
-        },
-        403: {
-            "description": "Forbidden",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "You can only delete your own comments"}
-                }
-            }
-        },
-        404: {
-            "description": "Not found",
-            "model": ErrorResponse,
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Comment not found"}
-                }
-            }
-        }
-    }
+    description="Delete a specific comment by its ID."
 )
 async def delete_comment(
     comment_id: str,
