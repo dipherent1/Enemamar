@@ -3,6 +3,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    BASE_URL: str
 
     ACCESS_SECRET_KEY: str
     REFRESH_SECRET_KEY: str

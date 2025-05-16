@@ -1,3 +1,4 @@
+import pprint
 from app.utils.exceptions.exceptions import ValidationError
 from app.domain.schema.courseSchema import (
     PaymentData,
@@ -14,7 +15,8 @@ from app.core.config.database import get_db
 from typing import Optional
 from app.utils.chapa.chapa import pay_course, verify_payment, generete_tx_ref
 from app.domain.schema.courseSchema import EnrollmentResponse
-
+from app.core.config.env import get_settings
+settings = get_settings()
 class PaymentService:
     def __init__(self, db: Session):
         self.payment_repo = PaymentRepository(db)
@@ -51,7 +53,7 @@ class PaymentService:
             raise ValidationError(detail="User already enrolled in course")
         
         if course.price > 0:
-            callback = "http://localhost:8000/payment/callback"
+            callback = f"{settings.BASE_URL}/payment/callback"
 
             tx_ref = generete_tx_ref(12)
             if course.discount:
@@ -72,10 +74,11 @@ class PaymentService:
             )
             if user.email:
                 data.email = user.email
+            print("Payment data:", data)
             try:
                 response = pay_course(data)
             except Exception as e:
-                raise ValidationError(detail="Payment initiation failed")
+                raise ValidationError(detail="Payment initiation failed", error=str(e))
 
             if response.get("status") != "success":
                 raise ValidationError(detail=response['message'])
@@ -86,6 +89,7 @@ class PaymentService:
                 amount=amount,
                 tx_ref=tx_ref
             )
+            print("Payment object:", payment)
             
             payment = self.payment_repo.save_payment(payment)
             
