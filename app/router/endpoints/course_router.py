@@ -287,6 +287,20 @@ async def get_course(
     course_response = course_service.getCourse(course_id)
     return course_response
 
+@course_router.get(
+    "/{course_id}/is_enrolled",
+    status_code=status.HTTP_200_OK,
+    summary="Check if current user is enrolled in a course",
+    description="Returns `is_enrolled: true` if the authenticated user is enrolled, otherwise `false`."
+)
+async def is_user_enrolled(
+    course_id: str,
+    decoded_token: dict = Depends(is_logged_in),
+    course_service: CourseService = Depends(get_course_service)
+):
+    user_id = str(decoded_token.get("id"))
+    return course_service.is_user_enrolled(user_id, course_id)
+
 # Analysis router
 analysis_router = APIRouter(
     prefix="/analysis",

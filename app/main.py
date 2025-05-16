@@ -1,10 +1,24 @@
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
+import sentry_sdk
 from sqlalchemy import text
 from app.router.routers import routers
 from app.core.config.database import Base, engine
+from app.core.config.env import get_settings
 
+sentry_sdk.init(
+    dsn=get_settings().SENTRY_DNS,
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    # Set profile_session_sample_rate to 1.0 to profile 100%
+    # of profile sessions.
+    profile_session_sample_rate=1.0,
+    # Set profile_lifecycle to "trace" to automatically
+    # run the profiler on when there is an active transaction
+    profile_lifecycle="trace"
+)
 
 print("initializing app")
 class AppCreator():
@@ -36,6 +50,10 @@ Base.metadata.create_all(bind=engine)
 # Create the app instance
 app_creator = AppCreator()
 app = app_creator.app
+
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
 
 # Custom OpenAPI schema generator
 def custom_openapi():

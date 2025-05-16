@@ -314,7 +314,22 @@ class CourseService:
             "data": courses
         }
 
+    def is_user_enrolled(self, user_id: str, course_id: str) -> dict:
+        """
+        Check if a user is enrolled in a course.
 
+        Raises ValidationError if inputs are missing.
+        """
+        if not user_id:
+            raise ValidationError(detail="User ID is required")
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        enrolled = bool(self.course_repo.get_enrollment(str(user_id), course_id))
+        return {
+            "detail": "Enrollment status fetched successfully",
+            "data": {"is_enrolled": enrolled}
+        }
 
 
 def get_course_service(db: Session = Depends(get_db)):
