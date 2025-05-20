@@ -151,16 +151,8 @@ async def add_thumbnail_to_course(
 ):
     """
     Add a thumbnail to a course.
-
-    Args:
-        course_id (str): The course ID.
-        thumbnail (UploadFile): The uploaded thumbnail file.
-        course_service (CourseService): The course service.
-
-    Returns:
-        dict: The thumbnail update response.
     """
-    return await course_service.addThumbnail(course_id, thumbnail, thumbnail_name)
+    return course_service.addThumbnail(course_id, thumbnail, thumbnail_name)
 
 @admin_router.put("/courses/{course_id}")
 async def update_course(
