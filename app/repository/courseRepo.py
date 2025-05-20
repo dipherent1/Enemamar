@@ -395,21 +395,11 @@ class CourseRepository:
             return _wrap_error(e)
 
     def get_course_revenue(self, course_id: str):
-        try:
-            total = (self.db.query(func.sum(Enrollment.amount))
-                .filter(Enrollment.course_id == course_id)
-                .filter(Enrollment.status == "success").scalar()) or 0.0
-            return _wrap_return(total)
-        except Exception as e:
-            return _wrap_error(e)
+        return self.payment_repo.get_course_revenue(course_id)
 
     def get_lessons_count(self, course_id: str) -> int:
-        try:
-            count = self.db.query(Lesson).filter(Lesson.course_id == course_id).count()
-            return _wrap_return(count)
-        except Exception as e:
-            return _wrap_error(e)
-
+        return self.lesson_repo.get_lessons_count(course_id)
+    
     def save_thumbnail(self, course_id: str, thumbnail_url: str):
         """
         Persist a thumbnail URL on a course.

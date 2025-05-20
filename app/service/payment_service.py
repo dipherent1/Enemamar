@@ -45,12 +45,16 @@ class PaymentService:
             raise NotFoundError(detail="User not found")
         
         # Validate course exists
-        course = self.course_repo.get_course(course_id)
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            raise ValidationError(detail="Error fetching course", data=str(err))
         if not course:
             raise NotFoundError(detail="Course not found")
         
         # Check if user is already enrolled
-        enrollment = self.course_repo.get_enrollment(user_id, course_id)
+        enrollment, err = self.course_repo.get_enrollment(user_id, course_id)
+        if err:
+            raise ValidationError(detail="Error fetching enrollment", data=str(err))    
         if enrollment:
             raise ValidationError(detail="User already enrolled in course")
         
@@ -101,7 +105,12 @@ class PaymentService:
         
         else:
             # Enroll course for free
-            enrollment = self.course_repo.enroll_course(user_id, course_id)
+            enrollment,err = self.course_repo.enroll_course(user_id, course_id)
+            if err:
+                raise ValidationError(detail="Error enrolling course", data=str(err))
+            if not enrollment:
+                raise ValidationError(detail="Error enrolling course")
+            # Check if user is already enrolled
              
             # Convert SQLAlchemy Enrollment object to Pydantic Response Model
             enrollment_response = EnrollmentResponse.model_validate(enrollment)
@@ -154,13 +163,20 @@ class PaymentService:
             raise NotFoundError(detail="User not found")
         
         # Validate course exists
-        course = self.course_repo.get_course(payment.course_id)
+        course,err = self.course_repo.get_course(payment.course_id)
+        if err:
+            raise ValidationError(detail="Error fetching course after payment", data=str(err))
+        
         if not course:
             raise NotFoundError(detail="Course not found")
         
         # Enroll course
-        enrollment = self.course_repo.enroll_course(user.id, course.id)
-        
+        enrollment, err = self.course_repo.enroll_course(user.id, course.id)
+        if err:
+            raise ValidationError(detail="Error enrolling course", data=str(err))
+        if not enrollment:
+            raise ValidationError(detail="Error enrolling course")
+
         # Convert SQLAlchemy Enrollment object to Pydantic Response Model
         enrollment_response = EnrollmentResponse.model_validate(enrollment)
         
@@ -228,7 +244,9 @@ class PaymentService:
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
-        course = self.course_repo.get_course(course_id)
+        course,err = self.course_repo.get_course(course_id)
+        if err:
+            raise ValidationError(detail="Error fetching course", data=str(err))
         if not course:
             raise NotFoundError(detail="Course not found")
 

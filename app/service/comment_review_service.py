@@ -3,9 +3,7 @@ from app.domain.schema.comment_review_schema import (
     CommentInput,
     CommentResponse,
     ReviewInput,
-    ReviewResponse,
-    CourseCommentResponse,
-    CourseReviewResponse
+    ReviewResponse
 )
 from app.domain.model.course import Comment, Review
 from app.repository.comment_review_repo import CommentReviewRepository
@@ -15,7 +13,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
-from typing import Optional, List
 from uuid import UUID
 
 class CommentReviewService:
@@ -48,15 +45,23 @@ class CommentReviewService:
             ValidationError: If the user or course is invalid or comment creation fails.
         """
         # Validate user
-        user = self.user_repo.get_user_by_id(str(user_id))
-        if not user:
-            raise ValidationError(detail="User not found")
+        _, err = self.user_repo.get_user_by_id(str(user_id))
+
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Invalid user ID")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
 
         # Validate course
-        try:
-            course = self.course_repo.get_course(course_id)
-        except NotFoundError:
-            raise ValidationError(detail="Course not found")
+        _, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Invalid course ID")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
 
         # Create comment
         comment = Comment(
@@ -65,15 +70,23 @@ class CommentReviewService:
             course_id=course_id
         )
 
-        try:
-            created_comment = self.comment_review_repo.create_comment(comment)
-            comment_response = CommentResponse.model_validate(created_comment)
-            return {
-                "detail": "Comment added successfully",
-                "data": comment_response
-            }
-        except Exception as e:
-            raise ValidationError(detail=f"Failed to add comment: {str(e)}")
+
+        created_comment,err = self.comment_review_repo.create_comment(comment)
+        if err:
+            if isinstance(err, ValidationError):
+                raise ValidationError(detail="Invalid comment data", data=str(err))
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Failed to create comment", data=str(err))
+            raise ValidationError(detail="Failed to create comment", data=str(err))
+
+        comment_response = CommentResponse.model_validate(created_comment)
+
+        return {
+            "detail": "Comment added successfully",
+            "data": comment_response
+        }
+
+
 
     def get_comment(self, comment_id: str):
         """
@@ -92,7 +105,14 @@ class CommentReviewService:
             raise ValidationError(detail="Comment ID is required")
 
         try:
-            comment = self.comment_review_repo.get_comment(comment_id)
+            comment,err = self.comment_review_repo.get_comment(comment_id)
+            if err:
+                if isinstance(err, NotFoundError):
+                    raise ValidationError(detail="Comment not found")
+                if isinstance(err, IntegrityError):
+                    raise ValidationError(detail="Invalid comment ID")
+                raise ValidationError(detail="Failed to retrieve comment", data=str(err))
+
             comment_response = CommentResponse.model_validate(comment)
             return {
                 "detail": "Comment retrieved successfully",
@@ -119,21 +139,36 @@ class CommentReviewService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        try:
-            comments = self.comment_review_repo.get_comments_by_course(course_id, page, page_size)
-            comments_response = [CommentResponse.model_validate(comment) for comment in comments]
+        # Validate course exists
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
 
-            return {
-                "detail": "Course comments retrieved successfully",
-                "data": {
-                    "comments": comments_response,
-                    "page": page,
-                    "page_size": page_size,
-                    "total_items": self.comment_review_repo.get_comments_count_by_course(course_id)
-                }
+        comments, err = self.comment_review_repo.get_comments_by_course(course_id, page, page_size)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found for comments")
+            raise ValidationError(detail="Failed to retrieve course comments", data=str(err))
+
+        comments_response = [CommentResponse.model_validate(comment) for comment in comments]
+
+        total_count, err = self.comment_review_repo.get_comments_count_by_course(course_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve comment count", data=str(err))
+
+        return {
+            "detail": "Course comments retrieved successfully",
+            "data": {
+                "comments": comments_response,
+                "page": page,
+                "page_size": page_size,
+                "total_items": total_count
             }
-        except NotFoundError as e:
-            raise ValidationError(detail=str(e))
+        }
 
     def get_user_comments(self, user_id: UUID, page: int = 1, page_size: int = 10):
         """
@@ -154,12 +189,23 @@ class CommentReviewService:
             raise ValidationError(detail="User ID is required")
 
         # Validate user
-        user = self.user_repo.get_user_by_id(str(user_id))
+        user, err = self.user_repo.get_user_by_id(str(user_id))
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
         if not user:
             raise ValidationError(detail="User not found")
 
-        comments = self.comment_review_repo.get_comments_by_user(str(user_id), page, page_size)
+        comments, err = self.comment_review_repo.get_comments_by_user(str(user_id), page, page_size)
+        if err:
+            raise ValidationError(detail="Failed to retrieve user comments", data=str(err))
+
         comments_response = [CommentResponse.model_validate(comment) for comment in comments]
+
+        total_count, err = self.comment_review_repo.get_comments_count_by_user(str(user_id))
+        if err:
+            raise ValidationError(detail="Failed to retrieve comment count", data=str(err))
 
         return {
             "detail": "User comments retrieved successfully",
@@ -167,7 +213,7 @@ class CommentReviewService:
                 "comments": comments_response,
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.comment_review_repo.get_comments_count_by_user(str(user_id))
+                "total_items": total_count
             }
         }
 
@@ -192,14 +238,27 @@ class CommentReviewService:
 
         try:
             # Get the comment to check ownership
-            comment = self.comment_review_repo.get_comment(comment_id)
+            comment, err = self.comment_review_repo.get_comment(comment_id)
+            if err:
+                if isinstance(err, NotFoundError):
+                    raise ValidationError(detail="Comment not found")
+                if isinstance(err, IntegrityError):
+                    raise ValidationError(detail="Invalid comment ID")
+                raise ValidationError(detail="Failed to retrieve comment", data=str(err))
 
             # Check if the user is the author of the comment
             if str(comment.user_id) != str(user_id):
                 raise ValidationError(detail="You can only update your own comments")
 
             # Update the comment
-            updated_comment = self.comment_review_repo.update_comment(comment_id, comment_input.content)
+            updated_comment, err = self.comment_review_repo.update_comment(comment_id, comment_input.content)
+            if err:
+                if isinstance(err, NotFoundError):
+                    raise ValidationError(detail="Comment not found")
+                if isinstance(err, IntegrityError):
+                    raise ValidationError(detail="Invalid comment ID")
+                raise ValidationError(detail="Failed to update comment", data=str(err))
+
             comment_response = CommentResponse.model_validate(updated_comment)
 
             return {
@@ -227,22 +286,31 @@ class CommentReviewService:
         if not comment_id:
             raise ValidationError(detail="Comment ID is required")
 
-        try:
-            # Get the comment to check ownership
-            comment = self.comment_review_repo.get_comment(comment_id)
+        # Get the comment to check ownership
+        comment, err = self.comment_review_repo.get_comment(comment_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Comment not found")
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Invalid comment ID")
+            raise ValidationError(detail="Failed to retrieve comment", data=str(err))
+        if not comment:
+            raise ValidationError(detail="Comment not found")
 
-            # Check if the user is the author of the comment
-            if str(comment.user_id) != str(user_id):
-                raise ValidationError(detail="You can only delete your own comments")
+        # Check if the user is the author of the comment
+        if str(comment.user_id) != str(user_id):
+            raise ValidationError(detail="You can only delete your own comments")
 
-            # Delete the comment
-            self.comment_review_repo.delete_comment(comment_id)
+        # Delete the comment
+        _, err = self.comment_review_repo.delete_comment(comment_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Comment not found to delete")
+            raise ValidationError(detail="Failed to delete comment", data=str(err))
 
-            return {
-                "detail": "Comment deleted successfully"
-            }
-        except NotFoundError as e:
-            raise ValidationError(detail=str(e))
+        return {
+            "detail": "Comment deleted successfully"
+        }
 
     # Review methods
     def add_review(self, user_id: UUID, course_id: str, review_input: ReviewInput):
@@ -262,14 +330,21 @@ class CommentReviewService:
                             or review creation fails.
         """
         # Validate user
-        user = self.user_repo.get_user_by_id(str(user_id))
+        user, err = self.user_repo.get_user_by_id(str(user_id))
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
         if not user:
             raise ValidationError(detail="User not found")
 
         # Validate course
-        try:
-            course = self.course_repo.get_course(course_id)
-        except NotFoundError:
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
             raise ValidationError(detail="Course not found")
 
         # Validate rating
@@ -283,17 +358,17 @@ class CommentReviewService:
             course_id=course_id
         )
 
-        try:
-            created_review = self.comment_review_repo.create_review(review)
-            review_response = ReviewResponse.model_validate(created_review)
-            return {
-                "detail": "Review added successfully",
-                "data": review_response
-            }
-        except ValidationError as e:
-            raise ValidationError(detail=str(e))
-        except Exception as e:
-            raise ValidationError(detail=f"Failed to add review: {str(e)}")
+        created_review, err = self.comment_review_repo.create_review(review)
+        if err:
+            if isinstance(err, ValidationError):
+                raise ValidationError(detail=str(err))
+            raise ValidationError(detail=f"Failed to add review", data=str(err))
+
+        review_response = ReviewResponse.model_validate(created_review)
+        return {
+            "detail": "Review added successfully",
+            "data": review_response
+        }
 
     def get_review(self, review_id: str):
         """
@@ -311,15 +386,21 @@ class CommentReviewService:
         if not review_id:
             raise ValidationError(detail="Review ID is required")
 
-        try:
-            review = self.comment_review_repo.get_review(review_id)
-            review_response = ReviewResponse.model_validate(review)
-            return {
-                "detail": "Review retrieved successfully",
-                "data": review_response
-            }
-        except NotFoundError as e:
-            raise ValidationError(detail=str(e))
+        review, err = self.comment_review_repo.get_review(review_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Review not found")
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Invalid review ID")
+            raise ValidationError(detail="Failed to retrieve review", data=str(err))
+        if not review:
+            raise ValidationError(detail="Review not found")
+
+        review_response = ReviewResponse.model_validate(review)
+        return {
+            "detail": "Review retrieved successfully",
+            "data": review_response
+        }
 
     def get_course_reviews(self, course_id: str, page: int = 1, page_size: int = 10):
         """
@@ -339,23 +420,39 @@ class CommentReviewService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        try:
-            reviews = self.comment_review_repo.get_reviews_by_course(course_id, page, page_size)
-            reviews_response = [ReviewResponse.model_validate(review) for review in reviews]
-            average_rating = self.comment_review_repo.get_average_rating_by_course(course_id)
+        # Validate course exists
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
 
-            return {
-                "detail": "Course reviews retrieved successfully",
-                "data": {
-                    "reviews": reviews_response,
-                    "average_rating": average_rating,
-                    "page": page,
-                    "page_size": page_size,
-                    "total_items": self.comment_review_repo.get_reviews_count_by_course(course_id)
-                }
+        reviews, err = self.comment_review_repo.get_reviews_by_course(course_id, page, page_size)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found for reviews")
+            raise ValidationError(detail="Failed to retrieve course reviews", data=str(err))
+
+        reviews_response = [ReviewResponse.model_validate(review) for review in reviews]
+
+        average_rating = self.comment_review_repo.get_average_rating_by_course(course_id)
+
+        total_count, err = self.comment_review_repo.get_reviews_count_by_course(course_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve review count", data=str(err))
+
+        return {
+            "detail": "Course reviews retrieved successfully",
+            "data": {
+                "reviews": reviews_response,
+                "average_rating": average_rating,
+                "page": page,
+                "page_size": page_size,
+                "total_items": total_count
             }
-        except NotFoundError as e:
-            raise ValidationError(detail=str(e))
+        }
 
     def get_user_reviews(self, user_id: UUID, page: int = 1, page_size: int = 10):
         """
@@ -376,12 +473,23 @@ class CommentReviewService:
             raise ValidationError(detail="User ID is required")
 
         # Validate user
-        user = self.user_repo.get_user_by_id(str(user_id))
+        user, err = self.user_repo.get_user_by_id(str(user_id))
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
         if not user:
             raise ValidationError(detail="User not found")
 
-        reviews = self.comment_review_repo.get_reviews_by_user(str(user_id), page, page_size)
+        reviews, err = self.comment_review_repo.get_reviews_by_user(str(user_id), page, page_size)
+        if err:
+            raise ValidationError(detail="Failed to retrieve user reviews", data=str(err))
+
         reviews_response = [ReviewResponse.model_validate(review) for review in reviews]
+
+        total_count, err = self.comment_review_repo.get_reviews_count_by_user(str(user_id))
+        if err:
+            raise ValidationError(detail="Failed to retrieve review count", data=str(err))
 
         return {
             "detail": "User reviews retrieved successfully",
@@ -389,7 +497,7 @@ class CommentReviewService:
                 "reviews": reviews_response,
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.comment_review_repo.get_reviews_count_by_user(str(user_id))
+                "total_items": total_count
             }
         }
 
@@ -416,24 +524,36 @@ class CommentReviewService:
         if review_input.rating < 1 or review_input.rating > 5:
             raise ValidationError(detail="Rating must be between 1 and 5")
 
-        try:
-            # Get the review to check ownership
-            review = self.comment_review_repo.get_review(review_id)
+        # Get the review to check ownership
+        review, err = self.comment_review_repo.get_review(review_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Review not found")
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Invalid review ID")
+            raise ValidationError(detail="Failed to retrieve review", data=str(err))
+        if not review:
+            raise ValidationError(detail="Review not found")
 
-            # Check if the user is the author of the review
-            if str(review.user_id) != str(user_id):
-                raise ValidationError(detail="You can only update your own reviews")
+        # Check if the user is the author of the review
+        if str(review.user_id) != str(user_id):
+            raise ValidationError(detail="You can only update your own reviews")
 
-            # Update the review
-            updated_review = self.comment_review_repo.update_review(review_id, review_input.rating)
-            review_response = ReviewResponse.model_validate(updated_review)
+        # Update the review
+        updated_review, err = self.comment_review_repo.update_review(review_id, review_input.rating)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Review not found to update")
+            if isinstance(err, ValidationError):
+                raise ValidationError(detail=str(err))
+            raise ValidationError(detail="Failed to update review", data=str(err))
 
-            return {
-                "detail": "Review updated successfully",
-                "data": review_response
-            }
-        except NotFoundError as e:
-            raise ValidationError(detail=str(e))
+        review_response = ReviewResponse.model_validate(updated_review)
+
+        return {
+            "detail": "Review updated successfully",
+            "data": review_response
+        }
 
     def delete_review(self, review_id: str, user_id: UUID):
         """
@@ -453,22 +573,31 @@ class CommentReviewService:
         if not review_id:
             raise ValidationError(detail="Review ID is required")
 
-        try:
-            # Get the review to check ownership
-            review = self.comment_review_repo.get_review(review_id)
+        # Get the review to check ownership
+        review, err = self.comment_review_repo.get_review(review_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Review not found")
+            if isinstance(err, IntegrityError):
+                raise ValidationError(detail="Invalid review ID")
+            raise ValidationError(detail="Failed to retrieve review", data=str(err))
+        if not review:
+            raise ValidationError(detail="Review not found")
 
-            # Check if the user is the author of the review
-            if str(review.user_id) != str(user_id):
-                raise ValidationError(detail="You can only delete your own reviews")
+        # Check if the user is the author of the review
+        if str(review.user_id) != str(user_id):
+            raise ValidationError(detail="You can only delete your own reviews")
 
-            # Delete the review
-            self.comment_review_repo.delete_review(review_id)
+        # Delete the review
+        _, err = self.comment_review_repo.delete_review(review_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Review not found to delete")
+            raise ValidationError(detail="Failed to delete review", data=str(err))
 
-            return {
-                "detail": "Review deleted successfully"
-            }
-        except NotFoundError as e:
-            raise ValidationError(detail=str(e))
+        return {
+            "detail": "Review deleted successfully"
+        }
 
     def get_user_review_for_course(self, user_id: UUID, course_id: str):
         """
@@ -490,17 +619,26 @@ class CommentReviewService:
             raise ValidationError(detail="Course ID is required")
 
         # Validate user
-        user = self.user_repo.get_user_by_id(str(user_id))
+        user, err = self.user_repo.get_user_by_id(str(user_id))
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
         if not user:
             raise ValidationError(detail="User not found")
 
         # Validate course
-        try:
-            course = self.course_repo.get_course(course_id)
-        except NotFoundError:
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
             raise ValidationError(detail="Course not found")
 
-        review = self.comment_review_repo.get_user_review_for_course(str(user_id), course_id)
+        review, err = self.comment_review_repo.get_user_review_for_course(str(user_id), course_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve user review", data=str(err))
         if not review:
             return {
                 "detail": "User has not reviewed this course",
