@@ -200,6 +200,12 @@ class SearchParams(PaginationParams):
         description="Filter term"
     )
 
+class DateFilterParams(SearchParams):
+    year: Optional[int]
+    month: Optional[int]
+    week: Optional[int]
+    day: Optional[int]
+
 
 class ModuleInput(BaseModel):
     title: str
