@@ -157,8 +157,8 @@ class PaymentService:
     def get_user_payments(
         self,
         user_id: str,
-        page: int = 1,
-        page_size: int = 10,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
         filter: Optional[str] = None,
         year: Optional[int] = None,
         month: Optional[int] = None,
@@ -166,7 +166,7 @@ class PaymentService:
         day: Optional[int] = None
     ):
         """
-        Get all payments for a user with pagination, optional status and date filters.
+        Get payments for a user, optional pagination, status & date filters.
         """
         if not user_id:
             raise ValidationError(detail="User ID is required")
@@ -178,25 +178,27 @@ class PaymentService:
             user_id, page, page_size, filter, year, month, week, day
         )
         payments_response = [PaymentResponse.model_validate(p) for p in payments]
-        total = self.payment_repo.get_user_payments_count(
-            user_id, filter, year, month, week, day
-        )
 
-        return {
+        result = {
             "detail": "User payments fetched successfully",
-            "data": payments_response,
-            "pagination": {
+            "data": payments_response
+        }
+        if page is not None and page_size is not None:
+            total = self.payment_repo.get_user_payments_count(
+                user_id, filter, year, month, week, day
+            )
+            result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
                 "total_items": total
             }
-        }
+        return result
 
     def get_course_payments(
         self,
         course_id: str,
-        page: int = 1,
-        page_size: int = 10,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
         filter: Optional[str] = None,
         year: Optional[int] = None,
         month: Optional[int] = None,
@@ -204,7 +206,7 @@ class PaymentService:
         day: Optional[int] = None
     ):
         """
-        Get all payments for a course with pagination, optional status and date filters.
+        Get payments for a course, optional pagination, status & date filters.
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
@@ -216,20 +218,21 @@ class PaymentService:
             course_id, page, page_size, filter, year, month, week, day
         )
         payments_response = [PaymentResponse.model_validate(p) for p in payments]
-        total = self.payment_repo.get_course_payments_count(
-            course_id, filter, year, month, week, day
-        )
 
-        return {
+        result = {
             "detail": "Course payments fetched successfully",
-            "data": payments_response,
-            "pagination": {
+            "data": payments_response
+        }
+        if page is not None and page_size is not None:
+            total = self.payment_repo.get_course_payments_count(
+                course_id, filter, year, month, week, day
+            )
+            result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
                 "total_items": total
             }
-        }
-
+        return result
 def get_payment_service(db: Session = Depends(get_db)) -> PaymentService:
     """
     Get a PaymentService instance.

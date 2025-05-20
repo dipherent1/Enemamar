@@ -95,30 +95,4 @@ async def get_user_payments(
         search_params.day
     )
 
-@protected_payment_router.get("/course/{course_id}")
-async def get_course_payments(
-    course_id: str,
-    search_params: DateFilterParams = Depends(),
-    payment_service: PaymentService = Depends(get_payment_service)
-):
-    """
-    Get all payments for a course.
-    
-    Args:
-        course_id (str): The course ID.
-        search_params (DateFilterParams): The search parameters.
-        payment_service (PaymentService): The payment service.
-        
-    Returns:
-        dict: The payments response.
-    """
-    return payment_service.get_course_payments(
-        course_id, 
-        search_params.page, 
-        search_params.page_size, 
-        search_params.filter,
-        search_params.year,
-        search_params.month,
-        search_params.week,
-        search_params.day
-    )
+

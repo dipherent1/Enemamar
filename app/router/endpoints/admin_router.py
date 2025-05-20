@@ -5,6 +5,7 @@ from app.domain.schema.courseSchema import (
     SearchParams,
     MultipleLessonInput,
     VideoInput,
+    DateFilterParams
 )
 from app.service.userService import UserService, get_user_service
 from app.service.courseService import CourseService, get_course_service
@@ -351,7 +352,7 @@ inst_admin_router = APIRouter(
 @inst_admin_router.get("/courses/{course_id}/enrolled")
 async def get_users_enrolled_in_course(
     course_id: str,
-    search_params: SearchParams = Depends(),
+    search_params: DateFilterParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     """
@@ -359,14 +360,52 @@ async def get_users_enrolled_in_course(
     
     Args:
         course_id (str): The course ID.
-        search_params (SearchParams): The search parameters.
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day,
+        search_params (DateFilterParams): The search parameters.
         course_service (CourseService): The course service.
+
         
     Returns:
         dict: The enrolled users response.
     """
     return course_service.getEnrolledUsers(
         course_id,
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day,
+
         search_params.page,
-        search_params.page_size
+        search_params.page_size,
+    )
+
+@inst_admin_router.get("/course/{course_id}")
+async def get_course_payments(
+    course_id: str,
+    search_params: DateFilterParams = Depends(),
+    payment_service: PaymentService = Depends(get_payment_service)
+):
+    """
+    Get all payments for a course.
+    
+    Args:
+        course_id (str): The course ID.
+        search_params (DateFilterParams): The search parameters.
+        payment_service (PaymentService): The payment service.
+        
+    Returns:
+        dict: The payments response.
+    """
+    return payment_service.get_course_payments(
+        course_id, 
+        search_params.page, 
+        search_params.page_size, 
+        search_params.filter,
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day
     )

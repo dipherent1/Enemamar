@@ -225,39 +225,44 @@ class CourseService:
             }
         }
 
-    def getEnrolledUsers(self, course_id: str, page: int = 1, page_size: int = 10):
+    def getEnrolledUsers(
+        self,
+        course_id: str,
+        year: Optional[int]     = None,
+        month: Optional[int]    = None,
+        week: Optional[int]     = None,
+        day: Optional[int]      = None,
+        page: Optional[int]     = None,
+        page_size: Optional[int] = None,
+    ):
         """
-        Retrieve a paginated list of users enrolled in a course.
-
-        Args:
-            course_id (str): ID of the course.
-            page (int): Page number for pagination.
-            page_size (int): Number of items per page.
-
-        Returns:
-            dict: Response containing enrolled users and pagination metadata.
-
-        Raises:
-            ValidationError: If the course ID is invalid.
+        Retrieve enrollments (not user info) for a course,
+        filtered by created_at date and optionally paginated.
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        enrollments = self.course_repo.get_enrolled_users(course_id, page, page_size)
-        users_response = [
-            UserResponse.model_validate(enrollment.user)   # unwrap the loaded user
-            for enrollment in enrollments
-        ]
+        enrollments = self.course_repo.get_enrolled_users(
+            course_id=course_id,
+            year=year, month=month, week=week, day=day,
+            page=page, page_size=page_size
+        )
+        data = [EnrollmentResponse.model_validate(e) for e in enrollments]
 
-        return {
-            "detail": "Course users fetched successfully",
-            "data": users_response,
-            "pagination": {
+        result = {
+            "detail": "Course enrollments fetched successfully",
+            "data": data
+        }
+        # only include pagination if requested
+        if page is not None and page_size is not None:
+            total = self.course_repo.get_enrolled_users_count(course_id)
+            result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_enrolled_users_count(course_id)
+                "total_items": total
             }
-        }
+
+        return result
 
     def get_courses_analysis(self, course_id: str):
         """

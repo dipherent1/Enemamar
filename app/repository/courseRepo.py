@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.domain.model.course import Course, Enrollment, Lesson
 from app.domain.schema.courseSchema import CourseAnalysisResponse
 from app.utils.exceptions.exceptions import NotFoundError, ValidationError
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from typing import Optional
 from app.repository.payment_repo import PaymentRepository
 from app.repository.lesson_repo import LessonRepository
@@ -177,35 +177,37 @@ class CourseRepository:
             .all()
         )
 
-    def get_enrolled_users(self, course_id: str, page: int = 1, page_size: int = 10):
+    def get_enrolled_users(
+        self,
+        course_id: str,
+        year: Optional[int]   = None,
+        month: Optional[int]  = None,
+        week: Optional[int]   = None,
+        day: Optional[int]    = None,
+        page: Optional[int]   = None,
+        page_size: Optional[int] = None,
+    ):
         """
-        Get all users enrolled in a course with pagination.
-
-        Args:
-            course_id (str): The ID of the course.
-            page (int, optional): The page number. Defaults to 1.
-            page_size (int, optional): The number of items per page. Defaults to 10.
-
-        Returns:
-            List[Enrollment]: A list of enrollment objects.
-
-        Raises:
-            NotFoundError: If the course is not found.
+        Get enrollments for a course, filtered by date on `Enrollment.created_at`,
+        and optionally paginated only if page & page_size are provided.
         """
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
-
-        return (
+        query = (
             self.db.query(Enrollment)
-            .options(
-                joinedload(Enrollment.user)        # ← eager‐load the user relationship
-            )
             .filter(Enrollment.course_id == course_id)
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
         )
+        if year is not None:
+            query = query.filter(func.extract('year', Enrollment.enrolled_at) == year)
+        if month is not None:
+            query = query.filter(func.extract('month', Enrollment.enrolled_at) == month)
+        if week is not None:
+            query = query.filter(func.extract('week', Enrollment.enrolled_at) == week)
+        if day is not None:
+            query = query.filter(func.extract('day', Enrollment.enrolled_at) == day)
+
+        if page is not None and page_size is not None:
+            query = query.offset((page - 1) * page_size).limit(page_size)
+
+        return query.all()
 
     def get_enrollment(self, user_id: str, course_id: str):
         """

@@ -68,8 +68,8 @@ class PaymentRepository:
     def get_user_payments(
         self,
         user_id: str,
-        page: int = 1,
-        page_size: int = 10,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
         filter: Optional[str] = "success",
         year: Optional[int] = None,
         month: Optional[int] = None,
@@ -77,20 +77,7 @@ class PaymentRepository:
         day: Optional[int] = None,
     ):
         """
-        Get all payments for a user with pagination, optional status and date filtering.
-        
-        Args:
-            user_id (str): The user ID.
-            page (int, optional): The page number. Defaults to 1.
-            page_size (int, optional): The page size. Defaults to 10.
-            filter (Optional[str], optional): Filter by payment status. Defaults to None.
-            year (Optional[int], optional): Filter by year of updated_at. Defaults to None.
-            month (Optional[int], optional): Filter by month of updated_at. Defaults to None.
-            week (Optional[int], optional): Filter by ISO week number of updated_at. Defaults to None.
-            day (Optional[int], optional): Filter by day of updated_at. Defaults to None.
-            
-        Returns:
-            List[Payment]: A list of payment objects.
+        Get all payments for a user, optional pagination, status & date filters.
         """
         query = self.db.query(Payment).filter(Payment.user_id == user_id)
         if filter:
@@ -104,13 +91,10 @@ class PaymentRepository:
         if day is not None:
             query = query.filter(func.extract('day', Payment.updated_at) == day)
 
-        return (
-            query
-            .order_by(Payment.updated_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        query = query.order_by(Payment.updated_at.desc())
+        if page is not None and page_size is not None:
+            query = query.offset((page - 1) * page_size).limit(page_size)
+        return query.all()
 
     def get_user_payments_count(
         self,
@@ -152,8 +136,8 @@ class PaymentRepository:
     def get_course_payments(
         self,
         course_id: str,
-        page: int = 1,
-        page_size: int = 10,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
         filter: Optional[str] = "success",
         year: Optional[int] = None,
         month: Optional[int] = None,
@@ -161,7 +145,7 @@ class PaymentRepository:
         day: Optional[int] = None,
     ):
         """
-        Get all payments for a course with pagination, optional status and date filtering.
+        Get all payments for a course, optional pagination, status & date filters.
 
         Args:
             course_id (str): The course ID.
@@ -188,13 +172,10 @@ class PaymentRepository:
         if day is not None:
             query = query.filter(func.extract('day', Payment.updated_at) == day)
 
-        return (
-            query
-            .order_by(Payment.updated_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        query = query.order_by(Payment.updated_at.desc())
+        if page is not None and page_size is not None:
+            query = query.offset((page - 1) * page_size).limit(page_size)
+        return query.all()
 
     def get_course_payments_count(
         self,
