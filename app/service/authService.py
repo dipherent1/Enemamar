@@ -1,4 +1,4 @@
-from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
+from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError, AuthError
 import re
 from app.domain.schema.authSchema import signUp, UserResponse, login,loginResponse, signUpResponse, tokenLoginData
 from app.domain.model.user import User
@@ -43,22 +43,24 @@ class AuthService:
             raise ValidationError(detail="Invalid email")
 
         # Convert sign_up_data to User ORM object
-        user = User(**sign_up_data.model_dump(exclude_none=True))
+        user_obj = User(**sign_up_data.model_dump(exclude_none=True))
 
         # Hash the password
-        user.password = hash_password(user.password)
+        user_obj.password = hash_password(user_obj.password)
 
         # Check for duplicate entry using database constraints
-        try:
-            user = self.user_repo.create_user(user)
-        # Handle wrong format of email or phone number
-        except ValueError:
-            raise ValidationError(detail="Invalid email or phone number")
-        # Handle duplicate entry
-        except IntegrityError:
-            raise DuplicatedError(detail="User with this email or phone number already exists")
-
-        user_response = UserResponse.model_validate(user)
+        # Create user in repository and handle errors
+        user, err = self.user_repo.create_user(user_obj)
+        if err:
+            if isinstance(err, ValueError):
+                raise ValidationError(detail="Invalid email or phone number")
+            if isinstance(err, IntegrityError):
+                raise DuplicatedError(detail="User with this email or phone number already exists")
+            raise ValidationError(detail="Failed to create user", data=str(err))
+        if not user:
+            raise ValidationError(detail="Failed to create user")
+        
+        user_response = UserResponse.model_validate(user, from_attributes=True)
 
         # Return response
         response = signUpResponse(detail="User created successfully", user=user_response)
@@ -66,19 +68,15 @@ class AuthService:
 
     def login(self, login_data: login):
         print(login_data)
-        user = None
+        # Fetch user by email or phone and handle repo errors
         if login_data.email:
-            try:
-                user = self.user_repo.get_user_by_email(login_data.email)
-            except NotFoundError:
-                raise NotFoundError(detail="User with this email does not exist")
-        
+            user, err = self.user_repo.get_user_by_email(login_data.email)
+            if err:
+                raise ValidationError(detail="Error fetching user by email", data=str(err))
         elif login_data.phone_number:
-            try:
-                user = self.user_repo.get_user_by_phone(login_data.phone_number)
-            except NotFoundError:
-                raise NotFoundError(detail="User with this phone number does not exist")
-        
+            user, err = self.user_repo.get_user_by_phone(login_data.phone_number)
+            if err:
+                raise ValidationError(detail="Error fetching user by phone number", data=str(err))
         else:
             raise ValidationError(detail="Provide either email or phone number")
         
@@ -105,8 +103,11 @@ class AuthService:
         
         # Create access token and refresh token
         token_data = tokenLoginData(id=user.id, role=user.role)
-        access_token, refresh_token = self.user_repo.login(token_data)
-
+        tokens, err = self.user_repo.login(token_data)
+        if err:
+            raise ValidationError(detail="Login failed", data=str(err))
+        access_token = tokens.get('access_token')
+        refresh_token = tokens.get('refresh_token')
         # Convert SQLAlchemy User object to Pydantic Response Model
         user_response = UserResponse.model_validate(user)
         login_response = loginResponse(detail="Login successful", access_token=access_token, refresh_token= refresh_token, user=user_response)
@@ -115,9 +116,11 @@ class AuthService:
     def logout(self,refresh_token):
         decoded_token = verify_refresh_token(refresh_token)
         user_id = decoded_token.get("id")
-        result = self.user_repo.delete_refresh(user_id,refresh_token)
+        result, err = self.user_repo.delete_refresh(user_id, refresh_token)
+        if err:
+            raise ValidationError(detail="Error deleting refresh token", data=str(err))
         if not result:
-            raise ValidationError(detail="Failed to logout, refresh token not found")
+            raise NotFoundError(detail="Refresh token not found for logout")
 
 
 
@@ -126,9 +129,11 @@ class AuthService:
         decoded_token = verify_refresh_token(refresh_token)
         user_id = decoded_token.get("id")
         #get refresh token
-        result = self.user_repo.get_user_by_refresh(user_id, refresh_token)
-        if not result:
-            raise ValidationError(detail="Invalid refresh token, user has been logged out")
+        token_obj, err = self.user_repo.get_user_by_refresh(user_id, refresh_token)
+        if err:
+            raise ValidationError(detail="Error validating refresh token", data=str(err))
+        if not token_obj:
+            raise AuthError(detail="Invalid refresh token or session expired")
         token_data = tokenLoginData(id=user_id, role=decoded_token.get("role"))
         access_token = create_access_token(token_data.model_dump())
         return {"access_token": access_token}
@@ -155,7 +160,7 @@ class AuthService:
         try:
             status_code, content = verify_otp_sms(formatted_phone_number, code)
         except Exception as e:
-            raise ValidationError(detail="Failed to verify OTP", data=str(e))
+            raise ValidationError(detail="Error verifying OTP via SMS provider", data=str(e))
         
         if status_code == 200:
             # Normalize phone number to raw form (e.g., 966934381)
@@ -164,7 +169,9 @@ class AuthService:
                         
             # Activate the user
             print("Normalized phone number:", phone_number)
-            user = self.user_repo.activate_user(None, phone_number)
+            user, err = self.user_repo.activate_user(None, phone_number)
+            if err:
+                raise ValidationError(detail="Error activating user after OTP", data=str(err))
             if not user:
                 raise NotFoundError(detail="User with this phone number does not exist")
             

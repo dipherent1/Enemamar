@@ -4,9 +4,14 @@ from app.domain.model.user import User, RefreshToken
 from app.domain.schema.authSchema import tokenLoginData, editUser
 from app.utils.security.jwt_handler import create_access_token, create_refresh_token
 from sqlalchemy.exc import DataError
-from typing import Optional
+from typing import Tuple, Optional, Any
 from sqlalchemy import or_
 from app.utils.security.hash import hash_password, verify_password
+
+def _wrap_return(result: Any) -> Tuple[Any, Optional[Exception]]:
+    return result, None
+def _wrap_error(e: Exception) -> Tuple[None, Exception]:
+    return None, e
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -17,39 +22,35 @@ class UserRepository:
             self.db.add(user)
             self.db.commit()
             self.db.refresh(user)
-            return user
+            return _wrap_return(user)
         except Exception as e:
             self.db.rollback()
-            print("Error creating user:", e)
-            return None
+            return _wrap_error(e)
 
     def get_user_by_refresh(self, user_id: str, refresh_token: str):
         try:
             result = self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
             if not result:
-                return None
-
-            if not verify_password(refresh_token,result.token):
+                return None, None
+            if not verify_password(refresh_token, result.token):
                 raise AuthError(detail="Invalid refresh token: token not verified")
-
-            return result
+            return _wrap_return(result)
         except Exception as e:
-            print("Error getting user by refresh token:", e)
-            return None
+            return _wrap_error(e)
 
     def delete_refresh(self, user_id: str, refresh_token: str):
         try:
-            refresh = self.get_user_by_refresh(user_id=user_id, refresh_token=refresh_token)
-            if not refresh:
-                return None
-
-            self.db.delete(refresh)
+            token_obj, err = self.get_user_by_refresh(user_id=user_id, refresh_token=refresh_token)
+            if err:
+                return None, err
+            if not token_obj:
+                return None, None
+            self.db.delete(token_obj)
             self.db.commit()
-            return True
+            return _wrap_return({'deleted': True})
         except Exception as e:
             self.db.rollback()
-            print("Error deleting refresh token:", e)
-            return None
+            return _wrap_error(e)
 
     def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
         try:
@@ -65,66 +66,63 @@ class UserRepository:
                     )
                 )
             offset = (page - 1) * page_size
-            return query.offset(offset).limit(page_size).all()
+            results = query.offset(offset).limit(page_size).all()
+            return _wrap_return(results)
         except Exception as e:
-            print("Error getting all users:", e)
-            return None
+            return _wrap_error(e)
     
     def get_user_by_id(self, user_id: str):
         try:
-            return self.db.query(User).filter(User.id == user_id).first()
+            user = self.db.query(User).filter(User.id == user_id).first()
+            return _wrap_return(user)
         except DataError as e:
-            print("Error getting user by ID:", e)
-            return None
+            return _wrap_error(e)
     
-
     def get_user_by_email(self, email: str):
         try:
-            return self.db.query(User).filter(User.email == email).first()
+            user = self.db.query(User).filter(User.email == email).first()
+            return _wrap_return(user)
         except DataError as e:
-            print("Error getting user by email:", e)
-            return None
+            return _wrap_error(e)
 
     def get_user_by_phone(self, phone_number: str):
         try:
-            return self.db.query(User).filter(User.phone_number == phone_number).first()
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
+            return _wrap_return(user)
         except DataError as e:
-            print("Error getting user by phone:", e)
-            return None
+            return _wrap_error(e)
 
     def deactivate_user(self, user_id: int):
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
             if not user:
-                return None
+                return None, None
             user.is_active = False
             self.db.commit()
-            return user
+            return _wrap_return(user)
         except Exception as e:
             self.db.rollback()
-            print("Error deactivating user:", e)
-            return None
+            return _wrap_error(e)
 
     def activate_user(self, user_id: Optional[str] = None, phone_number: Optional[str] = None):
         try:
             user = None
             if user_id:
-                user = self.get_user_by_id(user_id)
+                user, err = self.get_user_by_id(user_id)
+                if err:
+                    return None, err
             elif phone_number:
-                print("from activate user", phone_number)
-                user = self.get_user_by_phone(phone_number)
-            
+                user, err = self.get_user_by_phone(phone_number)
+                if err:
+                    return None, err
             if not user:
-                return None
-            
+                return None, None
             user.is_active = True
             self.db.commit()
-            print("User activated:", user.id)
-            return user
+            return _wrap_return(user)
         except Exception as e:
             self.db.rollback()
-            print("Error activating user:", e)
-            return None
+            return _wrap_error(e)
     
     def delete_user(self, user_id: int):
         try:
@@ -133,74 +131,66 @@ class UserRepository:
                 raise ValueError("User with this id does not exist")
             self.db.delete(user)
             self.db.commit()
-            return
+            return _wrap_return({'deleted': True})
         except Exception as e:
             self.db.rollback()
-            print("Error deleting user:", e)
-            return None
+            return _wrap_error(e)
 
     #update the role of the user
     def update_role(self, user_id: int, role: str):
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
             if not user:
-                return None
+                return None, None
             user.role = role
             self.db.commit()
-            return user
+            return _wrap_return(user)
         except Exception as e:
             self.db.rollback()
-            print("Error updating user role:", e)
-            return None
+            return _wrap_error(e)
 
     def update_user(self,id:int, edit_user: editUser):
         try:
             user = self.db.query(User).filter(User.id == id).first()
             if not user:
-                return None
+                return None, None
             for key, value in edit_user.model_dump().items():
                 if value:
                     setattr(user, key, value)
             self.db.commit()
-            return user
+            return _wrap_return(user)
         except Exception as e:
             self.db.rollback()
-            print("Error updating user:", e)
-            return None
+            return _wrap_error(e)
 
     
     def login(self, login_data: tokenLoginData):
         try:
-            accesToken = create_access_token(login_data.model_dump())
-            refreshToken = create_refresh_token(login_data.model_dump())
-            
-            # check and delete if there is existing refresh token
-            existing_refresh = self.get_refresh_token(login_data.id)
-            if existing_refresh:
-                self.db.delete(existing_refresh)
-            
-            # store hashed refresh token in database
-            hashed_refresh_token = hash_password(refreshToken)
-            self.db.add(RefreshToken(user_id=login_data.id, token=hashed_refresh_token))
+            access_token = create_access_token(login_data.model_dump())
+            refresh_token = create_refresh_token(login_data.model_dump())
+            existing, err = self.get_refresh_token(login_data.id)
+            if err:
+                return None, err
+            if existing:
+                self.db.delete(existing)
+            hashed = hash_password(refresh_token)
+            self.db.add(RefreshToken(user_id=login_data.id, token=hashed))
             self.db.commit()
-            
-            return accesToken, refreshToken
+            return _wrap_return({'access_token': access_token, 'refresh_token': refresh_token})
         except Exception as e:
-            print("Error during login:", e)
             self.db.rollback()
-            return None, None
+            return _wrap_error(e)
 
     def get_refresh_token(self, user_id: str):
         try:
-            return self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
+            token = self.db.query(RefreshToken).filter(RefreshToken.user_id == user_id).first()
+            return _wrap_return(token)
         except Exception as e:
-            print("Error getting refresh token:", e)
-            return None
+            return _wrap_error(e)
 
     def get_all_instructors(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
         try:
             query = self.db.query(User).filter(User.role == "instructor")
-            
             if search:
                 query = query.filter(
                     or_(
@@ -210,18 +200,17 @@ class UserRepository:
                         User.last_name.ilike(f"%{search}%")
                     )
                 )
-            
             offset = (page - 1) * page_size
-            return query.offset(offset).limit(page_size).all()
+            instructors = query.offset(offset).limit(page_size).all()
+            return _wrap_return(instructors)
         except Exception as e:
-            print("Error getting all instructors:", e)
-            return None
+            return _wrap_error(e)
     
     def get_instructor_by_id(self, instructor_id: str):
         try:
-            return self.db.query(User).filter(User.id == instructor_id, User.role == "instructor").first()
-        except DataError:
-            return None
+            instr = self.db.query(User).filter(User.id == instructor_id, User.role == "instructor").first()
+            return _wrap_return(instr)
+        except DataError as e:
+            return _wrap_error(e)
         except Exception as e:
-            print("Error getting instructor by id:", e)
-            return None
+            return _wrap_error(e)
