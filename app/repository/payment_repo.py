@@ -1,8 +1,13 @@
 from sqlalchemy.orm import Session
 from app.domain.model.course import Payment
 from app.utils.exceptions.exceptions import NotFoundError
+from typing import Tuple, Optional, Any
 from sqlalchemy import func
-from typing import Optional
+
+def _wrap_return(result: Any) -> Tuple[Any, None]:
+    return result, None
+def _wrap_error(e: Exception) -> Tuple[None, Exception]:
+    return None, e
 
 class PaymentRepository:
     def __init__(self, db: Session):
@@ -18,10 +23,14 @@ class PaymentRepository:
         Returns:
             Payment: The saved payment object.
         """
-        self.db.add(payment)
-        self.db.commit()
-        self.db.refresh(payment)
-        return payment
+        try:
+            self.db.add(payment)
+            self.db.commit()
+            self.db.refresh(payment)
+            return _wrap_return(payment)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
     
     def get_payment(self, tx_ref: str):
         """
@@ -33,12 +42,15 @@ class PaymentRepository:
         Returns:
             Payment: The payment object if found, None otherwise.
         """
-        payment = (
-            self.db.query(Payment)
-            .filter(Payment.tx_ref == tx_ref)
-            .first()
-        )
-        return payment
+        try:
+            payment = (
+                self.db.query(Payment)
+                .filter(Payment.tx_ref == tx_ref)
+                .first()
+            )
+            return _wrap_return(payment)
+        except Exception as e:
+            return _wrap_error(e)
     
     def update_payment(self, tx_ref: str, status: str, ref_id: str):
         """
@@ -55,15 +67,20 @@ class PaymentRepository:
         Raises:
             NotFoundError: If the payment is not found.
         """
-        payment = self.get_payment(tx_ref)
-        if not payment:
-            raise NotFoundError(detail="Payment not found")
-        
-        payment.status = status
-        payment.ref_id = ref_id
-        self.db.commit()
-        self.db.refresh(payment)
-        return payment
+        try:
+            payment, err = self.get_payment(tx_ref)
+            if err:
+                return None, err
+            if not payment:
+                return None, NotFoundError(detail="Payment not found")
+            payment.status = status
+            payment.ref_id = ref_id
+            self.db.commit()
+            self.db.refresh(payment)
+            return _wrap_return(payment)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
 
     def get_user_payments(
         self,
@@ -79,22 +96,25 @@ class PaymentRepository:
         """
         Get all payments for a user, optional pagination, status & date filters.
         """
-        query = self.db.query(Payment).filter(Payment.user_id == user_id)
-        if filter:
-            query = query.filter(Payment.status == filter)
-        if year is not None:
-            query = query.filter(func.extract('year', Payment.updated_at) == year)
-        if month is not None:
-            query = query.filter(func.extract('month', Payment.updated_at) == month)
-        if week is not None:
-            query = query.filter(func.extract('week', Payment.updated_at) == week)
-        if day is not None:
-            query = query.filter(func.extract('day', Payment.updated_at) == day)
+        try:
+            query = self.db.query(Payment).filter(Payment.user_id == user_id)
+            if filter:
+                query = query.filter(Payment.status == filter)
+            if year is not None:
+                query = query.filter(func.extract('year', Payment.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Payment.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Payment.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Payment.updated_at) == day)
 
-        query = query.order_by(Payment.updated_at.desc())
-        if page is not None and page_size is not None:
-            query = query.offset((page - 1) * page_size).limit(page_size)
-        return query.all()
+            if page is not None and page_size is not None:
+                query = query.offset((page - 1) * page_size).limit(page_size)
+            results = query.order_by(Payment.updated_at.desc()).all()
+            return _wrap_return(results)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_user_payments_count(
         self,
@@ -119,19 +139,23 @@ class PaymentRepository:
         Returns:
             int: The count of payments.
         """
-        query = self.db.query(Payment).filter(Payment.user_id == user_id)
-        if filter:
-            query = query.filter(Payment.status == filter)
-        if year is not None:
-            query = query.filter(func.extract('year', Payment.updated_at) == year)
-        if month is not None:
-            query = query.filter(func.extract('month', Payment.updated_at) == month)
-        if week is not None:
-            query = query.filter(func.extract('week', Payment.updated_at) == week)
-        if day is not None:
-            query = query.filter(func.extract('day', Payment.updated_at) == day)
+        try:
+            query = self.db.query(Payment).filter(Payment.user_id == user_id)
+            if filter:
+                query = query.filter(Payment.status == filter)
+            if year is not None:
+                query = query.filter(func.extract('year', Payment.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Payment.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Payment.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Payment.updated_at) == day)
 
-        return query.count()
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_course_payments(
         self,
@@ -160,22 +184,25 @@ class PaymentRepository:
         Returns:
             List[Payment]: A list of payment objects.
         """
-        query = self.db.query(Payment).filter(Payment.course_id == course_id)
-        if filter:
-            query = query.filter(Payment.status == filter)
-        if year is not None:
-            query = query.filter(func.extract('year', Payment.updated_at) == year)
-        if month is not None:
-            query = query.filter(func.extract('month', Payment.updated_at) == month)
-        if week is not None:
-            query = query.filter(func.extract('week', Payment.updated_at) == week)
-        if day is not None:
-            query = query.filter(func.extract('day', Payment.updated_at) == day)
+        try:
+            query = self.db.query(Payment).filter(Payment.course_id == course_id)
+            if filter:
+                query = query.filter(Payment.status == filter)
+            if year is not None:
+                query = query.filter(func.extract('year', Payment.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Payment.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Payment.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Payment.updated_at) == day)
 
-        query = query.order_by(Payment.updated_at.desc())
-        if page is not None and page_size is not None:
-            query = query.offset((page - 1) * page_size).limit(page_size)
-        return query.all()
+            if page is not None and page_size is not None:
+                query = query.offset((page - 1) * page_size).limit(page_size)
+            results = query.order_by(Payment.updated_at.desc()).all()
+            return _wrap_return(results)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_course_payments_count(
         self,
@@ -189,19 +216,23 @@ class PaymentRepository:
         """
         Get the count of payments for a course with optional status and date filtering.
         """
-        query = self.db.query(Payment).filter(Payment.course_id == course_id)
-        if filter:
-            query = query.filter(Payment.status == filter)
-        if year is not None:
-            query = query.filter(func.extract('year', Payment.updated_at) == year)
-        if month is not None:
-            query = query.filter(func.extract('month', Payment.updated_at) == month)
-        if week is not None:
-            query = query.filter(func.extract('week', Payment.updated_at) == week)
-        if day is not None:
-            query = query.filter(func.extract('day', Payment.updated_at) == day)
+        try:
+            query = self.db.query(Payment).filter(Payment.course_id == course_id)
+            if filter:
+                query = query.filter(Payment.status == filter)
+            if year is not None:
+                query = query.filter(func.extract('year', Payment.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Payment.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Payment.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Payment.updated_at) == day)
 
-        return query.count()
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_course_revenue(self, course_id: str):
         """
@@ -213,10 +244,13 @@ class PaymentRepository:
         Returns:
             float: The total revenue.
         """
-        total_revenue = (
-            self.db.query(func.sum(Payment.amount))
-            .filter(Payment.course_id == course_id)
-            .filter(Payment.status == "success")
-            .scalar()
-        )
-        return total_revenue or 0.0
+        try:
+            total_revenue = (
+                self.db.query(func.sum(Payment.amount))
+                .filter(Payment.course_id == course_id)
+                .filter(Payment.status == "success")
+                .scalar()
+            ) or 0.0
+            return _wrap_return(total_revenue)
+        except Exception as e:
+            return _wrap_error(e)

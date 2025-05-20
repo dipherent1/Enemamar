@@ -1,5 +1,5 @@
 import pprint
-from app.utils.exceptions.exceptions import ValidationError
+from app.utils.exceptions.exceptions import ValidationError, NotFoundError
 from app.domain.schema.courseSchema import (
     PaymentData,
     PaymentResponse,
@@ -38,14 +38,16 @@ class PaymentService:
             ValidationError: If the payment fails.
         """
         # Validate user exists
-        user = self.user_repo.get_user_by_id(user_id)
+        user, err = self.user_repo.get_user_by_id(user_id)
+        if err:
+            raise ValidationError(detail="Error fetching user", data=str(err))
         if not user:
-            raise ValidationError(detail="User not found")
+            raise NotFoundError(detail="User not found")
         
         # Validate course exists
         course = self.course_repo.get_course(course_id)
         if not course:
-            raise ValidationError(detail="Course not found")
+            raise NotFoundError(detail="Course not found")
         
         # Check if user is already enrolled
         enrollment = self.course_repo.get_enrollment(user_id, course_id)
@@ -91,14 +93,16 @@ class PaymentService:
             )
             print("Payment object:", payment)
             
-            payment = self.payment_repo.save_payment(payment)
+            payment, err = self.payment_repo.save_payment(payment)
+            if err:
+                raise ValidationError(detail="Error saving payment", data=str(err))
             
             return {"detail": "Payment initiated", "data": {"payment": PaymentResponse.model_validate(payment), "chapa_response": response}}
         
         else:
             # Enroll course for free
             enrollment = self.course_repo.enroll_course(user_id, course_id)
-            
+             
             # Convert SQLAlchemy Enrollment object to Pydantic Response Model
             enrollment_response = EnrollmentResponse.model_validate(enrollment)
             
@@ -118,9 +122,11 @@ class PaymentService:
             ValidationError: If the payment fails.
         """
         # Validate payment exists
-        payment = self.payment_repo.get_payment(payload.trx_ref)
+        payment, err = self.payment_repo.get_payment(payload.trx_ref)
+        if err:
+            raise ValidationError(detail="Error fetching payment", data=str(err))
         if not payment:
-            raise ValidationError(detail="Payment not found")
+            raise NotFoundError(detail="Payment not found")
         
         # Verify payment with payment provider
         try:
@@ -129,22 +135,28 @@ class PaymentService:
             raise ValidationError(detail="Payment verification failed")
         
         if response["status"] != "success":
-            payment = self.payment_repo.update_payment(payload.trx_ref, "failed", ref_id=payload.ref_id)
+            _, err = self.payment_repo.update_payment(payload.trx_ref, "failed", ref_id=payload.ref_id)
+            if err:
+                raise ValidationError(detail="Error updating payment status to failed", data=str(err))
             raise ValidationError(detail="Payment failed")
         
         # Update payment status
-        payment = self.payment_repo.update_payment(payload.trx_ref, "success", ref_id=response["data"]["reference"])
+        payment, err = self.payment_repo.update_payment(payload.trx_ref, "success", ref_id=response["data"]["reference"])
+        if err:
+            raise ValidationError(detail="Error updating payment status to success", data=str(err))
         payment = PaymentResponse.model_validate(payment)
         
         # Validate user exists
-        user = self.user_repo.get_user_by_id(payment.user_id)
+        user, err = self.user_repo.get_user_by_id(payment.user_id)
+        if err:
+            raise ValidationError(detail="Error fetching user after payment", data=str(err))
         if not user:
-            raise ValidationError(detail="User not found")
+            raise NotFoundError(detail="User not found")
         
         # Validate course exists
         course = self.course_repo.get_course(payment.course_id)
         if not course:
-            raise ValidationError(detail="Course not found")
+            raise NotFoundError(detail="Course not found")
         
         # Enroll course
         enrollment = self.course_repo.enroll_course(user.id, course.id)
@@ -170,13 +182,17 @@ class PaymentService:
         """
         if not user_id:
             raise ValidationError(detail="User ID is required")
-        user = self.user_repo.get_user_by_id(user_id)
+        user, err = self.user_repo.get_user_by_id(user_id)
+        if err:
+            raise ValidationError(detail="Error fetching user", data=str(err))
         if not user:
-            raise ValidationError(detail="User not found")
+            raise NotFoundError(detail="User not found")
 
-        payments = self.payment_repo.get_user_payments(
+        payments, err = self.payment_repo.get_user_payments(
             user_id, page, page_size, filter, year, month, week, day
         )
+        if err:
+            raise ValidationError(detail="Error fetching payments", data=str(err))
         payments_response = [PaymentResponse.model_validate(p) for p in payments]
 
         result = {
@@ -184,9 +200,11 @@ class PaymentService:
             "data": payments_response
         }
         if page is not None and page_size is not None:
-            total = self.payment_repo.get_user_payments_count(
+            total, err = self.payment_repo.get_user_payments_count(
                 user_id, filter, year, month, week, day
             )
+            if err:
+                raise ValidationError(detail="Error fetching payments count", data=str(err))
             result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
@@ -212,11 +230,13 @@ class PaymentService:
             raise ValidationError(detail="Course ID is required")
         course = self.course_repo.get_course(course_id)
         if not course:
-            raise ValidationError(detail="Course not found")
+            raise NotFoundError(detail="Course not found")
 
-        payments = self.payment_repo.get_course_payments(
+        payments, err = self.payment_repo.get_course_payments(
             course_id, page, page_size, filter, year, month, week, day
         )
+        if err:
+            raise ValidationError(detail="Error fetching course payments", data=str(err))
         payments_response = [PaymentResponse.model_validate(p) for p in payments]
 
         result = {
@@ -224,9 +244,11 @@ class PaymentService:
             "data": payments_response
         }
         if page is not None and page_size is not None:
-            total = self.payment_repo.get_course_payments_count(
+            total, err = self.payment_repo.get_course_payments_count(
                 course_id, filter, year, month, week, day
             )
+            if err:
+                raise ValidationError(detail="Error fetching course payments count", data=str(err))
             result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
