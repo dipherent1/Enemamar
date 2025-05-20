@@ -45,7 +45,10 @@ class AppCreator():
 #     connection.commit()
 
 # Recreate all tables
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print("Error creating tables:", e)
 
 # Create the app instance
 app_creator = AppCreator()

@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     CHAPA_SECRET_KEY: str   
     CHAPA_ENCRIPTION_KEY: str
 
+    BUNNY_CDN_PULL_ZONE: str
+    BUNNY_CDN_THUMB_STORAGE_ZONE: str
+    BUNNY_CDN_THUMB_STORAGE_APIKEY: str
+    BUNNY_CDN_PROFILE_STORAGE_ZONE: str
+    BUNNY_CDN_PROFILE_STORAGE_APIKEY: str
+
     
 
     class Config:
