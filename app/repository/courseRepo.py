@@ -375,6 +375,27 @@ class CourseRepository:
     def get_lessons_count(self, course_id: str) -> int:
         return self.lesson_repo.get_lessons_count(course_id)
     
+    def save_thumbnail(self, course_id: str, thumbnail_url: str):
+        """
+        Persist a thumbnail URL on a course.
+        """
+        from app.utils.exceptions.exceptions import NotFoundError
+
+        course = (
+            self.db
+            .query(Course)
+            .filter(Course.id == course_id)
+            .first()
+        )
+        if not course:
+            raise NotFoundError(detail="Course not found")
+
+        # adjust attribute name if your model field differs
+        course.thumbnail_url = thumbnail_url
+
+        self.db.commit()
+        self.db.refresh(course)
+        return course
     
     
     

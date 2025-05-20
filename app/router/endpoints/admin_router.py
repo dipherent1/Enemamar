@@ -12,6 +12,7 @@ from app.service.courseService import CourseService, get_course_service
 from app.service.lesson_service import LessonService, get_lesson_service
 from app.service.payment_service import PaymentService, get_payment_service
 from app.utils.middleware.dependancies import is_admin, is_admin_or_instructor
+from fastapi import File, UploadFile
 
 # Main admin router
 admin_router = APIRouter(
@@ -140,6 +141,26 @@ async def add_course(
         dict: The course creation response.
     """
     return course_service.addCourse(course_info)
+
+@admin_router.post("/courses/thumbnail/{course_id}")
+async def add_thumbnail_to_course(
+    course_id: str,
+    thumbnail: UploadFile = File(...),
+    thumbnail_name: str = None,
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Add a thumbnail to a course.
+
+    Args:
+        course_id (str): The course ID.
+        thumbnail (UploadFile): The uploaded thumbnail file.
+        course_service (CourseService): The course service.
+
+    Returns:
+        dict: The thumbnail update response.
+    """
+    return await course_service.addThumbnail(course_id, thumbnail, thumbnail_name)
 
 @admin_router.put("/courses/{course_id}")
 async def update_course(
