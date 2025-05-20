@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from app.domain.schema.courseSchema import (
     SearchParams,
-    CallbackPayload
+    CallbackPayload,
+    DateFilterParams
 )
 from app.service.payment_service import PaymentService, get_payment_service
 from app.utils.middleware.dependancies import is_admin, is_logged_in
@@ -69,7 +70,7 @@ async def payment_callback(
 @protected_payment_router.get("/user/{user_id}")
 async def get_user_payments(
     user_id: str,
-    search_params: SearchParams = Depends(),
+    search_params: DateFilterParams = Depends(),
     payment_service: PaymentService = Depends(get_payment_service)
 ):
     """
@@ -77,7 +78,7 @@ async def get_user_payments(
     
     Args:
         user_id (str): The user ID.
-        search_params (SearchParams): The search parameters.
+        search_params (DateFilterParams): The search parameters.
         payment_service (PaymentService): The payment service.
         
     Returns:
@@ -87,29 +88,11 @@ async def get_user_payments(
         user_id, 
         search_params.page, 
         search_params.page_size, 
-        search_params.filter
+        search_params.filter,
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day
     )
 
-@protected_payment_router.get("/course/{course_id}")
-async def get_course_payments(
-    course_id: str,
-    search_params: SearchParams = Depends(),
-    payment_service: PaymentService = Depends(get_payment_service)
-):
-    """
-    Get all payments for a course.
-    
-    Args:
-        course_id (str): The course ID.
-        search_params (SearchParams): The search parameters.
-        payment_service (PaymentService): The payment service.
-        
-    Returns:
-        dict: The payments response.
-    """
-    return payment_service.get_course_payments(
-        course_id, 
-        search_params.page, 
-        search_params.page_size, 
-        search_params.filter
-    )
+

@@ -12,7 +12,7 @@ from app.repository.courseRepo import CourseRepository
 from app.repository.lesson_repo import LessonRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 from app.core.config.database import get_db
 from typing import Optional
 from app.repository.userRepo import UserRepository
@@ -20,7 +20,13 @@ from app.service.payment_service import PaymentService
 from app.service.lesson_service import LessonService
 from app.service.payment_service import PaymentService
 from app.service.lesson_service import LessonService
+from app.utils.bunny.bunnyStorage import BunnyCDNStorage
+from app.core.config.env import get_settings
+import os
+from tempfile import NamedTemporaryFile
 
+
+settings = get_settings()
 class CourseService:
     def __init__(self, db):
         """
@@ -70,6 +76,68 @@ class CourseService:
             "detail": "Course created successfully",
             "data": course_response
         }
+    
+    def addThumbnail(self, course_id: str, thumbnail: UploadFile, thumbnail_name: str=""):
+        """
+        Add a thumbnail to a course.
+
+        Args:
+            course_id (str): ID of the course.
+            thumbnail (UploadFile): Thumbnail file to upload.
+
+        Returns:
+            dict: Response containing thumbnail upload details.
+
+        Raises:
+            ValidationError: If the course ID is invalid or the thumbnail upload fails.
+        """
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        course = self.course_repo.get_course(course_id)
+        if not course:
+            raise ValidationError(detail="Course not found")
+
+        # Validate and save the thumbnail
+        if not re.match(r"^image/(jpeg|png|jpg)$", thumbnail.content_type):
+            raise ValidationError(detail="Invalid image format. Only JPEG and PNG are allowed.")
+
+        try:
+            # 1) Pass the correct storage zone, not the API key twice
+            storage = BunnyCDNStorage(
+                settings.BUNNY_CDN_THUMB_STORAGE_APIKEY,
+                settings.BUNNY_CDN_THUMB_STORAGE_ZONE,
+                settings.BUNNY_CDN_PULL_ZONE
+            )
+
+            # 2) Write UploadFile to a temp file so upload_file can open it by path
+            from tempfile import NamedTemporaryFile
+
+            # decide file_name
+            file_name = thumbnail_name or thumbnail.filename
+
+            with NamedTemporaryFile("wb", delete=False) as tmp:
+                tmp.write(thumbnail.file.read())
+                tmp_path = tmp.name
+
+            # upload and then remove temp
+            thumbnail_url = storage.upload_file(
+                "",
+                file_path=tmp_path,
+                file_name=file_name
+            )
+            os.unlink(tmp_path)
+
+            self.course_repo.save_thumbnail(course_id, thumbnail_url)
+        except IntegrityError:
+            raise ValidationError(detail="Failed to save thumbnail")
+
+        return {
+            "detail": "Thumbnail uploaded successfully",
+            "data": {"thumbnail_url": thumbnail_url}
+        }
+    
+
 
     def getCourse(self, course_id: str):
         """
@@ -225,39 +293,44 @@ class CourseService:
             }
         }
 
-    def getEnrolledUsers(self, course_id: str, page: int = 1, page_size: int = 10):
+    def getEnrolledUsers(
+        self,
+        course_id: str,
+        year: Optional[int]     = None,
+        month: Optional[int]    = None,
+        week: Optional[int]     = None,
+        day: Optional[int]      = None,
+        page: Optional[int]     = None,
+        page_size: Optional[int] = None,
+    ):
         """
-        Retrieve a paginated list of users enrolled in a course.
-
-        Args:
-            course_id (str): ID of the course.
-            page (int): Page number for pagination.
-            page_size (int): Number of items per page.
-
-        Returns:
-            dict: Response containing enrolled users and pagination metadata.
-
-        Raises:
-            ValidationError: If the course ID is invalid.
+        Retrieve enrollments (not user info) for a course,
+        filtered by created_at date and optionally paginated.
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        enrollments = self.course_repo.get_enrolled_users(course_id, page, page_size)
-        users_response = [
-            UserResponse.model_validate(enrollment.user)   # unwrap the loaded user
-            for enrollment in enrollments
-        ]
+        enrollments = self.course_repo.get_enrolled_users(
+            course_id=course_id,
+            year=year, month=month, week=week, day=day,
+            page=page, page_size=page_size
+        )
+        data = [EnrollmentResponse.model_validate(e) for e in enrollments]
 
-        return {
-            "detail": "Course users fetched successfully",
-            "data": users_response,
-            "pagination": {
+        result = {
+            "detail": "Course enrollments fetched successfully",
+            "data": data
+        }
+        # only include pagination if requested
+        if page is not None and page_size is not None:
+            total = self.course_repo.get_enrolled_users_count(course_id)
+            result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_enrolled_users_count(course_id)
+                "total_items": total
             }
-        }
+
+        return result
 
     def get_courses_analysis(self, course_id: str):
         """

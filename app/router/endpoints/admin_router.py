@@ -5,12 +5,14 @@ from app.domain.schema.courseSchema import (
     SearchParams,
     MultipleLessonInput,
     VideoInput,
+    DateFilterParams
 )
 from app.service.userService import UserService, get_user_service
 from app.service.courseService import CourseService, get_course_service
 from app.service.lesson_service import LessonService, get_lesson_service
 from app.service.payment_service import PaymentService, get_payment_service
 from app.utils.middleware.dependancies import is_admin, is_admin_or_instructor
+from fastapi import File, UploadFile
 
 # Main admin router
 admin_router = APIRouter(
@@ -139,6 +141,18 @@ async def add_course(
         dict: The course creation response.
     """
     return course_service.addCourse(course_info)
+
+@admin_router.post("/courses/thumbnail/{course_id}")
+async def add_thumbnail_to_course(
+    course_id: str,
+    thumbnail: UploadFile = File(...),
+    thumbnail_name: str = None,
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Add a thumbnail to a course.
+    """
+    return course_service.addThumbnail(course_id, thumbnail, thumbnail_name)
 
 @admin_router.put("/courses/{course_id}")
 async def update_course(
@@ -351,7 +365,7 @@ inst_admin_router = APIRouter(
 @inst_admin_router.get("/courses/{course_id}/enrolled")
 async def get_users_enrolled_in_course(
     course_id: str,
-    search_params: SearchParams = Depends(),
+    search_params: DateFilterParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     """
@@ -359,14 +373,52 @@ async def get_users_enrolled_in_course(
     
     Args:
         course_id (str): The course ID.
-        search_params (SearchParams): The search parameters.
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day,
+        search_params (DateFilterParams): The search parameters.
         course_service (CourseService): The course service.
+
         
     Returns:
         dict: The enrolled users response.
     """
     return course_service.getEnrolledUsers(
         course_id,
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day,
+
         search_params.page,
-        search_params.page_size
+        search_params.page_size,
+    )
+
+@inst_admin_router.get("/course/{course_id}")
+async def get_course_payments(
+    course_id: str,
+    search_params: DateFilterParams = Depends(),
+    payment_service: PaymentService = Depends(get_payment_service)
+):
+    """
+    Get all payments for a course.
+    
+    Args:
+        course_id (str): The course ID.
+        search_params (DateFilterParams): The search parameters.
+        payment_service (PaymentService): The payment service.
+        
+    Returns:
+        dict: The payments response.
+    """
+    return payment_service.get_course_payments(
+        course_id, 
+        search_params.page, 
+        search_params.page_size, 
+        search_params.filter,
+        search_params.year,
+        search_params.month,
+        search_params.week,
+        search_params.day
     )
