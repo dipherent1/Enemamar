@@ -74,6 +74,7 @@ class AuthService:
             if err:
                 raise ValidationError(detail="Error fetching user by email", data=str(err))
         elif login_data.phone_number:
+            login_data.phone_number = normalize_phone_number(login_data.phone_number)
             user, err = self.user_repo.get_user_by_phone(login_data.phone_number)
             if err:
                 raise ValidationError(detail="Error fetching user by phone number", data=str(err))

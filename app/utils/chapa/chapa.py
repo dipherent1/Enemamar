@@ -25,7 +25,7 @@ def pay_course(payment_data):
         'callback_url': payment_data.callback_url,  # Use attribute-style access
         'customization': {
             'title': "Course Payment",  # Use attribute-style access
-            'description': f'Payment for your course {payment_data.title}',  # Use attribute-style access
+            'description': f'Payment for your course ',  # Use attribute-style access
         }
     }
 

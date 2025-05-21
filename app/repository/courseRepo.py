@@ -1,11 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
-from app.domain.model.course import Course, Enrollment, Lesson
+from app.domain.model.course import Course, Enrollment, Lesson, Video, Comment, Review, Payment
 from app.domain.schema.courseSchema import CourseAnalysisResponse
 from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
-from typing import Optional
+from typing import Tuple, Optional, Any, List
 from app.repository.payment_repo import PaymentRepository
 from app.repository.lesson_repo import LessonRepository
+
+def _wrap_return(result: Any) -> Tuple[Any, None]:
+    return result, None
+def _wrap_error(e: Exception) -> Tuple[None, Exception]:
+    return None, e
 
 class CourseRepository:
     """
@@ -33,10 +38,14 @@ class CourseRepository:
         Returns:
             Course: The created course object.
         """
-        self.db.add(course)
-        self.db.commit()
-        self.db.refresh(course)
-        return course
+        try:
+            self.db.add(course)
+            self.db.commit()
+            self.db.refresh(course)
+            return _wrap_return(course)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
 
     def get_course_with_lessons(self, course_id: str):
         """
@@ -51,18 +60,21 @@ class CourseRepository:
         Raises:
             NotFoundError: If the course is not found.
         """
-        course = (
-            self.db.query(Course)
-            .options(
-                joinedload(Course.lessons),
-                joinedload(Course.instructor)
+        try:
+            course = (
+                self.db.query(Course)
+                .options(
+                    joinedload(Course.lessons),
+                    joinedload(Course.instructor)
+                )
+                .filter(Course.id == course_id)
+                .first()
             )
-            .filter(Course.id == course_id)
-            .first()
-        )
-        if not course:
-            raise NotFoundError(detail="Course not found")
-        return course
+            if not course:
+                return None, NotFoundError(detail="Course not found")
+            return _wrap_return(course)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_course(self, course_id: str):
         """
@@ -110,12 +122,14 @@ class CourseRepository:
         if filter:
             query = query.filter(Course.tags.ilike(f"%{filter}%"))
 
-        return (
-            query
-            .offset((page - 1) * page_size)  # Pagination offset
-            .limit(page_size)  # Limit results to page size
-            .all()
-        )
+        try:
+            results = (query
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+                .all())
+            return _wrap_return(results)
+        except Exception as e:
+            return _wrap_error(e)
 
     def enroll_course(self, user_id: str, course_id: str):
         """
@@ -131,16 +145,18 @@ class CourseRepository:
         Raises:
             NotFoundError: If the course is not found.
         """
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
-
-        enrollment = Enrollment(user_id=user_id, course_id=course_id)
-        self.db.add(enrollment)
-        self.db.commit()
-        self.db.refresh(enrollment)
-
-        return enrollment
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return None, NotFoundError(detail="Course not found")
+            enrollment = Enrollment(user_id=user_id, course_id=course_id)
+            self.db.add(enrollment)
+            self.db.commit()
+            self.db.refresh(enrollment)
+            return _wrap_return(enrollment)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
 
     def get_enrolled_courses(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         """
@@ -170,12 +186,14 @@ class CourseRepository:
                 )
             )
 
-        return (
-            query
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        try:
+            items = (query
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+                .all())
+            return _wrap_return(items)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_enrolled_users(
         self,
@@ -204,10 +222,13 @@ class CourseRepository:
         if day is not None:
             query = query.filter(func.extract('day', Enrollment.enrolled_at) == day)
 
-        if page is not None and page_size is not None:
-            query = query.offset((page - 1) * page_size).limit(page_size)
-
-        return query.all()
+        try:
+            if page is not None and page_size is not None:
+                query = query.offset((page - 1) * page_size).limit(page_size)
+            results = query.all()
+            return _wrap_return(results)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_enrollment(self, user_id: str, course_id: str):
         """
@@ -223,15 +244,16 @@ class CourseRepository:
         Raises:
             NotFoundError: If the enrollment is not found.
         """
-        enrollment = (
-            self.db.query(Enrollment)
-            .filter(Enrollment.user_id == user_id)
-            .filter(Enrollment.course_id == course_id)
-            .first()
-        )
-        if not enrollment:
-            return None
-        return enrollment
+        try:
+            enrollment = (self.db.query(Enrollment)
+                .filter(Enrollment.user_id == user_id)
+                .filter(Enrollment.course_id == course_id)
+                .first())
+            if not enrollment:
+                return None, None
+            return _wrap_return(enrollment)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_enrolled_users_count(self, course_id: str) -> int:
         """
@@ -243,11 +265,11 @@ class CourseRepository:
         Returns:
             int: The number of enrolled users.
         """
-        return (
-            self.db.query(Enrollment)
-            .filter(Enrollment.course_id == course_id)
-            .count()
-        )
+        try:
+            count = self.db.query(Enrollment).filter(Enrollment.course_id == course_id).count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_courses_by_instructor(self, instructor_id: str):
         """
@@ -259,13 +281,18 @@ class CourseRepository:
         Returns:
             List[CourseAnalysisResponse]: A list of course analysis responses.
         """
-        courses = self.db.query(Course).filter(Course.instructor_id == instructor_id).all()
-        course_analysis_list = []
-        for course in courses:
-            analysis = self.course_analysis(course.id)
-            course_analysis_list.append(analysis)
-        return course_analysis_list
-    
+        try:
+            courses = self.db.query(Course).filter(Course.instructor_id == instructor_id).all()
+            analyses = []
+            for c in courses:
+                analysis, err = self.course_analysis(c.id)
+                if err:
+                    return None, err
+                analyses.append(analysis)
+            return _wrap_return(analyses)
+        except Exception as e:
+            return _wrap_error(e)
+
     def course_analysis(self, course_id: str):
         """
         Perform analysis on a course.
@@ -279,24 +306,29 @@ class CourseRepository:
         Raises:
             NotFoundError: If the course is not found.
         """
-        course = self.db.query(Course).filter(Course.id == course_id).first()
-        if not course:
-            raise NotFoundError(detail="Course not found")
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return None, NotFoundError(detail="Course not found")
+            lessons_count, err = self.get_lessons_count(course_id)
+            if err:
+                return None, err
+            enrolled_count, err = self.get_enrolled_users_count(course_id)
+            if err:
+                return None, err
+            for lesson in course.lessons:
+                lesson.video = None
+            revenue, err = self.get_course_revenue(course_id)
+            if err:
+                return None, err
+            analysis = CourseAnalysisResponse(
+                course=course, view_count=course.view_count,
+                no_of_enrollments=enrolled_count, no_of_lessons=lessons_count,
+                revenue=revenue)
+            return _wrap_return(analysis)
+        except Exception as e:
+            return _wrap_error(e)
 
-        total_lessons = self.get_lessons_count(course_id)
-        total_enrolled_users = self.get_total_enrolled_users_count(course_id)
-
-        for lesson in course.lessons:
-            lesson.video = None
-
-        return CourseAnalysisResponse(
-            course=course,
-            view_count=course.view_count,
-            no_of_enrollments=total_enrolled_users,
-            no_of_lessons=total_lessons,
-            revenue=self.get_course_revenue(course_id)
-        )
-    
     def get_total_courses_count(self, search: Optional[str] = None, filter_tag: Optional[str] = None):
         """
         Get the total count of courses with search and filter options.
@@ -308,21 +340,26 @@ class CourseRepository:
         Returns:
             int: The total number of courses matching the criteria.
         """
-        query = self.db.query(Course)
-
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    Course.title.ilike(search_term),
-                    Course.description.ilike(search_term)
+        try:
+            query = (
+                self.db.query(Course)
+                .options(joinedload(Course.instructor))            )
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        Course.title.ilike(search_term),
+                        Course.description.ilike(search_term)
+                    )
                 )
-            )
 
-        if filter_tag:
-            query = query.filter(Course.tags.ilike(f"%{filter_tag}%"))
+            if filter_tag:
+                query = query.filter(Course.tags.ilike(f"%{filter_tag}%"))
 
-        return query.count()
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_total_enrolled_users_count(self, course_id):
         """
@@ -334,12 +371,11 @@ class CourseRepository:
         Returns:
             int: The total number of enrolled users.
         """
-        query = (
-            self.db.query(Enrollment)
-            .join(Course)
-            .filter(Enrollment.course_id == course_id)
-        )
-        return query.count()
+        try:
+            count = self.db.query(Enrollment).filter(Enrollment.course_id == course_id).count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_user_courses_count(self, user_id: str, search: Optional[str] = None):
         """
@@ -352,128 +388,64 @@ class CourseRepository:
         Returns:
             int: The number of courses enrolled by the user matching the criteria.
         """
-        query = (
-            self.db.query(Enrollment)
-            .join(Course)
-            .filter(Enrollment.user_id == user_id)
-        )
+        try:
+            count = self.db.query(Enrollment).filter(Enrollment.user_id == user_id).count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    Course.title.ilike(search_term),
-                    Course.description.ilike(search_term)
-                )
-            )
-
-        return query.count()
-    
     def get_course_revenue(self, course_id: str):
         return self.payment_repo.get_course_revenue(course_id)
 
     def get_lessons_count(self, course_id: str) -> int:
         return self.lesson_repo.get_lessons_count(course_id)
-    
+
     def save_thumbnail(self, course_id: str, thumbnail_url: str):
         """
         Persist a thumbnail URL on a course.
         """
-        from app.utils.exceptions.exceptions import NotFoundError
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return None, NotFoundError(detail="Course not found for thumbnail")
+            course.thumbnail_url = thumbnail_url
+            self.db.commit()
+            return _wrap_return(course)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
 
-        course = (
-            self.db
-            .query(Course)
-            .filter(Course.id == course_id)
-            .first()
-        )
-        if not course:
-            raise NotFoundError(detail="Course not found")
+    def delete_course(self, course_id: str):
+        """
+        Delete a course from the database.
 
-        # adjust attribute name if your model field differs
-        course.thumbnail_url = thumbnail_url
+        With CASCADE DELETE configured in the model, this will automatically delete:
+        - Enrollments
+        - Payments
+        - Comments
+        - Reviews
+        - Lessons and their videos
 
-        self.db.commit()
-        self.db.refresh(course)
-        return course
-    
-    
-    
-    
-    # # Lesson methods are now in LessonRepository
-    # def get_lessons(self, course_id: str, page: int = 1, page_size: int = 10):
-    #     return self.lesson_repo.get_lessons(course_id, page, page_size)
+        Args:
+            course_id (str): The ID of the course to delete.
 
-    # def get_lesson_by_id(self, course_id: str, lesson_id: str):
-    #     return self.lesson_repo.get_lesson_by_id(course_id, lesson_id)
+        Returns:
+            Course: The deleted course object.
 
-    # def add_multiple_lessons(self, course_id: str, lessons: list[Lesson]):
-    #     return self.lesson_repo.add_multiple_lessons(course_id, lessons)
+        Raises:
+            NotFoundError: If the course is not found.
+        """
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return None, NotFoundError(detail="Course not found")
 
-    # def add_lesson(self, course_id: str, lesson: Lesson):
-    #     return self.lesson_repo.add_lesson(course_id, lesson)
-
-    # def edit_lesson(self, course_id: str, lesson_id: str, lesson_data: dict):
-    #     return self.lesson_repo.edit_lesson(course_id, lesson_id, lesson_data)
-
-    # def delete_lesson(self, course_id: str, lesson_id: str):
-    #     return self.lesson_repo.delete_lesson(course_id, lesson_id)
-
-
-
-
-    # # Video methods are now in LessonRepository
-    # def add_video(self, video):
-    #     return self.lesson_repo.add_video(video)
-
-    # # Payment methods are now in PaymentRepository
-    # def save_payment(self, payment):
-    #     return self.payment_repo.save_payment(payment)
-
-    # def get_payment(self, tx_ref: str):
-    #     return self.payment_repo.get_payment(tx_ref)
-
-    # def update_payment(self, tx_ref: str, status: str, ref_id: str):
-    #     return self.payment_repo.update_payment(tx_ref, status, ref_id)
-
-    # def get_user_payments(self, user_id: str, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
-    #     return self.payment_repo.get_user_payments(user_id, page, page_size, filter)
-
-    # def get_course_payments(self, course_id: str, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
-    #     return self.payment_repo.get_course_payments(course_id, page, page_size, filter)
-
-    # def get_lesson_video(self, lesson_id: str):
-    #     return self.lesson_repo.get_lesson_video(lesson_id)
-
-    # def get_video_by_id(self, lesson_id: str, video_id: str):
-    #     # This method should be implemented in LessonRepository
-    #     # For now, we'll just forward the call to the database
-    #     from app.domain.model.course import Video
-    #     video = (
-    #         self.db.query(Video)
-    #         .filter(Video.lesson_id == lesson_id)
-    #         .filter(Video.id == video_id)
-    #         .first()
-    #     )
-    #     if not video:
-    #         raise NotFoundError(detail="Video not found")
-    #     return video
-
-
-
-    # #get course all by instructor
-
-
-    # def get_user_payments_count(self, user_id: str, filter: Optional[str] = None):
-    #     return self.payment_repo.get_user_payments_count(user_id, filter)
-
-    # def get_course_payments_count(self, course_id: str, filter: Optional[str] = None):
-    #     return self.payment_repo.get_course_payments_count(course_id, filter)
-
-
-
-
-
-
-
+            # With CASCADE DELETE configured in the model, deleting the course
+            # will automatically delete all related records
+            self.db.delete(course)
+            self.db.commit()
+            return _wrap_return(course)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
 

@@ -204,6 +204,139 @@ async def get_lesson_by_id(
     user_id = decoded_token.get("id")
     return lesson_service.get_lesson_by_id(course_id, lesson_id, user_id)
 
+
+@protected_lesson_router.delete(
+    "/videos/{video_id}",
+    # response_model=BaseResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete a video",
+    description="Delete a video from a lesson.",
+    # responses={
+    #     200: {
+    #         "description": "Video deleted successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Video deleted successfully"
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Video not found"}
+    #             }
+    #         }
+    #     }
+    # }
+)
+async def delete_video(
+    video_id: str,
+    lesson_service: LessonService = Depends(get_lesson_service)
+):
+    """
+    Delete a video from a lesson.
+
+    This endpoint permanently removes a video from a lesson.
+    This operation cannot be undone.
+
+    - **video_id**: UUID of the video to delete
+    """
+    return lesson_service.delete_video(video_id)
+
+@protected_lesson_router.put(
+    "/videos/{video_id}",
+    # response_model=BaseResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update a video",
+    description="Update a video's metadata.",
+    # responses={
+    #     200: {
+    #         "description": "Video updated successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Video updated successfully"
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Video not found"}
+    #             }
+    #         }
+    #     }
+    # }
+)
+async def update_video(
+    video_id: str,
+    video_input: VideoInput,
+    lesson_service: LessonService = Depends(get_lesson_service)
+):
+    """
+    Update a video's metadata.
+
+    This endpoint updates a video's metadata such as video_id, library_id, and secret_key.
+
+    - **video_id**: UUID of the video to update
+    - **video_input**: New video metadata
+    """
+    return lesson_service.edit_video(video_id, video_input)
+
+@protected_lesson_router.get(
+    "/videos/{video_id}",
+    # response_model=BaseResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get a video",
+    description="Get a video by its ID.",
+    # responses={
+    #     200: {
+    #         "description": "Video fetched successfully",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {
+    #                     "detail": "Video fetched successfully",
+    #                     "data": {
+    #                         "id": "123e4567-e89b-12d3-a456-426614174000",
+    #                         "video_id": "abc123",
+    #                         "library_id": "lib123",
+    #                         "secret_key": "encrypted-secret-key",
+    #                         "video_url": "https://iframe.mediadelivery.net/embed/lib123/abc123?token=..."
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     404: {
+    #         "description": "Not found",
+    #         "content": {
+    #             "application/json": {
+    #                 "example": {"detail": "Video not found"}
+    #             }
+    #         }
+    #     }
+    # }
+)
+async def get_video(
+    video_id: str,
+    lesson_service: LessonService = Depends(get_lesson_service)
+):
+    """
+    Get a video by its ID.
+
+    This endpoint retrieves a video by its ID, including its metadata and a generated secure URL.
+
+    - **video_id**: UUID of the video to retrieve
+    """
+    return lesson_service.get_video_by_id(video_id)
+
+
+
 @protected_lesson_router.post(
     "/{course_id}",
     # response_model=BaseResponse,
@@ -524,3 +657,4 @@ async def delete_lesson(
     Note: This will also delete any video metadata associated with the lesson.
     """
     return lesson_service.delete_lesson(course_id, lesson_id)
+

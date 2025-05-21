@@ -1,4 +1,4 @@
-from app.utils.exceptions.exceptions import ValidationError
+from app.utils.exceptions.exceptions import ValidationError, NotFoundError
 import re
 from app.domain.schema.courseSchema import (
     CourseInput,
@@ -54,20 +54,28 @@ class CourseService:
         Raises:
             ValidationError: If the instructor is invalid or course creation fails.
         """
-        instructor = self.user_repo.get_user_by_id(str(course_info.instructor_id))
+        instructor, err = self.user_repo.get_user_by_id(str(course_info.instructor_id))
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Instructor not found")
+            raise ValidationError(detail="Failed to retrieve instructor", data=str(err))
         if not instructor or not instructor.role == "instructor":
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
 
         course_data = course_info.model_dump(exclude={'lessons'})
         course = Course(**course_data)
-        created_course = self.course_repo.create_course(course)
+        created_course, err = self.course_repo.create_course(course)
+        if err:
+            raise ValidationError(detail="Failed to create course", data=str(err))
         if not created_course:
             raise ValidationError(detail="Failed to create course")
 
         if course_info.lessons:
             self.lesson_service.add_multiple_lessons(str(created_course.id), course_info.lessons)
 
-        created_course = self.course_repo.get_course_with_lessons(str(created_course.id))
+        created_course, err = self.course_repo.get_course_with_lessons(str(created_course.id))
+        if err:
+            raise ValidationError(detail="Failed to fetch course with lessons", data=str(err))
         if not created_course:
             raise ValidationError(detail="Failed to fetch course with lessons")
         course_response = CourseResponse.model_validate(created_course)
@@ -76,7 +84,7 @@ class CourseService:
             "detail": "Course created successfully",
             "data": course_response
         }
-    
+
     def addThumbnail(self, course_id: str, thumbnail: UploadFile, thumbnail_name: str=""):
         """
         Add a thumbnail to a course.
@@ -94,7 +102,11 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        course = self.course_repo.get_course(course_id)
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
         if not course:
             raise ValidationError(detail="Course not found")
 
@@ -128,15 +140,19 @@ class CourseService:
             )
             os.unlink(tmp_path)
 
-            self.course_repo.save_thumbnail(course_id, thumbnail_url)
-        except IntegrityError:
-            raise ValidationError(detail="Failed to save thumbnail")
+            _, err = self.course_repo.save_thumbnail(course_id, thumbnail_url)
+            if err:
+                raise ValidationError(detail="Failed to save thumbnail", data=str(err))
+        except IntegrityError as e:
+            raise ValidationError(detail="Failed to save thumbnail", data=str(e))
+        except Exception as e:
+            raise ValidationError(detail="Failed to upload thumbnail", data=str(e))
 
         return {
             "detail": "Thumbnail uploaded successfully",
             "data": {"thumbnail_url": thumbnail_url}
         }
-    
+
 
 
     def getCourse(self, course_id: str):
@@ -155,7 +171,11 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        course = self.course_repo.get_course_with_lessons(course_id)
+        course, err = self.course_repo.get_course_with_lessons(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
         if not course:
             raise ValidationError(detail="Course not found")
 
@@ -175,11 +195,18 @@ class CourseService:
         Returns:
             dict: Response containing paginated course data and metadata.
         """
-        courses = self.course_repo.get_courses(page, page_size, search, filter)
+        courses, err = self.course_repo.get_courses(page, page_size, search, filter)
+        if err:
+            raise ValidationError(detail="Failed to retrieve courses", data=str(err))
+
         courses_response = [
             CourseResponse.model_validate(course).model_dump(exclude={'lessons'})
             for course in courses
         ]
+
+        total_count, err = self.course_repo.get_total_courses_count(search, filter)
+        if err:
+            raise ValidationError(detail="Failed to retrieve total courses count", data=str(err))
 
         return {
             "detail": "Courses fetched successfully",
@@ -187,7 +214,7 @@ class CourseService:
             "pagination": {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_total_courses_count(search, filter)
+                "total_items": total_count
             }
         }
 
@@ -210,7 +237,9 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        enrollment = self.course_repo.get_enrollment(user_id, course_id)
+        enrollment, err = self.course_repo.get_enrollment(user_id, course_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve enrollment", data=str(err))
         if not enrollment:
             raise ValidationError(detail="User not enrolled in course")
 
@@ -260,13 +289,19 @@ class CourseService:
         """
         if not user_id:
             raise ValidationError(detail="User ID is required")
-        
+
         #check if user exists
-        user = self.user_repo.get_user_by_id(user_id)
+        user, err = self.user_repo.get_user_by_id(user_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
         if not user:
             raise ValidationError(detail="User not found")
 
-        enrollments = self.course_repo.get_enrolled_courses(user_id, page, page_size, search)
+        enrollments, err = self.course_repo.get_enrolled_courses(user_id, page, page_size, search)
+        if err:
+            raise ValidationError(detail="Failed to retrieve enrolled courses", data=str(err))
         if not enrollments:
             return {
                 "detail": "No courses found for the user",
@@ -283,13 +318,17 @@ class CourseService:
             for enrollment in enrollments
         ]
 
+        total_count, err = self.course_repo.get_user_courses_count(user_id, search)
+        if err:
+            raise ValidationError(detail="Failed to retrieve user courses count", data=str(err))
+
         return {
             "detail": "User courses fetched successfully",
             "data": courses_response,
             "pagination": {
                 "page": page,
                 "page_size": page_size,
-                "total_items": self.course_repo.get_user_courses_count(user_id, search)
+                "total_items": total_count
             }
         }
 
@@ -310,11 +349,14 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        enrollments = self.course_repo.get_enrolled_users(
+        enrollments, err = self.course_repo.get_enrolled_users(
             course_id=course_id,
             year=year, month=month, week=week, day=day,
             page=page, page_size=page_size
         )
+        if err:
+            raise ValidationError(detail="Failed to retrieve enrolled users", data=str(err))
+
         data = [EnrollmentResponse.model_validate(e) for e in enrollments]
 
         result = {
@@ -323,7 +365,9 @@ class CourseService:
         }
         # only include pagination if requested
         if page is not None and page_size is not None:
-            total = self.course_repo.get_enrolled_users_count(course_id)
+            total, err = self.course_repo.get_enrolled_users_count(course_id)
+            if err:
+                raise ValidationError(detail="Failed to retrieve enrolled users count", data=str(err))
             result["pagination"] = {
                 "page": page,
                 "page_size": page_size,
@@ -348,7 +392,9 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        analysis_data = self.course_repo.course_analysis(course_id)
+        analysis_data, err = self.course_repo.course_analysis(course_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve course analysis", data=str(err))
         if not analysis_data:
             return {
                 "detail": "No analysis data found for this course",
@@ -376,11 +422,17 @@ class CourseService:
         if not instructor_id:
             raise ValidationError(detail="Instructor ID is required")
 
-        user = self.user_repo.get_user_by_id(instructor_id)
+        user, err = self.user_repo.get_user_by_id(instructor_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Instructor not found")
+            raise ValidationError(detail="Failed to retrieve instructor", data=str(err))
         if not user or not user.role == "instructor":
             raise ValidationError(detail="Invalid instructor ID or not an instructor")
 
-        courses = self.course_repo.get_courses_by_instructor(instructor_id)
+        courses, err = self.course_repo.get_courses_by_instructor(instructor_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve instructor courses", data=str(err))
 
         return {
             "detail": "Instructor courses fetched successfully",
@@ -398,10 +450,52 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        enrolled = bool(self.course_repo.get_enrollment(str(user_id), course_id))
+        enrollment, err = self.course_repo.get_enrollment(str(user_id), course_id)
+        if err:
+            raise ValidationError(detail="Failed to check enrollment status", data=str(err))
+
+        enrolled = bool(enrollment)
         return {
             "detail": "Enrollment status fetched successfully",
             "data": {"is_enrolled": enrolled}
+        }
+
+    def deleteCourse(self, course_id: str):
+        """
+        Delete a course.
+
+        Args:
+            course_id (str): ID of the course to delete.
+
+        Returns:
+            dict: Response containing course deletion details.
+
+        Raises:
+            ValidationError: If the course ID is invalid or the course is not found.
+        """
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        # First get the course to ensure it exists and to return its data
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
+
+        # Delete the course
+        deleted_course, err = self.course_repo.delete_course(course_id)
+        if err:
+            raise ValidationError(detail="Failed to delete course", data=str(err))
+        if not deleted_course:
+            raise ValidationError(detail="Failed to delete course")
+
+        course_response = CourseResponse.model_validate(course)
+        return {
+            "detail": "Course deleted successfully",
+            "data": course_response
         }
 
 
