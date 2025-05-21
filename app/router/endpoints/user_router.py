@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File
 from app.domain.schema.authSchema import editUser, UserResponse
 from app.domain.schema.courseSchema import SearchParams
 from app.domain.schema.responseSchema import (
@@ -183,6 +183,32 @@ async def delete_me(
     user_id = decoded_token.get("id")
     user_id = UUID(user_id)
     return user_service.deactivate_user(user_id)
+
+@user_router.post(
+    "/me/profile-picture",
+    status_code=status.HTTP_200_OK,
+    summary="Upload profile picture",
+    description="Upload a profile picture for the current user."
+)
+async def upload_profile_picture(
+    profile_picture: UploadFile = File(...),
+    decoded_token: dict = Depends(is_logged_in),
+    user_service: UserService = Depends(get_user_service)
+):
+    """
+    Upload a profile picture for the current user.
+
+    This endpoint allows users to upload a profile picture. The image will be stored
+    in BunnyCDN and the URL will be saved in the user's profile.
+
+    - **profile_picture**: The image file to upload (JPEG or PNG)
+
+    Authentication is required via JWT token in the Authorization header.
+    """
+    user_id = decoded_token.get("id")
+    user_id = UUID(user_id)
+
+    return user_service.upload_profile_picture(str(user_id), profile_picture)
 
 # @user_router.get("/all")
 # async def get_all_users(

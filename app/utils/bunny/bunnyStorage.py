@@ -68,8 +68,22 @@ class BunnyCDNStorage:
 
     def upload_file(self, storage_path, file_path, file_name=None):
         try:
+            # Get the original file name and extension
+            original_file = Path(file_path)
+            original_name = original_file.name
+            original_extension = original_file.suffix
+
+            # If file_name is not provided, use the original name
             if file_name is None:
-                file_name = Path(file_path).name
+                file_name = original_name
+            else:
+                # Check if the provided file_name has an extension
+                file_name_path = Path(file_name)
+                file_name_extension = file_name_path.suffix
+
+                # If the provided file_name doesn't have an extension, add the original extension
+                if not file_name_extension and original_extension:
+                    file_name = f"{file_name}{original_extension}"
 
             storage_url = f'{self.base_url}{storage_path}{file_name}'
 
