@@ -1,18 +1,14 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from app.domain.schema.authSchema import UpdateRoleRequest
 from app.domain.schema.courseSchema import (
     CourseInput,
     SearchParams,
-    MultipleLessonInput,
-    VideoInput,
     DateFilterParams
 )
 from app.service.userService import UserService, get_user_service
 from app.service.courseService import CourseService, get_course_service
-from app.service.lesson_service import LessonService, get_lesson_service
 from app.service.payment_service import PaymentService, get_payment_service
-from app.utils.middleware.dependancies import is_admin, is_admin_or_instructor
-from fastapi import File, UploadFile
+from app.utils.middleware.dependancies import is_admin
 
 # Main admin router
 admin_router = APIRouter(
@@ -194,88 +190,88 @@ async def delete_course(
 ####################################################
 
 
-# Lesson management endpoints
-@admin_router.post("/course/{course_id}/lessons")
-async def add_multiple_lessons(
-    course_id: str,
-    lessons_input: MultipleLessonInput,
-    lesson_service: LessonService = Depends(get_lesson_service)
-):
-    """
-    Add multiple lessons to a course.
+# # Lesson management endpoints
+# @admin_router.post("/course/{course_id}/lessons")
+# async def add_multiple_lessons(
+#     course_id: str,
+#     lessons_input: MultipleLessonInput,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Add multiple lessons to a course.
 
-    Args:
-        course_id (str): The course ID.
-        lessons_input (MultipleLessonInput): The lessons input.
-        lesson_service (LessonService): The lesson service.
+#     Args:
+#         course_id (str): The course ID.
+#         lessons_input (MultipleLessonInput): The lessons input.
+#         lesson_service (LessonService): The lesson service.
 
-    Returns:
-        dict: The lessons response.
-    """
-    return lesson_service.add_multiple_lessons(course_id, lessons_input)
+#     Returns:
+#         dict: The lessons response.
+#     """
+#     return lesson_service.add_multiple_lessons(course_id, lessons_input)
 
-@admin_router.post("/course/{course_id}/lessons/{lesson_id}/video")
-async def add_video_to_lesson(
-    course_id: str,
-    lesson_id: str,
-    video_input: VideoInput,
-    lesson_service: LessonService = Depends(get_lesson_service)
-):
-    """
-    Add a video to a lesson.
+# @admin_router.post("/course/{course_id}/lessons/{lesson_id}/video")
+# async def add_video_to_lesson(
+#     course_id: str,
+#     lesson_id: str,
+#     video_input: VideoInput,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Add a video to a lesson.
 
-    Args:
-        course_id (str): The course ID.
-        lesson_id (str): The lesson ID.
-        video_input (VideoInput): The video input.
-        lesson_service (LessonService): The lesson service.
+#     Args:
+#         course_id (str): The course ID.
+#         lesson_id (str): The lesson ID.
+#         video_input (VideoInput): The video input.
+#         lesson_service (LessonService): The lesson service.
 
-    Returns:
-        dict: The video response.
-    """
-    return lesson_service.add_video_to_lesson(course_id, lesson_id, video_input)
+#     Returns:
+#         dict: The video response.
+#     """
+#     return lesson_service.add_video_to_lesson(course_id, lesson_id, video_input)
 
-@admin_router.put("/course/{course_id}/lessons/{lesson_id}")
-async def update_lesson(
-    course_id: str,
-    lesson_id: str,
-    lesson_input: MultipleLessonInput,
-    lesson_service: LessonService = Depends(get_lesson_service)
-):
-    """
-    Update a lesson.
+# @admin_router.put("/course/{course_id}/lessons/{lesson_id}")
+# async def update_lesson(
+#     course_id: str,
+#     lesson_id: str,
+#     lesson_input: MultipleLessonInput,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Update a lesson.
 
-    Args:
-        course_id (str): The course ID.
-        lesson_id (str): The lesson ID.
-        lesson_input (MultipleLessonInput): The lesson input.
-        lesson_service (LessonService): The lesson service.
+#     Args:
+#         course_id (str): The course ID.
+#         lesson_id (str): The lesson ID.
+#         lesson_input (MultipleLessonInput): The lesson input.
+#         lesson_service (LessonService): The lesson service.
 
-    Returns:
-        dict: The lesson update response.
-    """
-    return lesson_service.update_lesson(course_id, lesson_id, lesson_input)
+#     Returns:
+#         dict: The lesson update response.
+#     """
+#     return lesson_service.update_lesson(course_id, lesson_id, lesson_input)
 
 
 
-@admin_router.delete("/course/{course_id}/lessons/{lesson_id}")
-async def delete_lesson(
-    course_id: str,
-    lesson_id: str,
-    lesson_service: LessonService = Depends(get_lesson_service)
-):
-    """
-    Delete a lesson.
+# @admin_router.delete("/course/{course_id}/lessons/{lesson_id}")
+# async def delete_lesson(
+#     course_id: str,
+#     lesson_id: str,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Delete a lesson.
 
-    Args:
-        course_id (str): The course ID.
-        lesson_id (str): The lesson ID.
-        lesson_service (LessonService): The lesson service.
+#     Args:
+#         course_id (str): The course ID.
+#         lesson_id (str): The lesson ID.
+#         lesson_service (LessonService): The lesson service.
 
-    Returns:
-        dict: The lesson deletion response.
-    """
-    return lesson_service.delete_lesson(course_id, lesson_id)
+#     Returns:
+#         dict: The lesson deletion response.
+#     """
+#     return lesson_service.delete_lesson(course_id, lesson_id)
 
 
 # Payment management endpoints
@@ -377,6 +373,7 @@ async def get_users_enrolled_in_course(
         search_params (DateFilterParams): The search parameters for filtering by date and pagination.
         course_service (CourseService): The course service.
         decoded_token (dict): The decoded JWT token containing user information.
+
 
     Returns:
         dict: The enrolled users response.

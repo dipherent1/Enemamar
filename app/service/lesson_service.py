@@ -329,6 +329,110 @@ class LessonService:
             "data": LessonResponse.model_validate(deleted_lesson)
         }
 
+    def delete_video(self, video_id: str):
+        """
+        Delete a video.
+
+        Args:
+            video_id (str): The video ID.
+
+        Returns:
+            dict: The video deletion response.
+        """
+        # First get the video to ensure it exists
+        video, err = self.lesson_repo.get_lesson_video_by_id(video_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve video", data=str(err))
+        if not video:
+            raise ValidationError(detail="Video not found")
+
+        # Delete the video
+        deleted_video, err = self.lesson_repo.delete_video(video_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Video not found")
+            raise ValidationError(detail="Failed to delete video", data=str(err))
+        if not deleted_video:
+            raise ValidationError(detail="Failed to delete video")
+
+        return {
+            "detail": "Video deleted successfully",
+            "data": videoResponse.model_validate(deleted_video)
+        }
+
+    def edit_video(self, video_id: str, video_input: VideoInput):
+        """
+        Edit a video.
+
+        Args:
+            video_id (str): The video ID.
+            video_input (VideoInput): The video input data.
+
+        Returns:
+            dict: The video update response.
+        """
+        # First get the video to ensure it exists
+        video, err = self.lesson_repo.get_lesson_video_by_id(video_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve video", data=str(err))
+        if not video:
+            raise ValidationError(detail="Video not found")
+
+        # Encrypt the secret key if provided
+        if video_input.secret_key:
+            video_input.secret_key = encrypt_secret_key(video_input.secret_key)
+
+        # Update the video
+        video_data = video_input.model_dump(exclude_unset=True)
+        updated_video, err = self.lesson_repo.edit_video(video_id, video_data)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Video not found")
+            raise ValidationError(detail="Failed to update video", data=str(err))
+        if not updated_video:
+            raise ValidationError(detail="Failed to update video")
+
+        return {
+            "detail": "Video updated successfully",
+            "data": videoResponse.model_validate(updated_video)
+        }
+
+    def get_video_by_id(self, video_id: str):
+        """
+        Get a video by its ID.
+
+        Args:
+            video_id (str): The video ID.
+
+        Returns:
+            dict: The video response.
+        """
+        video, err = self.lesson_repo.get_lesson_video_by_id(video_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve video", data=str(err))
+        if not video:
+            raise ValidationError(detail="Video not found")
+
+        video_response = videoResponse.model_validate(video)
+
+        # If the video has a secret key, generate a secure URL
+        if video_response.secret_key:
+            try:
+                decrypted_key = decrypt_secret_key(video_response.secret_key)
+                url = generate_secure_bunny_stream_url(
+                    video_response.library_id,
+                    video_response.video_id,
+                    decrypted_key
+                )
+                video_response.video_url = url
+            except Exception as e:
+                raise ValidationError(detail=f"Failed to decrypt video secret key: {str(e)}")
+
+        return {
+            "detail": "Video fetched successfully",
+            "data": video_response
+        }
+
 def get_lesson_service(db: Session = Depends(get_db)) -> LessonService:
     """
     Get a LessonService instance.
