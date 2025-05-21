@@ -437,7 +437,10 @@ class CommentReviewService:
 
         reviews_response = [ReviewResponse.model_validate(review) for review in reviews]
 
-        average_rating = self.comment_review_repo.get_average_rating_by_course(course_id)
+        average_rating, err = self.comment_review_repo.get_average_rating_by_course(course_id)
+        if err:
+            raise ValidationError(detail="Failed to retrieve average rating", data=str(err))
+        
 
         total_count, err = self.comment_review_repo.get_reviews_count_by_course(course_id)
         if err:

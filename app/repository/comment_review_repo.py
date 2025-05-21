@@ -94,7 +94,7 @@ class CommentReviewRepository:
         except Exception as e:
             return _wrap_error(e)
 
-    def get_comments_by_user(self, user_id: str, page: int = 1, page_size: int = 10) -> List[Comment]:
+    def get_comments_by_user(self, user_id: str, page: int = 1, page_size: int = 10) -> Tuple[Optional[List[Comment]], Optional[Exception]]:
         """
         Get all comments by a user with pagination.
 
@@ -104,19 +104,21 @@ class CommentReviewRepository:
             page_size (int, optional): The number of items per page. Defaults to 10.
 
         Returns:
-            List[Comment]: A list of comment objects.
+            Tuple[Optional[List[Comment]], Optional[Exception]]: A list of comment objects or an error.
         """
-        return (
-            self.db.query(Comment)
-            .options(
-                joinedload(Comment.course)
+        try:
+            comments = (
+                self.db.query(Comment)
+                .options(joinedload(Comment.course))
+                .filter(Comment.user_id == user_id)
+                .order_by(Comment.created_at.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+                .all()
             )
-            .filter(Comment.user_id == user_id)
-            .order_by(Comment.created_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+            return _wrap_return(comments)
+        except Exception as e:
+            return _wrap_error(e)
 
     def update_comment(self, comment_id: str, content: str) -> Comment:
         """
@@ -163,7 +165,7 @@ class CommentReviewRepository:
         except Exception as e:
             return _wrap_error(e)
 
-    def get_comments_count_by_course(self, course_id: str) -> int:
+    def get_comments_count_by_course(self, course_id: str) -> Tuple[Optional[int], Optional[Exception]]:
         """
         Get the count of comments for a course.
 
@@ -171,15 +173,19 @@ class CommentReviewRepository:
             course_id (str): The ID of the course.
 
         Returns:
-            int: The number of comments.
+            Tuple[Optional[int], Optional[Exception]]: The number of comments or an error.
         """
-        return (
-            self.db.query(Comment)
-            .filter(Comment.course_id == course_id)
-            .count()
-        )
+        try:
+            count = (
+                self.db.query(Comment)
+                .filter(Comment.course_id == course_id)
+                .count()
+            )
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
-    def get_comments_count_by_user(self, user_id: str) -> int:
+    def get_comments_count_by_user(self, user_id: str) -> Tuple[Optional[int], Optional[Exception]]:
         """
         Get the count of comments by a user.
 
@@ -187,13 +193,17 @@ class CommentReviewRepository:
             user_id (str): The ID of the user.
 
         Returns:
-            int: The number of comments.
+            Tuple[Optional[int], Optional[Exception]]: The number of comments or an error.
         """
-        return (
-            self.db.query(Comment)
-            .filter(Comment.user_id == user_id)
-            .count()
-        )
+        try:
+            count = (
+                self.db.query(Comment)
+                .filter(Comment.user_id == user_id)
+                .count()
+            )
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     # Review methods
     def create_review(self, review: Review) -> Review:
@@ -268,7 +278,7 @@ class CommentReviewRepository:
         except Exception as e:
             return _wrap_error(e)
 
-    def get_reviews_by_user(self, user_id: str, page: int = 1, page_size: int = 10) -> List[Review]:
+    def get_reviews_by_user(self, user_id: str, page: int = 1, page_size: int = 10) -> Tuple[Optional[List[Review]], Optional[Exception]]:
         """
         Get all reviews by a user with pagination.
 
@@ -278,19 +288,21 @@ class CommentReviewRepository:
             page_size (int, optional): The number of items per page. Defaults to 10.
 
         Returns:
-            List[Review]: A list of review objects.
+            Tuple[Optional[List[Review]], Optional[Exception]]: A list of review objects or an error.
         """
-        return (
-            self.db.query(Review)
-            .options(
-                joinedload(Review.course)
+        try:
+            reviews = (
+                self.db.query(Review)
+                .options(joinedload(Review.course))
+                .filter(Review.user_id == user_id)
+                .order_by(Review.created_at.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+                .all()
             )
-            .filter(Review.user_id == user_id)
-            .order_by(Review.created_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+            return _wrap_return(reviews)
+        except Exception as e:
+            return _wrap_error(e)
 
     def update_review(self, review_id: str, rating: int) -> Review:
         """
@@ -340,7 +352,7 @@ class CommentReviewRepository:
         except Exception as e:
             return _wrap_error(e)
 
-    def get_reviews_count_by_course(self, course_id: str) -> int:
+    def get_reviews_count_by_course(self, course_id: str) -> Tuple[Optional[int], Optional[Exception]]:
         """
         Get the count of reviews for a course.
 
@@ -348,15 +360,19 @@ class CommentReviewRepository:
             course_id (str): The ID of the course.
 
         Returns:
-            int: The number of reviews.
+            Tuple[Optional[int], Optional[Exception]]: The number of reviews or an error.
         """
-        return (
-            self.db.query(Review)
-            .filter(Review.course_id == course_id)
-            .count()
-        )
+        try:
+            count = (
+                self.db.query(Review)
+                .filter(Review.course_id == course_id)
+                .count()
+            )
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
-    def get_reviews_count_by_user(self, user_id: str) -> int:
+    def get_reviews_count_by_user(self, user_id: str) -> Tuple[Optional[int], Optional[Exception]]:
         """
         Get the count of reviews by a user.
 
@@ -364,15 +380,19 @@ class CommentReviewRepository:
             user_id (str): The ID of the user.
 
         Returns:
-            int: The number of reviews.
+            Tuple[Optional[int], Optional[Exception]]: The number of reviews or an error.
         """
-        return (
-            self.db.query(Review)
-            .filter(Review.user_id == user_id)
-            .count()
-        )
+        try:
+            count = (
+                self.db.query(Review)
+                .filter(Review.user_id == user_id)
+                .count()
+            )
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
-    def get_average_rating_by_course(self, course_id: str) -> float:
+    def get_average_rating_by_course(self, course_id: str) -> Tuple[Optional[float], Optional[Exception]]:
         """
         Get the average rating for a course.
 
@@ -380,16 +400,20 @@ class CommentReviewRepository:
             course_id (str): The ID of the course.
 
         Returns:
-            float: The average rating.
+            Tuple[Optional[float], Optional[Exception]]: The average rating, or 0.0 if there are no reviews, or an error.
         """
-        result = (
-            self.db.query(func.avg(Review.rating).label('average_rating'))
-            .filter(Review.course_id == course_id)
-            .first()
-        )
-        return float(result.average_rating) if result.average_rating else 0.0
+        try:
+            avg = (
+                self.db
+                .query(func.avg(Review.rating))
+                .filter(Review.course_id == course_id)
+                .scalar()
+            )
+            return _wrap_return(float(avg) if avg is not None else 0.0)
+        except Exception as e:
+            return _wrap_error(e)
 
-    def get_user_review_for_course(self, user_id: str, course_id: str) -> Optional[Review]:
+    def get_user_review_for_course(self, user_id: str, course_id: str) -> Tuple[Optional[Review], Optional[Exception]]:
         """
         Get a user's review for a specific course.
 
@@ -398,11 +422,15 @@ class CommentReviewRepository:
             course_id (str): The ID of the course.
 
         Returns:
-            Optional[Review]: The review object if found, None otherwise.
+            Tuple[Optional[Review], Optional[Exception]]: The review object if found, or an error.
         """
-        return (
-            self.db.query(Review)
-            .filter(Review.user_id == user_id)
-            .filter(Review.course_id == course_id)
-            .first()
-        )
+        try:
+            review = (
+                self.db.query(Review)
+                .filter(Review.user_id == user_id)
+                .filter(Review.course_id == course_id)
+                .first()
+            )
+            return _wrap_return(review)
+        except Exception as e:
+            return _wrap_error(e)
