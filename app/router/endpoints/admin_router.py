@@ -8,7 +8,7 @@ from app.domain.schema.courseSchema import (
 from app.service.userService import UserService, get_user_service
 from app.service.courseService import CourseService, get_course_service
 from app.service.payment_service import PaymentService, get_payment_service
-from app.utils.middleware.dependancies import is_admin
+from app.utils.middleware.dependancies import is_admin, is_admin_or_instructor
 
 # Main admin router
 admin_router = APIRouter(
