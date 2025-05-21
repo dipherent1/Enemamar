@@ -1,14 +1,12 @@
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError
 import re
-from app.domain.schema.authSchema import signUp, UserResponse, login,loginResponse, signUpResponse, tokenLoginData, editUser
+from app.domain.schema.authSchema import UserResponse, editUser
 from app.domain.model.user import User
 from app.repository.userRepo import UserRepository
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi import Depends, UploadFile
 from app.core.config.database import get_db
-from app.utils.security.hash import hash_password, verify_password
-from app.utils.security.jwt_handler import verify_access_token
 from typing import Optional
 
 #initalize the user service
@@ -235,6 +233,103 @@ class UserService:
         user_response = UserResponse.model_validate(user)
         response = {"detail": "Instructor retrieved successfully", "data": user_response}
         return response
+
+    def upload_profile_picture(self, user_id: str, profile_picture: UploadFile):
+        """
+        Upload a profile picture for a user.
+
+        Args:
+            user_id (str): The ID of the user.
+            profile_picture (UploadFile): The profile picture file.
+
+        Returns:
+            dict: Response containing profile picture upload details.
+
+        Raises:
+            ValidationError: If the user ID is invalid or the profile picture upload fails.
+        """
+        import re
+        import uuid
+        import os
+        from tempfile import NamedTemporaryFile
+        from app.utils.bunny.bunnyStorage import BunnyCDNStorage
+        from app.core.config.env import get_settings
+
+        settings = get_settings()
+
+        # Validate user exists
+        user, err = self.user_repo.get_user_by_id(user_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
+        if not user:
+            raise ValidationError(detail="User not found")
+
+        # Validate image format
+        if not re.match(r"^image/(jpeg|png|jpg)$", profile_picture.content_type):
+            raise ValidationError(detail="Invalid image format. Only JPEG and PNG are allowed.")
+
+        try:
+            # Initialize BunnyCDN storage
+            storage = BunnyCDNStorage(
+                settings.BUNNY_CDN_PROFILE_STORAGE_APIKEY,
+                settings.BUNNY_CDN_PROFILE_STORAGE_ZONE,
+                settings.BUNNY_CDN_PULL_ZONE
+            )
+
+            # Get original filename and extension
+            original_filename = profile_picture.filename
+            original_extension = ""
+            if original_filename and "." in original_filename:
+                original_extension = "." + original_filename.split(".")[-1]
+
+            # Generate unique filename based on user's name and a UUID
+            name_base = user.first_name
+            if user.last_name:
+                name_base += f"_{user.last_name}"
+
+            # Clean the name (remove spaces, special chars)
+            name_base = re.sub(r'[^\w]', '_', name_base).lower()
+
+            # Add a unique identifier
+            unique_id = str(uuid.uuid4())[:8]
+            file_name = f"{name_base}_{unique_id}{original_extension}"
+
+            # Create a temporary file with the original content
+            with NamedTemporaryFile("wb", delete=False) as tmp:
+                tmp.write(profile_picture.file.read())
+                tmp_path = tmp.name
+
+            # Create a temporary file with the correct extension to help BunnyCDN detect the file type
+            temp_file_with_ext = f"{tmp_path}{original_extension}"
+            import shutil
+            shutil.copy(tmp_path, temp_file_with_ext)
+
+            # Upload and then remove temp files
+            profile_picture_url = storage.upload_file(
+                "",
+                file_path=temp_file_with_ext,
+                file_name=file_name
+            )
+
+            # Clean up temporary files
+            os.unlink(temp_file_with_ext)
+            os.unlink(tmp_path)
+
+            # Update user's profile picture URL
+            updated_user, err = self.user_repo.update_profile_picture(user_id, profile_picture_url)
+            if err:
+                raise ValidationError(detail="Failed to update profile picture", data=str(err))
+
+            return {
+                "detail": "Profile picture uploaded successfully",
+                "data": {
+                    "profile_picture_url": profile_picture_url
+                }
+            }
+        except Exception as e:
+            raise ValidationError(detail="Failed to upload profile picture", data=str(e))
 
 def get_user_service(db: Session = Depends(get_db)):
     return UserService(db)

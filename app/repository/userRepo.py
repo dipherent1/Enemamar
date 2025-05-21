@@ -61,7 +61,7 @@ class UserRepository:
                         User.email.ilike(f"%{search}%"),
                         User.phone_number.ilike(f"%{search}%"),
                         User.first_name.ilike(f"%{search}%"),
-                        User.last_name.ilike(f"%{search}%"),    
+                        User.last_name.ilike(f"%{search}%"),
                         User.profession.ilike(f"%{search}%")
                     )
                 )
@@ -70,14 +70,14 @@ class UserRepository:
             return _wrap_return(results)
         except Exception as e:
             return _wrap_error(e)
-    
+
     def get_user_by_id(self, user_id: str):
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
             return _wrap_return(user)
         except DataError as e:
             return _wrap_error(e)
-    
+
     def get_user_by_email(self, email: str):
         try:
             user = self.db.query(User).filter(User.email == email).first()
@@ -123,7 +123,7 @@ class UserRepository:
         except Exception as e:
             self.db.rollback()
             return _wrap_error(e)
-    
+
     def delete_user(self, user_id: int):
         try:
             user = self.db.query(User).filter(User.id == user_id).first()
@@ -163,7 +163,7 @@ class UserRepository:
             self.db.rollback()
             return _wrap_error(e)
 
-    
+
     def login(self, login_data: tokenLoginData):
         try:
             access_token = create_access_token(login_data.model_dump())
@@ -205,7 +205,7 @@ class UserRepository:
             return _wrap_return(instructors)
         except Exception as e:
             return _wrap_error(e)
-    
+
     def get_instructor_by_id(self, instructor_id: str):
         try:
             instr = self.db.query(User).filter(User.id == instructor_id, User.role == "instructor").first()
@@ -213,4 +213,27 @@ class UserRepository:
         except DataError as e:
             return _wrap_error(e)
         except Exception as e:
+            return _wrap_error(e)
+
+    def update_profile_picture(self, user_id: str, profile_picture_url: str):
+        """
+        Update the profile picture URL for a user.
+
+        Args:
+            user_id (str): The ID of the user.
+            profile_picture_url (str): The URL of the profile picture.
+
+        Returns:
+            Tuple[User, Optional[Exception]]: The updated user or an error.
+        """
+        try:
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user:
+                return None, NotFoundError(detail="User not found")
+            user.profile_picture = profile_picture_url
+            self.db.commit()
+            self.db.refresh(user)
+            return _wrap_return(user)
+        except Exception as e:
+            self.db.rollback()
             return _wrap_error(e)
