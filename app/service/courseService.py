@@ -271,6 +271,33 @@ class CourseService:
     #     """
     #     return self.payment_service.process_payment_callback(payload)
 
+    #check if user is admin or owner of the course 
+    def checkAdminOrOwner(self, user_id, course_id):
+        user, err = self.user_repo.get_user_by_id(user_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
+        if not user:
+            raise ValidationError(detail="User not found")
+        
+        if user.role == "admin":
+            return True
+        
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
+        
+        if course.instructor_id == user_id:
+            return True
+        
+        return False
+
+    
     def getEnrolledCourses(self, user_id: str, page: int = 1, page_size: int = 10, search: Optional[str] = None):
         """
         Retrieve a paginated list of courses a user is enrolled in.
@@ -332,9 +359,14 @@ class CourseService:
             }
         }
 
+    
+    
+    
+    
     def getEnrolledUsers(
         self,
         course_id: str,
+        user_id: str,
         year: Optional[int]     = None,
         month: Optional[int]    = None,
         week: Optional[int]     = None,
@@ -348,6 +380,10 @@ class CourseService:
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
+        
+        #check if user is admin or owner of the course
+        if not self.checkAdminOrOwner(user_id, course_id):
+            raise ValidationError(detail="You are not authorized to view this course")
 
         enrollments, err = self.course_repo.get_enrolled_users(
             course_id=course_id,

@@ -186,6 +186,94 @@ async def delete_course(
     """
     return course_service.deleteCourse(course_id)
 
+
+####################################################
+
+
+# # Lesson management endpoints
+# @admin_router.post("/course/{course_id}/lessons")
+# async def add_multiple_lessons(
+#     course_id: str,
+#     lessons_input: MultipleLessonInput,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Add multiple lessons to a course.
+
+#     Args:
+#         course_id (str): The course ID.
+#         lessons_input (MultipleLessonInput): The lessons input.
+#         lesson_service (LessonService): The lesson service.
+
+#     Returns:
+#         dict: The lessons response.
+#     """
+#     return lesson_service.add_multiple_lessons(course_id, lessons_input)
+
+# @admin_router.post("/course/{course_id}/lessons/{lesson_id}/video")
+# async def add_video_to_lesson(
+#     course_id: str,
+#     lesson_id: str,
+#     video_input: VideoInput,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Add a video to a lesson.
+
+#     Args:
+#         course_id (str): The course ID.
+#         lesson_id (str): The lesson ID.
+#         video_input (VideoInput): The video input.
+#         lesson_service (LessonService): The lesson service.
+
+#     Returns:
+#         dict: The video response.
+#     """
+#     return lesson_service.add_video_to_lesson(course_id, lesson_id, video_input)
+
+# @admin_router.put("/course/{course_id}/lessons/{lesson_id}")
+# async def update_lesson(
+#     course_id: str,
+#     lesson_id: str,
+#     lesson_input: MultipleLessonInput,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Update a lesson.
+
+#     Args:
+#         course_id (str): The course ID.
+#         lesson_id (str): The lesson ID.
+#         lesson_input (MultipleLessonInput): The lesson input.
+#         lesson_service (LessonService): The lesson service.
+
+#     Returns:
+#         dict: The lesson update response.
+#     """
+#     return lesson_service.update_lesson(course_id, lesson_id, lesson_input)
+
+
+
+# @admin_router.delete("/course/{course_id}/lessons/{lesson_id}")
+# async def delete_lesson(
+#     course_id: str,
+#     lesson_id: str,
+#     lesson_service: LessonService = Depends(get_lesson_service)
+# ):
+#     """
+#     Delete a lesson.
+
+#     Args:
+#         course_id (str): The course ID.
+#         lesson_id (str): The lesson ID.
+#         lesson_service (LessonService): The lesson service.
+
+#     Returns:
+#         dict: The lesson deletion response.
+#     """
+#     return lesson_service.delete_lesson(course_id, lesson_id)
+
+
 # Payment management endpoints
 # @admin_router.get("/payments")
 # async def get_all_payments(
@@ -267,38 +355,37 @@ async def get_payment(
 inst_admin_router = APIRouter(
     prefix="/inst-admin",
     tags=["admin"],
-    dependencies=[Depends(is_admin)]
+    dependencies=[Depends(is_admin_or_instructor)]
 )
 
 @inst_admin_router.get("/courses/{course_id}/enrolled")
 async def get_users_enrolled_in_course(
     course_id: str,
     search_params: DateFilterParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
+    course_service: CourseService = Depends(get_course_service),
+    decoded_token: dict = Depends(is_admin_or_instructor)
 ):
     """
     Get all users enrolled in a course.
 
     Args:
         course_id (str): The course ID.
-        search_params.year,
-        search_params.month,
-        search_params.week,
-        search_params.day,
-        search_params (DateFilterParams): The search parameters.
+        search_params (DateFilterParams): The search parameters for filtering by date and pagination.
         course_service (CourseService): The course service.
+        decoded_token (dict): The decoded JWT token containing user information.
 
 
     Returns:
         dict: The enrolled users response.
     """
+    user_id = decoded_token.get("id")
     return course_service.getEnrolledUsers(
         course_id,
+        user_id,
         search_params.year,
         search_params.month,
         search_params.week,
         search_params.day,
-
         search_params.page,
         search_params.page_size,
     )
@@ -307,7 +394,8 @@ async def get_users_enrolled_in_course(
 async def get_course_payments(
     course_id: str,
     search_params: DateFilterParams = Depends(),
-    payment_service: PaymentService = Depends(get_payment_service)
+    payment_service: PaymentService = Depends(get_payment_service),
+    decoded_token: dict = Depends(is_admin_or_instructor)
 ):
     """
     Get all payments for a course.
@@ -320,8 +408,11 @@ async def get_course_payments(
     Returns:
         dict: The payments response.
     """
+    user_id = decoded_token.get("id")
+
     return payment_service.get_course_payments(
         course_id,
+        user_id,
         search_params.page,
         search_params.page_size,
         search_params.filter,
