@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pprint import pprint
 
 class Settings(BaseSettings):
     DATABASE_URL: str
@@ -30,6 +31,8 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"  # Specify the .env file to load variables from
 
-
 def get_settings():
-    return Settings()
+    settings = Settings()
+    print("Loading settings from environment variables...")
+    pprint(settings.model_dump())
+    return settings
