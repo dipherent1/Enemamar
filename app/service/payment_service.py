@@ -248,7 +248,9 @@ class PaymentService:
         if not course:
             raise ValidationError(detail="Course not found")
         
-        if course.instructor_id == user_id:
+        print("instructor_id", course.instructor_id)
+        print("user_id", user_id)
+        if str(course.instructor_id) == user_id:
             return True
         
         return False
