@@ -31,16 +31,16 @@ class Course(Base):
     view_count = Column(Integer, default=0)
 
     # Relationships
-    enrollments = relationship("Enrollment", back_populates="course")
-    lessons = relationship("Lesson", back_populates="course")  # Changed from modules to lessons
+    enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
+    lessons = relationship("Lesson", back_populates="course", cascade="all, delete-orphan")  # Changed from modules to lessons
     instructor: Mapped["User"] = relationship(
         "User",
         back_populates="courses_taught",
         foreign_keys=[instructor_id]
     )
-    payment = relationship("Payment", back_populates="course")
-    comments = relationship("Comment", back_populates="course")
-    reviews = relationship("Review", back_populates="course")
+    payment = relationship("Payment", back_populates="course", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="course", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="course", cascade="all, delete-orphan")
 
 
 class Enrollment(Base):
@@ -52,7 +52,7 @@ class Enrollment(Base):
         index=True
     )
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
-    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
     enrolled_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
@@ -69,14 +69,14 @@ class Lesson(Base):
     title: Mapped[str]
     description: Mapped[str]
     duration: Mapped[int]
-    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
     order = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     course = relationship("Course", back_populates="lessons")
-    video = relationship("Video", back_populates="lesson", uselist=False)  # Changed to one-to-one
+    video = relationship("Video", back_populates="lesson", uselist=False, cascade="all, delete-orphan")  # Changed to one-to-one
 
 class Video(Base):
     __tablename__ = "videos"
@@ -102,7 +102,7 @@ class Video(Base):
     )
 
     # Relationships
-    lesson_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id"), unique=True)  # Added unique constraint
+    lesson_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("lessons.id", ondelete="CASCADE"), unique=True)  # Added unique constraint
     lesson = relationship("Lesson", back_populates="video")  # Changed to one-to-one
 
 class Payment(Base):
@@ -116,7 +116,7 @@ class Payment(Base):
     tx_ref = Column(String, unique=True)
     ref_id = Column(String, unique=True)
 
-    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     amount = Column(Float)
     status = Column(String, default="pending")
@@ -140,7 +140,7 @@ class Comment(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
-    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
 
     # Relationships
     user = relationship("User", back_populates="comments")
@@ -159,7 +159,7 @@ class Review(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
-    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id"))
+    course_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"))
 
     # Relationships
     user = relationship("User", back_populates="reviews")

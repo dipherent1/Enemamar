@@ -156,6 +156,9 @@ class LessonRepository:
         """
         Delete a lesson.
 
+        With CASCADE DELETE configured in the model, this will automatically delete
+        any associated videos.
+
         Args:
             course_id (str): The course ID.
             lesson_id (str): The lesson ID.
@@ -167,6 +170,7 @@ class LessonRepository:
             NotFoundError: If the lesson is not found.
         """
         try:
+            # Find the lesson
             lesson_to_delete = (
                 self.db.query(Lesson)
                 .filter(Lesson.course_id == course_id)
@@ -175,10 +179,14 @@ class LessonRepository:
             )
             if not lesson_to_delete:
                 return None, None
+
+            # With CASCADE DELETE configured in the model, deleting the lesson
+            # will automatically delete any associated videos
             self.db.delete(lesson_to_delete)
             self.db.commit()
             return _wrap_return(lesson_to_delete)
         except Exception as e:
+            self.db.rollback()  # Rollback in case of error
             return _wrap_error(e)
 
     def get_lessons_count(self, course_id: str) -> int:

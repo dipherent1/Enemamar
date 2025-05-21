@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from app.domain.model.course import Course, Enrollment, Lesson
+from app.domain.model.course import Course, Enrollment, Lesson, Video, Comment, Review, Payment
 from app.domain.schema.courseSchema import CourseAnalysisResponse
 from app.utils.exceptions.exceptions import NotFoundError, ValidationError
 from sqlalchemy import or_, func
@@ -419,6 +419,13 @@ class CourseRepository:
         """
         Delete a course from the database.
 
+        With CASCADE DELETE configured in the model, this will automatically delete:
+        - Enrollments
+        - Payments
+        - Comments
+        - Reviews
+        - Lessons and their videos
+
         Args:
             course_id (str): The ID of the course to delete.
 
@@ -433,7 +440,8 @@ class CourseRepository:
             if not course:
                 return None, NotFoundError(detail="Course not found")
 
-            # Delete the course
+            # With CASCADE DELETE configured in the model, deleting the course
+            # will automatically delete all related records
             self.db.delete(course)
             self.db.commit()
             return _wrap_return(course)
