@@ -460,6 +460,44 @@ class CourseService:
             "data": {"is_enrolled": enrolled}
         }
 
+    def deleteCourse(self, course_id: str):
+        """
+        Delete a course.
+
+        Args:
+            course_id (str): ID of the course to delete.
+
+        Returns:
+            dict: Response containing course deletion details.
+
+        Raises:
+            ValidationError: If the course ID is invalid or the course is not found.
+        """
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        # First get the course to ensure it exists and to return its data
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
+
+        # Delete the course
+        deleted_course, err = self.course_repo.delete_course(course_id)
+        if err:
+            raise ValidationError(detail="Failed to delete course", data=str(err))
+        if not deleted_course:
+            raise ValidationError(detail="Failed to delete course")
+
+        course_response = CourseResponse.model_validate(course)
+        return {
+            "detail": "Course deleted successfully",
+            "data": course_response
+        }
+
 
 def get_course_service(db: Session = Depends(get_db)):
     return CourseService(db)

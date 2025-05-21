@@ -399,7 +399,7 @@ class CourseRepository:
 
     def get_lessons_count(self, course_id: str) -> int:
         return self.lesson_repo.get_lessons_count(course_id)
-    
+
     def save_thumbnail(self, course_id: str, thumbnail_url: str):
         """
         Persist a thumbnail URL on a course.
@@ -415,10 +415,29 @@ class CourseRepository:
             self.db.rollback()
             return _wrap_error(e)
 
+    def delete_course(self, course_id: str):
+        """
+        Delete a course from the database.
 
+        Args:
+            course_id (str): The ID of the course to delete.
 
+        Returns:
+            Course: The deleted course object.
 
+        Raises:
+            NotFoundError: If the course is not found.
+        """
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return None, NotFoundError(detail="Course not found")
 
-
-
+            # Delete the course
+            self.db.delete(course)
+            self.db.commit()
+            return _wrap_return(course)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
 
