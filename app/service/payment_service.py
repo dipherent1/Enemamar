@@ -228,9 +228,36 @@ class PaymentService:
             }
         return result
 
+    def checkAdminOrOwner(self, user_id, course_id):
+        user, err = self.user_repo.get_user_by_id(user_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="User not found")
+            raise ValidationError(detail="Failed to retrieve user", data=str(err))
+        if not user:
+            raise ValidationError(detail="User not found")
+        
+        if user.role == "admin":
+            return True
+        
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
+        
+        if course.instructor_id == user_id:
+            return True
+        
+        return False
+
+    
     def get_course_payments(
         self,
         course_id: str,
+        user_id: str,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
         filter: Optional[str] = None,
@@ -244,11 +271,9 @@ class PaymentService:
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
-        course,err = self.course_repo.get_course(course_id)
-        if err:
-            raise ValidationError(detail="Error fetching course", data=str(err))
-        if not course:
-            raise NotFoundError(detail="Course not found")
+        
+        if not self.checkAdminOrOwner(user_id, course_id):
+            raise ValidationError(detail="You are not authorized to view this course")
 
         payments, err = self.payment_repo.get_course_payments(
             course_id, page, page_size, filter, year, month, week, day

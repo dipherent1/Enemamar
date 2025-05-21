@@ -29,11 +29,11 @@ async def get_all_users(
 ):
     """
     Get all users.
-    
+
     Args:
         params (SearchParams): The search parameters.
         user_service (UserService): The user service.
-        
+
     Returns:
         dict: The users response.
     """
@@ -48,16 +48,16 @@ async def get_all_users(
 
 @admin_router.put("/users/deactivate/{user_id}")
 async def deactivate_user(
-    user_id: str, 
+    user_id: str,
     user_service: UserService = Depends(get_user_service)
 ):
     """
     Deactivate a user.
-    
+
     Args:
         user_id (str): The user ID.
         user_service (UserService): The user service.
-        
+
     Returns:
         dict: The deactivation response.
     """
@@ -65,16 +65,16 @@ async def deactivate_user(
 
 @admin_router.put("/users/activate/{user_id}")
 async def activate_user(
-    user_id: str, 
+    user_id: str,
     user_service: UserService = Depends(get_user_service)
 ):
     """
     Activate a user.
-    
+
     Args:
         user_id (str): The user ID.
         user_service (UserService): The user service.
-        
+
     Returns:
         dict: The activation response.
     """
@@ -82,18 +82,18 @@ async def activate_user(
 
 @admin_router.put("/users/role/{user_id}")
 async def update_user_role(
-    user_id: str, 
+    user_id: str,
     role_request: UpdateRoleRequest,
     user_service: UserService = Depends(get_user_service)
 ):
     """
     Update a user's role.
-    
+
     Args:
         user_id (str): The user ID.
         role_request (UpdateRoleRequest): The role update request.
         user_service (UserService): The user service.
-        
+
     Returns:
         dict: The role update response.
     """
@@ -115,7 +115,7 @@ async def get_users_enrolled_in_course(
         course_service (CourseService): Service for course-related operations.
 
     Returns:
-        dict: Paginated list of courses the user is enrolled in, 
+        dict: Paginated list of courses the user is enrolled in,
               including metadata like total count, page, and page_size.
     """
     return course_service.getEnrolledCourses(
@@ -132,11 +132,11 @@ async def add_course(
 ):
     """
     Add a new course.
-    
+
     Args:
         course_info (CourseInput): The course information.
         course_service (CourseService): The course service.
-        
+
     Returns:
         dict: The course creation response.
     """
@@ -162,12 +162,12 @@ async def update_course(
 ):
     """
     Update a course.
-    
+
     Args:
         course_id (str): The course ID.
         course_info (CourseInput): The course information.
         course_service (CourseService): The course service.
-        
+
     Returns:
         dict: The course update response.
     """
@@ -180,11 +180,11 @@ async def delete_course(
 ):
     """
     Delete a course.
-    
+
     Args:
         course_id (str): The course ID.
         course_service (CourseService): The course service.
-        
+
     Returns:
         dict: The course deletion response.
     """
@@ -203,12 +203,12 @@ async def add_multiple_lessons(
 ):
     """
     Add multiple lessons to a course.
-    
+
     Args:
         course_id (str): The course ID.
         lessons_input (MultipleLessonInput): The lessons input.
         lesson_service (LessonService): The lesson service.
-        
+
     Returns:
         dict: The lessons response.
     """
@@ -223,13 +223,13 @@ async def add_video_to_lesson(
 ):
     """
     Add a video to a lesson.
-    
+
     Args:
         course_id (str): The course ID.
         lesson_id (str): The lesson ID.
         video_input (VideoInput): The video input.
         lesson_service (LessonService): The lesson service.
-        
+
     Returns:
         dict: The video response.
     """
@@ -244,13 +244,13 @@ async def update_lesson(
 ):
     """
     Update a lesson.
-    
+
     Args:
         course_id (str): The course ID.
         lesson_id (str): The lesson ID.
         lesson_input (MultipleLessonInput): The lesson input.
         lesson_service (LessonService): The lesson service.
-        
+
     Returns:
         dict: The lesson update response.
     """
@@ -266,12 +266,12 @@ async def delete_lesson(
 ):
     """
     Delete a lesson.
-    
+
     Args:
         course_id (str): The course ID.
         lesson_id (str): The lesson ID.
         lesson_service (LessonService): The lesson service.
-        
+
     Returns:
         dict: The lesson deletion response.
     """
@@ -286,11 +286,11 @@ async def delete_lesson(
 # ):
 #     """
 #     Get all payments.
-    
+
 #     Args:
 #         search_params (SearchParams): The search parameters.
 #         payment_service (PaymentService): The payment service.
-        
+
 #     Returns:
 #         dict: The payments response.
 #     """
@@ -306,11 +306,11 @@ async def get_payment(
 ):
     """
     Get a payment by ID.
-    
+
     Args:
         payment_id (str): The payment ID.
         payment_service (PaymentService): The payment service.
-        
+
     Returns:
         dict: The payment response.
     """
@@ -324,11 +324,11 @@ async def get_payment(
 # ):
 #     """
 #     Get all instructors.
-    
+
 #     Args:
 #         params (SearchParams): The search parameters.
 #         user_service (UserService): The user service.
-        
+
 #     Returns:
 #         dict: The instructors response.
 #     """
@@ -340,16 +340,16 @@ async def get_payment(
 
 # @admin_router.get("/instructors/{instructor_id}")
 # async def get_instructor_by_id(
-#     instructor_id: str, 
+#     instructor_id: str,
 #     user_service: UserService = Depends(get_user_service)
 # ):
 #     """
 #     Get an instructor by ID.
-    
+
 #     Args:
 #         instructor_id (str): The instructor ID.
 #         user_service (UserService): The user service.
-        
+
 #     Returns:
 #         dict: The instructor response.
 #     """
@@ -359,38 +359,36 @@ async def get_payment(
 inst_admin_router = APIRouter(
     prefix="/inst-admin",
     tags=["admin"],
-    dependencies=[Depends(is_admin)]
-)   
+    dependencies=[Depends(is_admin_or_instructor)]
+)
 
 @inst_admin_router.get("/courses/{course_id}/enrolled")
 async def get_users_enrolled_in_course(
     course_id: str,
     search_params: DateFilterParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
+    course_service: CourseService = Depends(get_course_service),
+    decoded_token: dict = Depends(is_admin_or_instructor)
 ):
     """
     Get all users enrolled in a course.
-    
+
     Args:
         course_id (str): The course ID.
-        search_params.year,
-        search_params.month,
-        search_params.week,
-        search_params.day,
-        search_params (DateFilterParams): The search parameters.
+        search_params (DateFilterParams): The search parameters for filtering by date and pagination.
         course_service (CourseService): The course service.
+        decoded_token (dict): The decoded JWT token containing user information.
 
-        
     Returns:
         dict: The enrolled users response.
     """
+    user_id = decoded_token.get("id")
     return course_service.getEnrolledUsers(
         course_id,
+        user_id,
         search_params.year,
         search_params.month,
         search_params.week,
         search_params.day,
-
         search_params.page,
         search_params.page_size,
     )
@@ -399,23 +397,27 @@ async def get_users_enrolled_in_course(
 async def get_course_payments(
     course_id: str,
     search_params: DateFilterParams = Depends(),
-    payment_service: PaymentService = Depends(get_payment_service)
+    payment_service: PaymentService = Depends(get_payment_service),
+    decoded_token: dict = Depends(is_admin_or_instructor)
 ):
     """
     Get all payments for a course.
-    
+
     Args:
         course_id (str): The course ID.
         search_params (DateFilterParams): The search parameters.
         payment_service (PaymentService): The payment service.
-        
+
     Returns:
         dict: The payments response.
     """
+    user_id = decoded_token.get("id")
+
     return payment_service.get_course_payments(
-        course_id, 
-        search_params.page, 
-        search_params.page_size, 
+        course_id,
+        user_id,
+        search_params.page,
+        search_params.page_size,
         search_params.filter,
         search_params.year,
         search_params.month,
