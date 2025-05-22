@@ -122,6 +122,7 @@ class AuthService:
             raise ValidationError(detail="Error deleting refresh token", data=str(err))
         if not result:
             raise NotFoundError(detail="Refresh token not found for logout")
+        return {"detail": "Successfully logged out"}
 
 
 
