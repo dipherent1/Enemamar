@@ -131,14 +131,9 @@ class CourseService:
             if original_filename and "." in original_filename:
                 original_extension = "." + original_filename.split(".")[-1]
 
-            # Decide file_name and ensure it has an extension
+            # Decide file_name (BunnyCDNStorage will make it unique)
             if thumbnail_name:
-                # Check if custom name already has an extension
-                if "." in thumbnail_name:
-                    file_name = thumbnail_name
-                else:
-                    # Add the original extension to the custom name
-                    file_name = f"{thumbnail_name}{original_extension}"
+                file_name = thumbnail_name
             else:
                 file_name = original_filename
 

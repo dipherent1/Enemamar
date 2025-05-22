@@ -248,8 +248,6 @@ class UserService:
         Raises:
             ValidationError: If the user ID is invalid or the profile picture upload fails.
         """
-        import re
-        import uuid
         import os
         from tempfile import NamedTemporaryFile
         from app.utils.bunny.bunnyStorage import BunnyCDNStorage
@@ -278,23 +276,16 @@ class UserService:
                 settings.BUNNY_CDN_PROFILE_PULL_ZONE
             )
 
+            # Generate filename based on user's name
+            name_base = user.first_name
+            if user.last_name:
+                name_base += f"_{user.last_name}"
+
             # Get original filename and extension
             original_filename = profile_picture.filename
             original_extension = ""
             if original_filename and "." in original_filename:
                 original_extension = "." + original_filename.split(".")[-1]
-
-            # Generate unique filename based on user's name and a UUID
-            name_base = user.first_name
-            if user.last_name:
-                name_base += f"_{user.last_name}"
-
-            # Clean the name (remove spaces, special chars)
-            name_base = re.sub(r'[^\w]', '_', name_base).lower()
-
-            # Add a unique identifier
-            unique_id = str(uuid.uuid4())[:8]
-            file_name = f"{name_base}_{unique_id}{original_extension}"
 
             # Create a temporary file with the original content
             with NamedTemporaryFile("wb", delete=False) as tmp:
@@ -307,10 +298,11 @@ class UserService:
             shutil.copy(tmp_path, temp_file_with_ext)
 
             # Upload and then remove temp files
+            # The BunnyCDNStorage class will handle making the filename unique
             profile_picture_url = storage.upload_file(
                 "",
                 file_path=temp_file_with_ext,
-                file_name=file_name
+                file_name=name_base
             )
 
             # Clean up temporary files
@@ -318,7 +310,7 @@ class UserService:
             os.unlink(tmp_path)
 
             # Update user's profile picture URL
-            updated_user, err = self.user_repo.update_profile_picture(user_id, profile_picture_url)
+            _, err = self.user_repo.update_profile_picture(user_id, profile_picture_url)
             if err:
                 raise ValidationError(detail="Failed to update profile picture", data=str(err))
 
