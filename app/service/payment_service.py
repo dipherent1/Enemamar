@@ -1,4 +1,3 @@
-import pprint
 from app.utils.exceptions.exceptions import ValidationError, NotFoundError
 from app.domain.schema.courseSchema import (
     PaymentData,
@@ -22,18 +21,18 @@ class PaymentService:
         self.payment_repo = PaymentRepository(db)
         self.course_repo = CourseRepository(db)
         self.user_repo = UserRepository(db)
-    
+
     def initiate_payment(self, user_id, course_id):
         """
         Initiate a payment for a course.
-        
+
         Args:
             user_id: The user ID.
             course_id: The course ID.
-            
+
         Returns:
             dict: The payment response.
-            
+
         Raises:
             ValidationError: If the payment fails.
         """
@@ -43,21 +42,21 @@ class PaymentService:
             raise ValidationError(detail="Error fetching user", data=str(err))
         if not user:
             raise NotFoundError(detail="User not found")
-        
+
         # Validate course exists
         course, err = self.course_repo.get_course(course_id)
         if err:
             raise ValidationError(detail="Error fetching course", data=str(err))
         if not course:
             raise NotFoundError(detail="Course not found")
-        
+
         # Check if user is already enrolled
         enrollment, err = self.course_repo.get_enrollment(user_id, course_id)
         if err:
-            raise ValidationError(detail="Error fetching enrollment", data=str(err))    
+            raise ValidationError(detail="Error fetching enrollment", data=str(err))
         if enrollment:
             raise ValidationError(detail="User already enrolled in course")
-        
+
         if course.price > 0:
             callback = f"{settings.BASE_URL}/payment/callback"
 
@@ -88,7 +87,7 @@ class PaymentService:
 
             if response.get("status") != "success":
                 raise ValidationError(detail=response['message'])
-            
+
             payment = Payment(
                 user_id=user_id,
                 course_id=course_id,
@@ -96,13 +95,13 @@ class PaymentService:
                 tx_ref=tx_ref
             )
             print("Payment object:", payment)
-            
+
             payment, err = self.payment_repo.save_payment(payment)
             if err:
                 raise ValidationError(detail="Error saving payment", data=str(err))
-            
+
             return {"detail": "Payment initiated", "data": {"payment": PaymentResponse.model_validate(payment), "chapa_response": response}}
-        
+
         else:
             # Enroll course for free
             enrollment,err = self.course_repo.enroll_course(user_id, course_id)
@@ -111,22 +110,22 @@ class PaymentService:
             if not enrollment:
                 raise ValidationError(detail="Error enrolling course")
             # Check if user is already enrolled
-             
+
             # Convert SQLAlchemy Enrollment object to Pydantic Response Model
             enrollment_response = EnrollmentResponse.model_validate(enrollment)
-            
+
             return {"detail": "Course enrolled successfully", "data": enrollment_response}
-    
+
     def process_payment_callback(self, payload: CallbackPayload):
         """
         Process a payment callback.
-        
+
         Args:
             payload (CallbackPayload): The callback payload.
-            
+
         Returns:
             dict: The enrollment response.
-            
+
         Raises:
             ValidationError: If the payment fails.
         """
@@ -136,40 +135,40 @@ class PaymentService:
             raise ValidationError(detail="Error fetching payment", data=str(err))
         if not payment:
             raise NotFoundError(detail="Payment not found")
-        
+
         # Verify payment with payment provider
         try:
             response = verify_payment(payload.trx_ref)
         except Exception as e:
             raise ValidationError(detail="Payment verification failed")
-        
+
         if response["status"] != "success":
             _, err = self.payment_repo.update_payment(payload.trx_ref, "failed", ref_id=payload.ref_id)
             if err:
                 raise ValidationError(detail="Error updating payment status to failed", data=str(err))
             raise ValidationError(detail="Payment failed")
-        
+
         # Update payment status
         payment, err = self.payment_repo.update_payment(payload.trx_ref, "success", ref_id=response["data"]["reference"])
         if err:
             raise ValidationError(detail="Error updating payment status to success", data=str(err))
         payment = PaymentResponse.model_validate(payment)
-        
+
         # Validate user exists
         user, err = self.user_repo.get_user_by_id(payment.user_id)
         if err:
             raise ValidationError(detail="Error fetching user after payment", data=str(err))
         if not user:
             raise NotFoundError(detail="User not found")
-        
+
         # Validate course exists
         course,err = self.course_repo.get_course(payment.course_id)
         if err:
             raise ValidationError(detail="Error fetching course after payment", data=str(err))
-        
+
         if not course:
             raise NotFoundError(detail="Course not found")
-        
+
         # Enroll course
         enrollment, err = self.course_repo.enroll_course(user.id, course.id)
         if err:
@@ -179,9 +178,9 @@ class PaymentService:
 
         # Convert SQLAlchemy Enrollment object to Pydantic Response Model
         enrollment_response = EnrollmentResponse.model_validate(enrollment)
-        
+
         return {"detail": "Course enrolled successfully", "data": enrollment_response}
-    
+
     def get_user_payments(
         self,
         user_id: str,
@@ -236,10 +235,10 @@ class PaymentService:
             raise ValidationError(detail="Failed to retrieve user", data=str(err))
         if not user:
             raise ValidationError(detail="User not found")
-        
+
         if user.role == "admin":
             return True
-        
+
         course, err = self.course_repo.get_course(course_id)
         if err:
             if isinstance(err, NotFoundError):
@@ -247,15 +246,44 @@ class PaymentService:
             raise ValidationError(detail="Failed to retrieve course", data=str(err))
         if not course:
             raise ValidationError(detail="Course not found")
-        
+
         print("instructor_id", course.instructor_id)
         print("user_id", user_id)
         if str(course.instructor_id) == user_id:
             return True
-        
+
         return False
 
-    
+
+    def get_payment(self, payment_id: str):
+        """
+        Get a payment by ID.
+
+        Args:
+            payment_id (str): The payment ID.
+
+        Returns:
+            dict: The payment response.
+
+        Raises:
+            ValidationError: If the payment ID is invalid or the payment is not found.
+        """
+        if not payment_id:
+            raise ValidationError(detail="Payment ID is required")
+
+        payment, err = self.payment_repo.get_payment_by_id(payment_id)
+        if err:
+            raise ValidationError(detail="Error fetching payment", data=str(err))
+        if not payment:
+            raise NotFoundError(detail="Payment not found")
+
+        payment_response = PaymentResponse.model_validate(payment)
+
+        return {
+            "detail": "Payment fetched successfully",
+            "data": payment_response
+        }
+
     def get_course_payments(
         self,
         course_id: str,
@@ -273,7 +301,7 @@ class PaymentService:
         """
         if not course_id:
             raise ValidationError(detail="Course ID is required")
-        
+
         if not self.checkAdminOrOwner(user_id, course_id):
             raise ValidationError(detail="You are not authorized to view this course")
 
@@ -303,10 +331,10 @@ class PaymentService:
 def get_payment_service(db: Session = Depends(get_db)) -> PaymentService:
     """
     Get a PaymentService instance.
-    
+
     Args:
         db (Session, optional): The database session. Defaults to Depends(get_db).
-        
+
     Returns:
         PaymentService: A PaymentService instance.
     """

@@ -82,7 +82,7 @@ class RefreshToken(Base):
         default=uuid.uuid4,
         index=True
     )
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     token: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.now, onupdate=datetime.now)

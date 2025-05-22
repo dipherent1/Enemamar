@@ -109,7 +109,7 @@ class CommentReviewRepository:
         try:
             comments = (
                 self.db.query(Comment)
-                .options(joinedload(Comment.course))
+                .options(joinedload(Comment.course), joinedload(Comment.user))
                 .filter(Comment.user_id == user_id)
                 .order_by(Comment.created_at.desc())
                 .offset((page - 1) * page_size)
@@ -141,7 +141,13 @@ class CommentReviewRepository:
             comment.content = content
             self.db.commit()
             self.db.refresh(comment)
-            return _wrap_return(comment)
+
+            # Reload the comment with user relationship
+            updated_comment = (self.db.query(Comment)
+                .options(joinedload(Comment.user))
+                .filter(Comment.id == comment_id).first())
+
+            return _wrap_return(updated_comment)
         except Exception as e:
             return _wrap_error(e)
 

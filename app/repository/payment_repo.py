@@ -12,14 +12,14 @@ def _wrap_error(e: Exception) -> Tuple[None, Exception]:
 class PaymentRepository:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def save_payment(self, payment: Payment):
         """
         Save a new payment to the database.
-        
+
         Args:
             payment (Payment): The payment object to save.
-            
+
         Returns:
             Payment: The saved payment object.
         """
@@ -31,14 +31,14 @@ class PaymentRepository:
         except Exception as e:
             self.db.rollback()
             return _wrap_error(e)
-    
+
     def get_payment(self, tx_ref: str):
         """
         Get a payment by transaction reference.
-        
+
         Args:
             tx_ref (str): The transaction reference.
-            
+
         Returns:
             Payment: The payment object if found, None otherwise.
         """
@@ -51,19 +51,39 @@ class PaymentRepository:
             return _wrap_return(payment)
         except Exception as e:
             return _wrap_error(e)
-    
+
+    def get_payment_by_id(self, payment_id: str):
+        """
+        Get a payment by ID.
+
+        Args:
+            payment_id (str): The payment ID.
+
+        Returns:
+            Payment: The payment object if found, None otherwise.
+        """
+        try:
+            payment = (
+                self.db.query(Payment)
+                .filter(Payment.id == payment_id)
+                .first()
+            )
+            return _wrap_return(payment)
+        except Exception as e:
+            return _wrap_error(e)
+
     def update_payment(self, tx_ref: str, status: str, ref_id: str):
         """
         Update a payment's status and reference ID.
-        
+
         Args:
             tx_ref (str): The transaction reference.
             status (str): The new status.
             ref_id (str): The reference ID.
-            
+
         Returns:
             Payment: The updated payment object.
-            
+
         Raises:
             NotFoundError: If the payment is not found.
         """
@@ -127,7 +147,7 @@ class PaymentRepository:
     ) -> int:
         """
         Get the count of payments for a user with optional status and date filtering.
-        
+
         Args:
             user_id (str): The user ID.
             filter (Optional[str], optional): Filter by payment status. Defaults to None.
@@ -135,7 +155,7 @@ class PaymentRepository:
             month (Optional[int], optional): Filter by month of updated_at. Defaults to None.
             week (Optional[int], optional): Filter by ISO week number of updated_at. Defaults to None.
             day (Optional[int], optional): Filter by day of updated_at. Defaults to None.
-            
+
         Returns:
             int: The count of payments.
         """
@@ -237,10 +257,10 @@ class PaymentRepository:
     def get_course_revenue(self, course_id: str):
         """
         Get the total revenue for a course.
-        
+
         Args:
             course_id (str): The course ID.
-            
+
         Returns:
             float: The total revenue.
         """
