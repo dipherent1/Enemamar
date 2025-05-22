@@ -1,5 +1,7 @@
 import os
 import requests
+import uuid
+import re
 from pathlib import Path
 
 
@@ -84,6 +86,17 @@ class BunnyCDNStorage:
                 # If the provided file_name doesn't have an extension, add the original extension
                 if not file_name_extension and original_extension:
                     file_name = f"{file_name}{original_extension}"
+
+            # Make the filename unique by adding a UUID
+            # First, separate the name and extension
+            file_name_without_ext, file_ext = os.path.splitext(file_name)
+
+            # Clean the name (remove spaces, special chars)
+            file_name_without_ext = re.sub(r'[^\w]', '_', file_name_without_ext).lower()
+
+            # Add a unique identifier
+            unique_id = str(uuid.uuid4())[:8]
+            file_name = f"{file_name_without_ext}_{unique_id}{file_ext}"
 
             storage_url = f'{self.base_url}{storage_path}{file_name}'
 
