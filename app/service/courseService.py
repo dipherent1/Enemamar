@@ -119,7 +119,7 @@ class CourseService:
             storage = BunnyCDNStorage(
                 settings.BUNNY_CDN_THUMB_STORAGE_APIKEY,
                 settings.BUNNY_CDN_THUMB_STORAGE_ZONE,
-                settings.BUNNY_CDN_PULL_ZONE
+                settings.BUNNY_CDN_THUMB_PULL_ZONE
             )
 
             # 2) Write UploadFile to a temp file so upload_file can open it by path

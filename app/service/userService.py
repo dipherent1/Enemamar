@@ -275,7 +275,7 @@ class UserService:
             storage = BunnyCDNStorage(
                 settings.BUNNY_CDN_PROFILE_STORAGE_APIKEY,
                 settings.BUNNY_CDN_PROFILE_STORAGE_ZONE,
-                settings.BUNNY_CDN_PULL_ZONE
+                settings.BUNNY_CDN_PROFILE_PULL_ZONE
             )
 
             # Get original filename and extension
