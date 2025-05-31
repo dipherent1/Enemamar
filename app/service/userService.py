@@ -20,15 +20,24 @@ class UserService:
         # Ensure pagination defaults when parameters are None
         page = page or 1
         page_size = page_size or 10
+
         users, err = self.user_repo.get_all_users(search=search, page=page, page_size=page_size, filter=filter)
         if err:
             raise ValidationError(detail="Failed to retrieve users", data=str(err))
+
+        # Get total count for pagination metadata
+        total_count, err = self.user_repo.get_users_count(search=search, filter=filter)
+        if err:
+            raise ValidationError(detail="Failed to retrieve users count", data=str(err))
+
         users_response = [UserResponse.model_validate(user) for user in users]
         response = {
             "detail": "Users retrieved successfully",
             "data": users_response,
             "page": page,
-            "page_size": page_size
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size
         }
         return response
 
@@ -209,15 +218,24 @@ class UserService:
         # Ensure pagination defaults when parameters are None
         page = page or 1
         page_size = page_size or 10
+
         users, err = self.user_repo.get_all_instructors(search=search, page=page, page_size=page_size)
         if err:
             raise ValidationError(detail="Failed to retrieve instructors", data=str(err))
+
+        # Get total count for pagination metadata
+        total_count, err = self.user_repo.get_instructors_count(search=search)
+        if err:
+            raise ValidationError(detail="Failed to retrieve instructors count", data=str(err))
+
         users_response = [UserResponse.model_validate(user) for user in users]
         response = {
             "detail": "Instructors retrieved successfully",
             "data": users_response,
             "page": page,
-            "page_size": page_size
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size
         }
         return response
 

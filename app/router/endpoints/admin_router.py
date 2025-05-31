@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from app.domain.schema.authSchema import UpdateRoleRequest
 from app.domain.schema.courseSchema import (
     CourseInput,
+    CourseEditInput,
     SearchParams,
     DateFilterParams
 )
@@ -24,14 +25,22 @@ async def get_all_users(
     user_service: UserService = Depends(get_user_service)
 ):
     """
-    Get all users.
+    Get all users with search and filter capabilities.
+
+    This endpoint returns a paginated list of all active users in the system.
+    You can search across multiple user fields and filter by user role.
+
+    - **page**: Page number for pagination (default: 1)
+    - **page_size**: Number of items per page (default: 10, max: 100)
+    - **search**: Optional search term to filter users by username, email, phone number, first name, last name, or profession
+    - **filter**: Optional filter to filter users by role (student, instructor, admin)
 
     Args:
         params (SearchParams): The search parameters.
         user_service (UserService): The user service.
 
     Returns:
-        dict: The users response.
+        dict: The users response with pagination metadata.
     """
     return user_service.get_all_users(
         search=params.search,
@@ -153,15 +162,19 @@ async def add_thumbnail_to_course(
 @admin_router.put("/courses/{course_id}")
 async def update_course(
     course_id: str,
-    course_info: CourseInput,
+    course_info: CourseEditInput,
     course_service: CourseService = Depends(get_course_service)
 ):
     """
     Update a course.
 
+    This endpoint allows updating course fields such as title, description, tags,
+    price, discount, thumbnail_url, and instructor_id. All fields are optional.
+    Lessons cannot be updated through this endpoint - use the lesson endpoints instead.
+
     Args:
         course_id (str): The course ID.
-        course_info (CourseInput): The course information.
+        course_info (CourseEditInput): The course information to update.
         course_service (CourseService): The course service.
 
     Returns:

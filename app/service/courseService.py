@@ -217,6 +217,10 @@ class CourseService:
         if err:
             raise ValidationError(detail="Failed to retrieve courses", data=str(err))
 
+        for course in courses:
+            if course.discount and course.discount>0:
+                course.price = course.price - (course.price * course.discount/100)
+
         courses_response = [
             CourseResponse.model_validate(course).model_dump(exclude={'lessons'})
             for course in courses
@@ -512,6 +516,65 @@ class CourseService:
         return {
             "detail": "Enrollment status fetched successfully",
             "data": {"is_enrolled": enrolled}
+        }
+
+    def updateCourse(self, course_id: str, course_info):
+        """
+        Update a course.
+
+        Args:
+            course_id (str): ID of the course to update.
+            course_info: Input data for updating the course.
+
+        Returns:
+            dict: Response containing course update details.
+
+        Raises:
+            ValidationError: If the course ID is invalid, course is not found, or update fails.
+        """
+        if not course_id:
+            raise ValidationError(detail="Course ID is required")
+
+        # First get the course to ensure it exists
+        course, err = self.course_repo.get_course(course_id)
+        if err:
+            if isinstance(err, NotFoundError):
+                raise ValidationError(detail="Course not found")
+            raise ValidationError(detail="Failed to retrieve course", data=str(err))
+        if not course:
+            raise ValidationError(detail="Course not found")
+
+        # If instructor_id is being updated, validate the new instructor
+        if hasattr(course_info, 'instructor_id') and course_info.instructor_id is not None:
+            instructor, err = self.user_repo.get_user_by_id(str(course_info.instructor_id))
+            if err:
+                if isinstance(err, NotFoundError):
+                    raise ValidationError(detail="Instructor not found")
+                raise ValidationError(detail="Failed to retrieve instructor", data=str(err))
+            if not instructor or instructor.role != "instructor":
+                raise ValidationError(detail="Invalid instructor ID or not an instructor")
+
+        # Convert course_info to dict, excluding None values
+        course_data = course_info.model_dump(exclude_none=True)
+
+        # Update the course
+        updated_course, err = self.course_repo.update_course(course_id, course_data)
+        if err:
+            raise ValidationError(detail="Failed to update course", data=str(err))
+        if not updated_course:
+            raise ValidationError(detail="Failed to update course")
+
+        # Get the updated course with lessons for the response
+        updated_course_with_lessons, err = self.course_repo.get_course_with_lessons(course_id)
+        if err:
+            raise ValidationError(detail="Failed to fetch updated course", data=str(err))
+        if not updated_course_with_lessons:
+            raise ValidationError(detail="Failed to fetch updated course")
+
+        course_response = CourseResponse.model_validate(updated_course_with_lessons)
+        return {
+            "detail": "Course updated successfully",
+            "data": course_response
         }
 
     def deleteCourse(self, course_id: str):

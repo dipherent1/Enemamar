@@ -62,7 +62,7 @@ class PaymentService:
 
             tx_ref = generete_tx_ref(12)
             if course.discount:
-                amount = course.price - course.discount * course.price
+                amount = course.price - ((course.discount/100) * course.price)
             else:
                 amount = course.price
 

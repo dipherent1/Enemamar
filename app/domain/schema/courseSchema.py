@@ -114,6 +114,28 @@ class CourseInput(BaseModel):
         }
     }
 
+class CourseEditInput(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None, min_length=1)
+    tags: Optional[List[str]] = Field(default=None, description="List of tags for the course")
+    thumbnail_url: Optional[str] = Field(default=None, description="URL of the course thumbnail")
+    price: Optional[float] = Field(default=None, ge=0)
+    discount: Optional[float] = Field(default=None, description="Special offer price")
+    instructor_id: Optional[UUID] = Field(default=None, description="UUID of the instructor")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Updated Python Programming",
+                "description": "Learn Python from scratch - Updated",
+                "tags": ["Python", "Programming", "Advanced"],
+                "price": 89.99,
+                "discount": 10.0,
+                "instructor_id": "123e4567-e89b-12d3-a456-426614174000"
+            }
+        }
+    }
+
 class CourseResponse(BaseModel):
     id: UUID
     title: str
