@@ -201,6 +201,12 @@ class editUser(BaseModel):
         examples=["0987654321"]
     )
 
+    password: Optional[str] = Field(
+        None,
+        description="New password (min 8 characters)",
+        examples=["newsecurepassword123"]
+    )
+
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
