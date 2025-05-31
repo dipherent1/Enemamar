@@ -120,8 +120,8 @@ async def edit_me(
     """
     Update the profile information of the currently authenticated user.
 
-    This endpoint allows users to update their profile information such as username,
-    email, first name, last name, and phone number.
+    This endpoint allows users to update their profile information such as
+    first name, last name, and phone number.
 
     - **edit_user**: Object containing the fields to update (all fields are optional)
 

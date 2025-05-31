@@ -1,11 +1,8 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from uuid import UUID
-from app.domain.model.user import User
 from app.domain.schema.authSchema import UserResponse
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
 
 class VideoInput(BaseModel):
     video_id: str = Field(..., min_length=1)
@@ -197,7 +194,6 @@ class PaymentData(BaseModel):
     tx_ref: Optional[str] = None
     user_id: Optional[UUID] = None
     course_id: Optional[UUID] = None
-    email: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     title: Optional[str] = None

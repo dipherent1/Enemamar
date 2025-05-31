@@ -77,8 +77,6 @@ class PaymentService:
                 callback_url=callback,
                 phone_number="0"+user.phone_number
             )
-            if user.email:
-                data.email = user.email
             print("Payment data:", data)
             try:
                 response = pay_course(data)
