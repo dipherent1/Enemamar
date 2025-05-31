@@ -7,16 +7,6 @@ from datetime import datetime
 
 class signUp(BaseModel):
     """User registration schema"""
-    email: Optional[str] = Field(
-        None,
-        description="User's email address",
-        examples=["john.doe@example.com"]
-    )
-    username: Optional[str] = Field(
-        None,
-        description="Unique username",
-        examples=["johndoe"]
-    )
     password: str = Field(
         ...,
         description="User's password (min 8 characters)",
@@ -48,8 +38,6 @@ class signUp(BaseModel):
         "from_attributes": True,
         "json_schema_extra": {
             "example": {
-                "email": "john.doe@example.com",
-                "username": "johndoe",
                 "password": "securepassword123",
                 "first_name": "John",
                 "last_name": "Doe",
@@ -61,19 +49,14 @@ class signUp(BaseModel):
 
 class login(BaseModel):
     """User login schema"""
-    email: Optional[str] = Field(
-        None,
-        description="User's email address",
-        examples=["john.doe@example.com"]
-    )
     password: str = Field(
         ...,
         description="User's password",
         examples=["securepassword123"]
     )
-    phone_number: Optional[str] = Field(
-        None,
-        description="User's phone number (alternative to email)",
+    phone_number: str = Field(
+        ...,
+        description="User's phone number",
         examples=["0912345678", "+251912345678"]
     )
 
@@ -81,16 +64,14 @@ class login(BaseModel):
         """Validate login credentials"""
         if not self.password:
             raise ValueError("Password must be provided.")
-        if not self.email and not self.phone_number:
-            raise ValueError("Either email or phone_number must be provided.")
-        if self.email and self.phone_number:
-            raise ValueError("Provide only one of email or phone_number, not both.")
+        if not self.phone_number:
+            raise ValueError("Phone number must be provided.")
 
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
             "example": {
-                "email": "john.doe@example.com",
+                "phone_number": "0912345678",
                 "password": "securepassword123"
             }
         }
@@ -102,16 +83,6 @@ class UserResponse(BaseModel):
         ...,
         description="Unique user identifier",
         examples=["123e4567-e89b-12d3-a456-426614174000"]
-    )
-    username: Optional[str] = Field(
-        None,
-        description="User's username",
-        examples=["johndoe"]
-    )
-    email: Optional[str] = Field(
-        None,
-        description="User's email address",
-        examples=["john.doe@example.com"]
     )
     first_name: str = Field(
         ...,
@@ -159,8 +130,6 @@ class UserResponse(BaseModel):
         "json_schema_extra": {
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
-                "username": "johndoe",
-                "email": "john.doe@example.com",
                 "first_name": "John",
                 "last_name": "Doe",
                 "phone_number": "0912345678",
@@ -175,16 +144,6 @@ class UserResponse(BaseModel):
 
 class editUser(BaseModel):
     """User profile update schema"""
-    username: Optional[str] = Field(
-        None,
-        description="New username",
-        examples=["johndoe_updated"]
-    )
-    email: Optional[str] = Field(
-        None,
-        description="New email address",
-        examples=["john.doe.updated@example.com"]
-    )
     first_name: Optional[str] = Field(
         None,
         description="New first name",
@@ -211,8 +170,6 @@ class editUser(BaseModel):
         "from_attributes": True,
         "json_schema_extra": {
             "example": {
-                "username": "johndoe_updated",
-                "email": "john.doe.updated@example.com",
                 "first_name": "Johnny",
                 "last_name": "Doe",
                 "phone_number": "0987654321",
@@ -239,8 +196,6 @@ class signUpResponse(BaseModel):
                 "detail": "User created successfully",
                 "user": {
                     "id": "123e4567-e89b-12d3-a456-426614174000",
-                    "username": "johndoe",
-                    "email": "john.doe@example.com",
                     "first_name": "John",
                     "last_name": "Doe",
                     "phone_number": "0912345678",
@@ -281,8 +236,6 @@ class loginResponse(BaseModel):
                 "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "user": {
                     "id": "123e4567-e89b-12d3-a456-426614174000",
-                    "username": "johndoe",
-                    "email": "john.doe@example.com",
                     "first_name": "John",
                     "last_name": "Doe",
                     "phone_number": "0912345678",

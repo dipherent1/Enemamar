@@ -60,8 +60,6 @@ class UserRepository:
                 search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        User.username.ilike(search_term),
-                        User.email.ilike(search_term),
                         User.phone_number.ilike(search_term),
                         User.first_name.ilike(search_term),
                         User.last_name.ilike(search_term),
@@ -86,12 +84,7 @@ class UserRepository:
         except DataError as e:
             return _wrap_error(e)
 
-    def get_user_by_email(self, email: str):
-        try:
-            user = self.db.query(User).filter(User.email == email).first()
-            return _wrap_return(user)
-        except DataError as e:
-            return _wrap_error(e)
+
 
     def get_user_by_phone(self, phone_number: str):
         try:
@@ -218,8 +211,6 @@ class UserRepository:
                 search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        User.username.ilike(search_term),
-                        User.email.ilike(search_term),
                         User.phone_number.ilike(search_term),
                         User.first_name.ilike(search_term),
                         User.last_name.ilike(search_term),
@@ -282,8 +273,6 @@ class UserRepository:
                 search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        User.username.ilike(search_term),
-                        User.email.ilike(search_term),
                         User.phone_number.ilike(search_term),
                         User.first_name.ilike(search_term),
                         User.last_name.ilike(search_term),

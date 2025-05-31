@@ -22,17 +22,9 @@ class AuthService:
         regex = r'^(?:\+251|0)?9\d{8}$'
         if not re.match(regex, sign_up_data.phone_number):
             raise ValidationError(detail="Invalid phone number")
-        
+
         # Normalize phone number to raw form (e.g., 966934381)
         sign_up_data.phone_number = normalize_phone_number(sign_up_data.phone_number)
-        # Set username if not provided
-        if not sign_up_data.username:
-            sign_up_data.username = sign_up_data.phone_number
-        
-        # Validate email format
-        regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-        if sign_up_data.email and not re.match(regex, sign_up_data.email):
-            raise ValidationError(detail="Invalid email")
 
         # Convert sign_up_data to User ORM object
         user_obj = User(**sign_up_data.model_dump(exclude_none=True))
@@ -45,9 +37,9 @@ class AuthService:
         user, err = self.user_repo.create_user(user_obj)
         if err:
             if isinstance(err, ValueError):
-                raise ValidationError(detail="Invalid email or phone number")
+                raise ValidationError(detail="Invalid phone number")
             if isinstance(err, IntegrityError):
-                raise DuplicatedError(detail="User with this email or phone number already exists")
+                raise DuplicatedError(detail="User with this phone number already exists")
             raise ValidationError(detail="Failed to create user", data=str(err))
         if not user:
             raise ValidationError(detail="Failed to create user")
@@ -60,34 +52,17 @@ class AuthService:
 
     def login(self, login_data: login):
         print(login_data)
-        # Fetch user by email or phone and handle repo errors
-        if login_data.email:
-            user, err = self.user_repo.get_user_by_email(login_data.email)
-            if err:
-                raise ValidationError(detail="Error fetching user by email", data=str(err))
-        elif login_data.phone_number:
-            login_data.phone_number = normalize_phone_number(login_data.phone_number)
-            user, err = self.user_repo.get_user_by_phone(login_data.phone_number)
-            if err:
-                raise ValidationError(detail="Error fetching user by phone number", data=str(err))
-        else:
-            raise ValidationError(detail="Provide either email or phone number")
-        
+        # Fetch user by phone number and handle repo errors
+        login_data.phone_number = normalize_phone_number(login_data.phone_number)
+        user, err = self.user_repo.get_user_by_phone(login_data.phone_number)
+        if err:
+            raise ValidationError(detail="Error fetching user by phone number", data=str(err))
+
         # Check if user exists and is active
         if not user:
-            raise NotFoundError(detail="User with this email or phone number does not exist")
+            raise NotFoundError(detail="User with this phone number does not exist")
         
         user_response = UserResponse.model_validate(user)
-    #     user_data = {
-    #     "id": user.id,
-    #     "username": user.username,
-    #     "email": user.email,
-    #     "first_name": user.first_name,
-    #     "last_name": user.last_name,
-    #     "phone_number": user.phone_number,
-    #     "role": user.role,
-    #     "is_active": user.is_active,
-    # }
         if not user.is_active:
             raise ValidationError(detail="User is not active")
 

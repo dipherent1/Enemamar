@@ -18,8 +18,7 @@ class User(Base):
         default=uuid.uuid4,
         index=True
     )
-    username: Mapped[str] = mapped_column(String(50), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -70,7 +69,7 @@ class User(Base):
 
     def __repr__(self) -> str:
         """String representation of the User model."""
-        return f"<User {self.username}>"
+        return f"<User {self.phone_number}>"
 
 
 class RefreshToken(Base):
