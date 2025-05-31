@@ -72,6 +72,8 @@ class CourseRepository:
             )
             if not course:
                 return None, NotFoundError(detail="Course not found")
+            if course.discount and course.discount>0:
+                course.price = course.price - (course.price * course.discount / 100)
             return _wrap_return(course)
         except Exception as e:
             return _wrap_error(e)
@@ -115,12 +117,12 @@ class CourseRepository:
                 or_(
                     Course.title.ilike(search_term),
                     Course.description.ilike(search_term),
-                    Course.tags.ilike(search_term)
+                    func.array_to_string(Course.tags, ' ').ilike(search_term)
                 )
             )
 
         if filter:
-            query = query.filter(Course.tags.ilike(f"%{filter}%"))
+            query = query.filter(func.array_to_string(Course.tags, ' ').ilike(f"%{filter}%"))
 
         try:
             results = (query
@@ -354,7 +356,7 @@ class CourseRepository:
                 )
 
             if filter_tag:
-                query = query.filter(Course.tags.ilike(f"%{filter_tag}%"))
+                query = query.filter(func.array_to_string(Course.tags, ' ').ilike(f"%{filter_tag}%"))
 
             count = query.count()
             return _wrap_return(count)
@@ -410,6 +412,37 @@ class CourseRepository:
                 return None, NotFoundError(detail="Course not found for thumbnail")
             course.thumbnail_url = thumbnail_url
             self.db.commit()
+            return _wrap_return(course)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
+
+    def update_course(self, course_id: str, course_data: dict):
+        """
+        Update a course in the database.
+
+        Args:
+            course_id (str): The ID of the course to update.
+            course_data (dict): Dictionary containing the fields to update.
+
+        Returns:
+            Course: The updated course object.
+
+        Raises:
+            NotFoundError: If the course is not found.
+        """
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course:
+                return None, NotFoundError(detail="Course not found")
+
+            # Update only the fields that are provided
+            for key, value in course_data.items():
+                if hasattr(course, key) and value is not None:
+                    setattr(course, key, value)
+
+            self.db.commit()
+            self.db.refresh(course)
             return _wrap_return(course)
         except Exception as e:
             self.db.rollback()

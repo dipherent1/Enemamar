@@ -279,14 +279,21 @@ async def get_all_instructors(
     user_service: UserService = Depends(get_user_service)
 ):
     """
-    Get all instructors.
+    Get all instructors with search capabilities.
+
+    This endpoint returns a paginated list of all users with instructor role.
+    You can search across multiple instructor fields.
+
+    - **page**: Page number for pagination (default: 1)
+    - **page_size**: Number of items per page (default: 10, max: 100)
+    - **search**: Optional search term to filter instructors by username, email, phone number, first name, last name, or profession
 
     Args:
         params (SearchParams): The search parameters.
         user_service (UserService): The user service.
 
     Returns:
-        dict: The instructors response.
+        dict: The instructors response with pagination metadata.
     """
     return user_service.get_all_instructors(
         search=params.search,

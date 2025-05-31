@@ -135,6 +135,8 @@ class LessonService:
                     secret_key = decrypt_secret_key(secret_key)
                 except Exception as e:
                     raise ValidationError(detail=f"Failed to decrypt video secret key: {str(e)}")
+            else:
+                raise ValidationError(detail="Video secret key not found")
 
             url = generate_secure_bunny_stream_url(library_id, video_id, secret_key)
             lesson_response.video_url = url

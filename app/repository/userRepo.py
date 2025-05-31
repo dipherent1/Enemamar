@@ -55,16 +55,24 @@ class UserRepository:
     def get_all_users(self, search: Optional[str] = None, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
         try:
             query = self.db.query(User).filter(User.is_active == True)
+
             if search:
+                search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        User.email.ilike(f"%{search}%"),
-                        User.phone_number.ilike(f"%{search}%"),
-                        User.first_name.ilike(f"%{search}%"),
-                        User.last_name.ilike(f"%{search}%"),
-                        User.profession.ilike(f"%{search}%")
+                        User.username.ilike(search_term),
+                        User.email.ilike(search_term),
+                        User.phone_number.ilike(search_term),
+                        User.first_name.ilike(search_term),
+                        User.last_name.ilike(search_term),
+                        User.profession.ilike(search_term)
                     )
                 )
+
+            if filter:
+                # Filter by role (student, instructor, admin)
+                query = query.filter(User.role.ilike(f"%{filter}%"))
+
             offset = (page - 1) * page_size
             results = query.offset(offset).limit(page_size).all()
             return _wrap_return(results)
@@ -192,12 +200,15 @@ class UserRepository:
         try:
             query = self.db.query(User).filter(User.role == "instructor")
             if search:
+                search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        User.email.ilike(f"%{search}%"),
-                        User.phone_number.ilike(f"%{search}%"),
-                        User.first_name.ilike(f"%{search}%"),
-                        User.last_name.ilike(f"%{search}%")
+                        User.username.ilike(search_term),
+                        User.email.ilike(search_term),
+                        User.phone_number.ilike(search_term),
+                        User.first_name.ilike(search_term),
+                        User.last_name.ilike(search_term),
+                        User.profession.ilike(search_term)
                     )
                 )
             offset = (page - 1) * page_size
@@ -236,4 +247,70 @@ class UserRepository:
             return _wrap_return(user)
         except Exception as e:
             self.db.rollback()
+            return _wrap_error(e)
+
+    def get_users_count(self, search: Optional[str] = None, filter: Optional[str] = None):
+        """
+        Get the total count of users with search and filter options.
+
+        Args:
+            search (Optional[str]): Search term for user fields.
+            filter (Optional[str]): Filter term for user role.
+
+        Returns:
+            int: The total number of users matching the criteria.
+        """
+        try:
+            query = self.db.query(User).filter(User.is_active == True)
+
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        User.username.ilike(search_term),
+                        User.email.ilike(search_term),
+                        User.phone_number.ilike(search_term),
+                        User.first_name.ilike(search_term),
+                        User.last_name.ilike(search_term),
+                        User.profession.ilike(search_term)
+                    )
+                )
+
+            if filter:
+                query = query.filter(User.role.ilike(f"%{filter}%"))
+
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
+
+    def get_instructors_count(self, search: Optional[str] = None):
+        """
+        Get the total count of instructors with search options.
+
+        Args:
+            search (Optional[str]): Search term for instructor fields.
+
+        Returns:
+            int: The total number of instructors matching the criteria.
+        """
+        try:
+            query = self.db.query(User).filter(User.role == "instructor")
+
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        User.username.ilike(search_term),
+                        User.email.ilike(search_term),
+                        User.phone_number.ilike(search_term),
+                        User.first_name.ilike(search_term),
+                        User.last_name.ilike(search_term),
+                        User.profession.ilike(search_term)
+                    )
+                )
+
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
             return _wrap_error(e)
