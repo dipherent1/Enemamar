@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from fastapi import Depends, UploadFile
 from app.core.config.database import get_db
 from typing import Optional
+from app.utils.helper import normalize_phone_number
+from app.utils.security.hash import hash_password, verify_password
+
 
 #initalize the user service
 class UserService:
@@ -186,6 +189,11 @@ class UserService:
     #edit user by token
     def edit_user_by_token(self, user_id, edit_data: editUser):
         #split the token
+        if edit_data.phone_number:
+            edit_data.phone_number = normalize_phone_number(edit_data.phone_number)
+        
+        if edit_data.password:
+            edit_data.password = hash_password(edit_data.password)
 
         user, err = self.user_repo.update_user(user_id, edit_data)
         if err:

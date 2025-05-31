@@ -1,6 +1,6 @@
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError, AuthError
 import re
-from app.domain.schema.authSchema import signUp, UserResponse, login,loginResponse, signUpResponse, tokenLoginData
+from app.domain.schema.authSchema import signUp, UserResponse, login,loginResponse, signUpResponse, tokenLoginData, ForgetPasswordRequest, VerifyOTPForPasswordReset, ResetPassword
 from app.domain.model.user import User
 from app.repository.userRepo import UserRepository
 from sqlalchemy.exc import IntegrityError
@@ -8,18 +8,10 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.config.database import get_db
 from app.utils.security.hash import hash_password, verify_password
-from app.utils.security.jwt_handler import verify_refresh_token, verify_access_token, create_access_token, create_refresh_token
+from app.utils.security.jwt_handler import verify_refresh_token, verify_access_token, create_access_token, create_refresh_token, create_password_reset_token, verify_password_reset_token
 from app.utils.otp.sms import send_otp_sms, verify_otp_sms
+from app.utils.helper import normalize_phone_number, format_phone_for_sending
 
-def normalize_phone_number(phone: str) -> str:
-    # Strip +251, 251, or 0 at the start
-    return re.sub(r'^(?:\+251|251|0)', '', phone)
-
-def format_phone_for_sending(phone: str, use_plus_prefix=True) -> str:
-    if use_plus_prefix:
-        return f'+251{normalize_phone_number(phone)}'
-    else:
-        return f'0{normalize_phone_number(phone)}'
 
 class AuthService:
     def __init__(self, db):
@@ -182,6 +174,84 @@ class AuthService:
         else:
             raise ValidationError(detail=f"Failed to verify OTP: {str(content)}")
 
-        
+    def forget_password(self, forget_password_data: ForgetPasswordRequest):
+        """Initiate password reset by sending OTP to user's phone"""
+        # Normalize phone number
+        phone_number = normalize_phone_number(forget_password_data.phone_number)
+
+        # Get user by phone number
+        user, err = self.user_repo.get_user_by_phone(phone_number)
+        if err:
+            raise ValidationError(detail="Error fetching user by phone number", data=str(err))
+        if not user:
+            raise NotFoundError(detail="User with this phone number does not exist")
+
+        # Send OTP to user's phone number
+        formatted_phone_number = format_phone_for_sending(phone_number)
+        try:
+            status_code, content = send_otp_sms(formatted_phone_number)
+        except Exception as e:
+            raise ValidationError(detail="Failed to send OTP for password reset", data=str(e))
+
+        if status_code == 200:
+            return {"detail": "OTP sent to your phone number for password reset"}
+        else:
+            raise ValidationError(detail=f"Failed to send OTP for password reset: {str(content)}")
+
+    def verify_otp_for_password_reset(self, verify_data: VerifyOTPForPasswordReset):
+        """Verify OTP for password reset and return one-time use token"""
+        # Normalize phone number for verification
+        formatted_phone_number = format_phone_for_sending(verify_data.phone_number)
+
+        try:
+            status_code, content = verify_otp_sms(formatted_phone_number, verify_data.code)
+        except Exception as e:
+            raise ValidationError(detail="Failed to verify OTP for password reset", data=str(e))
+
+        if status_code == 200:
+            # Normalize phone number to raw form for database lookup
+            phone_number = normalize_phone_number(formatted_phone_number)
+
+            # Check if user exists with this phone number
+            user, err = self.user_repo.get_user_by_phone(phone_number)
+            if err:
+                raise ValidationError(detail="Error fetching user by phone number", data=str(err))
+            if not user:
+                raise NotFoundError(detail="User with this phone number does not exist")
+
+            # Generate one-time use password reset token
+            reset_token = create_password_reset_token(phone_number)
+
+            return {
+                "detail": "OTP verified successfully for password reset",
+                "status_code": status_code,
+                "reset_token": reset_token
+            }
+        else:
+            raise ValidationError(detail=f"Failed to verify OTP for password reset: {str(content)}")
+
+    def reset_password(self, reset_data: ResetPassword):
+        """Reset user password using reset token"""
+        # Verify the password reset token
+        try:
+            token_payload = verify_password_reset_token(reset_data.reset_token)
+        except Exception as e:
+            raise AuthError(detail="Invalid or expired password reset token", data=str(e))
+
+        phone_number = token_payload.get("phone_number")
+
+        if not phone_number:
+            raise AuthError(detail="Invalid password reset token payload")
+
+        # Update password in repository
+        user, err = self.user_repo.update_password(phone_number, reset_data.new_password)
+        if err:
+            raise ValidationError(detail="Error updating password", data=str(err))
+        if not user:
+            raise NotFoundError(detail="User with this phone number does not exist")
+
+        return {"detail": "Password reset successfully"}
+
+
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     return AuthService(db)

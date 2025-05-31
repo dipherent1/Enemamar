@@ -201,6 +201,12 @@ class editUser(BaseModel):
         examples=["0987654321"]
     )
 
+    password: Optional[str] = Field(
+        None,
+        description="New password (min 8 characters)",
+        examples=["newsecurepassword123"]
+    )
+
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
@@ -209,7 +215,8 @@ class editUser(BaseModel):
                 "email": "john.doe.updated@example.com",
                 "first_name": "Johnny",
                 "last_name": "Doe",
-                "phone_number": "0987654321"
+                "phone_number": "0987654321",
+                "password": "newsecurepassword123"
             }
         }
     }
@@ -360,6 +367,75 @@ class RefreshTokenRequest(BaseModel):
         "json_schema_extra": {
             "example": {
                 "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+        }
+    }
+
+
+class ForgetPasswordRequest(BaseModel):
+    """Forget password request schema"""
+    phone_number: str = Field(
+        ...,
+        description="User's phone number for password reset (format: 09XXXXXXXX or +251XXXXXXXXX)",
+        examples=["0912345678", "+251912345678"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "phone_number": "0912345678"
+            }
+        }
+    }
+
+
+class VerifyOTPForPasswordReset(BaseModel):
+    """Verify OTP for password reset schema"""
+    phone_number: str = Field(
+        ...,
+        description="User's phone number (format: 09XXXXXXXX or +251XXXXXXXXX)",
+        examples=["0912345678", "+251912345678"]
+    )
+    code: str = Field(
+        ...,
+        description="6-digit OTP code received via SMS",
+        min_length=6,
+        max_length=6,
+        examples=["123456"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "phone_number": "0912345678",
+                "code": "123456"
+            }
+        }
+    }
+
+
+class ResetPassword(BaseModel):
+    """Reset password schema"""
+    reset_token: str = Field(
+        ...,
+        description="Password reset token received after OTP verification",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."]
+    )
+    new_password: str = Field(
+        ...,
+        description="New password (min 8 characters)",
+        min_length=8,
+        examples=["newsecurepassword123"]
+    )
+
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "reset_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "new_password": "newsecurepassword123"
             }
         }
     }

@@ -89,3 +89,5 @@ class RefreshToken(Base):
 
     # Relationship to User model
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+
+

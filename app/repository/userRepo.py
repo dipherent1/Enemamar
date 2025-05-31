@@ -196,6 +196,21 @@ class UserRepository:
         except Exception as e:
             return _wrap_error(e)
 
+    def update_password(self, phone_number: str, new_password: str):
+        """Update user password by phone number"""
+        try:
+            user = self.db.query(User).filter(User.phone_number == phone_number).first()
+            if not user:
+                return None, None
+            user.password = hash_password(new_password)
+            self.db.commit()
+            return _wrap_return(user)
+        except Exception as e:
+            self.db.rollback()
+            return _wrap_error(e)
+
+
+
     def get_all_instructors(self, search: Optional[str] = None, page: int = 1, page_size: int = 10):
         try:
             query = self.db.query(User).filter(User.role == "instructor")

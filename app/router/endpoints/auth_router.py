@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header, status
-from app.domain.schema.authSchema import signUp, login, RefreshTokenRequest, signUpResponse, loginResponse, TokenResponse, UserResponse
+from app.domain.schema.authSchema import signUp, login, RefreshTokenRequest, signUpResponse, loginResponse, TokenResponse, UserResponse, ForgetPasswordRequest, VerifyOTPForPasswordReset, ResetPassword
 from app.domain.schema.responseSchema import (
     OTPSendResponse, OTPVerifyResponse, LogoutResponse, TokenRefreshResponse,
-    ErrorResponse
+    ErrorResponse, ForgetPasswordResponse, PasswordResetOTPVerifyResponse, PasswordResetResponse
 )
 from app.service.authService import AuthService, get_auth_service
 from app.utils.middleware.dependancies import is_admin, is_logged_in
@@ -321,3 +321,70 @@ async def refresh_token(
     - **refresh_token_request**: Object containing the refresh token
     """
     return auth_service.refresh_token(refresh_token=refresh_token_request.refresh_token)
+
+
+@auth_router.post(
+    "/forget-password",
+    # response_model=ForgetPasswordResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Initiate password reset",
+    description="Send OTP to user's phone number for password reset."
+)
+async def forget_password(
+    forget_password_request: ForgetPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Initiate password reset by sending OTP to user's phone number.
+
+    This endpoint takes the user's phone number and sends an OTP to that phone number
+    for password reset verification.
+
+    - **forget_password_request**: Object containing the user's phone number
+    """
+    return auth_service.forget_password(forget_password_request)
+
+
+@auth_router.post(
+    "/verify-otp-password-reset",
+    # response_model=PasswordResetOTPVerifyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify OTP for password reset",
+    description="Verify the OTP code sent for password reset."
+)
+async def verify_otp_password_reset(
+    verify_request: VerifyOTPForPasswordReset,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Verify the OTP code sent to the user's phone number for password reset.
+
+    This endpoint validates the OTP code and confirms that the user can proceed
+    with resetting their password.
+
+    - **verify_request**: Object containing phone number and OTP code
+    """
+    return auth_service.verify_otp_for_password_reset(verify_request)
+
+
+@auth_router.post(
+    "/reset-password",
+    # response_model=PasswordResetResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reset user password",
+    description="Reset user password after OTP verification."
+)
+async def reset_password(
+    reset_request: ResetPassword,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Reset user password using reset token.
+
+    This endpoint updates the user's password with the new password provided.
+    The user must provide the reset token received after successful OTP verification.
+    The token expires in 10 minutes.
+
+    - **reset_request**: Object containing reset token and new password
+    """
+    return auth_service.reset_password(reset_request)
