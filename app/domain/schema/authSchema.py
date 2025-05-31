@@ -215,7 +215,8 @@ class editUser(BaseModel):
                 "email": "john.doe.updated@example.com",
                 "first_name": "Johnny",
                 "last_name": "Doe",
-                "phone_number": "0987654321"
+                "phone_number": "0987654321",
+                "password": "newsecurepassword123"
             }
         }
     }
