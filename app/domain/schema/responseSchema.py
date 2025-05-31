@@ -84,6 +84,55 @@ class TokenRefreshResponse(BaseModel):
         }
     }
 
+
+# Forget Password response models
+class ForgetPasswordResponse(BaseResponse):
+    """Forget password response model"""
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "OTP sent to your phone number for password reset"
+            }
+        }
+    }
+
+
+class PasswordResetOTPVerifyResponse(BaseResponse):
+    """Password reset OTP verification response model"""
+    status_code: int = Field(
+        ...,
+        description="HTTP status code",
+        examples=[200]
+    )
+    reset_token: str = Field(
+        ...,
+        description="Password reset token (expires in 10 minutes)",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."]
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "OTP verified successfully for password reset",
+                "status_code": 200,
+                "reset_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+        }
+    }
+
+
+class PasswordResetResponse(BaseResponse):
+    """Password reset response model"""
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "detail": "Password reset successfully"
+            }
+        }
+    }
+
 # Generic paginated response
 class PaginatedResponse(BaseResponse, Generic[T]):
     """Paginated response model"""
