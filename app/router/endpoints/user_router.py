@@ -79,7 +79,6 @@ async def read_users_me(
     #         "model": ErrorResponse,
     #         "content": {
     #             "application/json": {
-    #                 "example": {"detail": "Invalid email format"}
     #             }
     #         }
     #     },
@@ -106,7 +105,7 @@ async def read_users_me(
     #         "model": ErrorResponse,
     #         "content": {
     #             "application/json": {
-    #                 "example": {"detail": "Username or email already exists"}
+    #                 "example": {"detail": "phone number already exists"}
     #             }
     #         }
     #     }
@@ -286,7 +285,7 @@ async def get_all_instructors(
 
     - **page**: Page number for pagination (default: 1)
     - **page_size**: Number of items per page (default: 10, max: 100)
-    - **search**: Optional search term to filter instructors by username, email, phone number, first name, last name, or profession
+    - **search**: Optional search term to filter instructors by phone number, first name, last name, or profession
 
     Args:
         params (SearchParams): The search parameters.

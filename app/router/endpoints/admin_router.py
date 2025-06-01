@@ -32,7 +32,7 @@ async def get_all_users(
 
     - **page**: Page number for pagination (default: 1)
     - **page_size**: Number of items per page (default: 10, max: 100)
-    - **search**: Optional search term to filter users by username, email, phone number, first name, last name, or profession
+    - **search**: Optional search term to filter users by  phone number, first name, last name, or profession
     - **filter**: Optional filter to filter users by role (student, instructor, admin)
 
     Args:

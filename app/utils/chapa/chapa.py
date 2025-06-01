@@ -29,8 +29,6 @@ def pay_course(payment_data):
         }
     }
 
-    # Email is no longer available in the payment data
-    # Chapa payments work without email
     
     
     chapa = Chapa(settings.CHAPA_SECRET_KEY)
