@@ -255,8 +255,6 @@ class UserProfileResponse(BaseResponse):
                 "detail": "User profile retrieved successfully",
                 "data": {
                     "id": "123e4567-e89b-12d3-a456-426614174000",
-                    "username": "johndoe",
-                    "email": "john.doe@example.com",
                     "first_name": "John",
                     "last_name": "Doe",
                     "phone_number": "0912345678",
@@ -283,8 +281,6 @@ class UserUpdateResponse(BaseResponse):
                 "detail": "User profile updated successfully",
                 "data": {
                     "id": "123e4567-e89b-12d3-a456-426614174000",
-                    "username": "johndoe_updated",
-                    "email": "john.doe.updated@example.com",
                     "first_name": "John",
                     "last_name": "Doe",
                     "phone_number": "0912345678",
@@ -539,8 +535,6 @@ class ReviewDetailResponse(BaseResponse):
 #         "updated_at": null,
 #         "instructor": {
 #             "id": "0c18d25a-dc77-4be7-af62-aea00717077e",
-#             "username": "instructor",
-#             "email": "instructor2@gmail.com",
 #             "first_name": "instructor",
 #             "last_name": "instructor",
 #             "phone_number": "921417155",

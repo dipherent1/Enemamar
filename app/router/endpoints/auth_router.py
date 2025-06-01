@@ -115,8 +115,6 @@ async def verify_otp(phone_number: str, code: str, auth_service: AuthService = D
     #                     "detail": "User created successfully",
     #                     "user": {
     #                         "id": "123e4567-e89b-12d3-a456-426614174000",
-    #                         "username": "johndoe",
-    #                         "email": "john.doe@example.com",
     #                         "first_name": "John",
     #                         "last_name": "Doe",
     #                         "phone_number": "0912345678",
@@ -131,7 +129,6 @@ async def verify_otp(phone_number: str, code: str, auth_service: AuthService = D
     #         "description": "Bad request",
     #         "content": {
     #             "application/json": {
-    #                 "example": {"detail": "Invalid email or phone number"}
     #             }
     #         }
     #     },
@@ -139,7 +136,7 @@ async def verify_otp(phone_number: str, code: str, auth_service: AuthService = D
     #         "description": "Conflict",
     #         "content": {
     #             "application/json": {
-    #                 "example": {"detail": "User with this email or phone number already exists"}
+    #                 "example": {"detail": "User phone number already exists"}
     #             }
     #         }
     #     }
@@ -162,7 +159,7 @@ async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_a
     # response_model=loginResponse,
     status_code=status.HTTP_200_OK,
     summary="Authenticate a user",
-    description="Log in a user with email/phone and password to get access tokens.",
+    description="Log in a user with phone and password to get access tokens.",
     # responses={
     #     200: {
     #         "description": "Login successful",
@@ -174,8 +171,6 @@ async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_a
     #                     "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     #                     "user": {
     #                         "id": "123e4567-e89b-12d3-a456-426614174000",
-    #                         "username": "johndoe",
-    #                         "email": "john.doe@example.com",
     #                         "first_name": "John",
     #                         "last_name": "Doe",
     #                         "phone_number": "0912345678",
@@ -190,7 +185,7 @@ async def signup(sign_up_info: signUp, auth_service: AuthService = Depends(get_a
     #         "description": "Bad request",
     #         "content": {
     #             "application/json": {
-    #                 "example": {"detail": "Either email or phone_number must be provided"}
+    #                 "example": {"detail": " phone_number must be provided"}
     #             }
     #         }
     #     },
@@ -219,10 +214,10 @@ async def login_endpoint(
     """
     Authenticate a user and generate access tokens.
 
-    This endpoint authenticates a user using either email or phone number with password,
+    This endpoint authenticates a user using phone number with password,
     and returns JWT access and refresh tokens for API authorization.
 
-    - **login_info**: Login credentials (email/phone and password)
+    - **login_info**: Login credentials (phone number and password)
     """
     try:
         login_info.validate()

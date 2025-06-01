@@ -59,9 +59,7 @@ class UserService:
 
         # user_response = UserResponse(
         #     id=user.id,
-        #     username=user.username,
         #     full_name=user.full_name,
-        #     email=user.email,
         #     phone_number=user.phone_number,
         #     role=user.role,
         #     is_active=user.is_active
@@ -85,9 +83,7 @@ class UserService:
 
         # user_response = UserResponse(
         #     id=user.id,
-        #     username=user.username,
         #     full_name=user.full_name,
-        #     email=user.email,
         #     phone_number=user.phone_number,
         #     role=user.role,
         #     is_active=user.is_active
@@ -111,9 +107,7 @@ class UserService:
 
         # user_response = UserResponse(
         #     id=user.id,
-        #     username=user.username,
         #     full_name=user.full_name,
-        #     email=user.email,
         #     phone_number=user.phone_number,
         #     role=user.role,
         #     is_active=user.is_active
@@ -149,9 +143,7 @@ class UserService:
 
         # user_response = UserResponse(
         #     id=user.id,
-        #     username=user.username,
         #     full_name=user.full_name,
-        #     email=user.email,
         #     phone_number=user.phone_number,
         #     role=user.role,
         #     is_active=user.is_active
@@ -175,9 +167,7 @@ class UserService:
         user_response = UserResponse.model_validate(user)
         # user_response = UserResponse(
         #     id=user.id,
-        #     username=user.username,
         #     full_name=user.full_name,
-        #     email=user.email,
         #     phone_number=user.phone_number,
         #     role=user.role,
         #     is_active=user.is_active
@@ -210,9 +200,7 @@ class UserService:
 
         # user_response = UserResponse(
         #     id=user.id,
-        #     username=user.username,
         #     full_name=user.full_name,
-        #     email=user.email,
         #     phone_number=user.phone_number,
         #     role=user.role,
         #     is_active=user.is_active
