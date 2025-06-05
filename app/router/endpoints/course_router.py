@@ -4,14 +4,15 @@ from app.domain.schema.courseSchema import (
     CourseResponse,
     EnrollmentResponse,
     EnrollResponse,
-    CourseAnalysisResponse
+    CourseAnalysisResponse,
+    DateFilterParams
 )
 from app.domain.schema.responseSchema import (
     CourseListResponse, CourseDetailResponse, EnrollmentResponse as EnrollmentResponseModel,
     BaseResponse, ErrorResponse, PaginatedResponse
 )
 from app.service.courseService import CourseService, get_course_service
-from app.utils.middleware.dependancies import is_logged_in
+from app.utils.middleware.dependancies import is_logged_in, is_admin, is_admin_or_instructor
 from uuid import UUID
 from typing import Dict, Any
 
@@ -308,6 +309,59 @@ analysis_router = APIRouter(
 )
 
 @analysis_router.get(
+    "/instructor/courses",
+    status_code=status.HTTP_200_OK,
+    summary="Get instructor courses analytics",
+    description="Retrieve analytics for courses assigned to the authenticated instructor.",
+    dependencies=[Depends(is_admin_or_instructor)]
+)
+async def get_instructor_courses_analytics(
+    params: DateFilterParams = Depends(),
+    decoded_token: dict = Depends(is_admin_or_instructor),
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Retrieve analytics for courses assigned to the authenticated instructor.
+
+    This endpoint returns analytics data for courses taught by the current instructor including:
+    - Course details (id, title, instructor info)
+    - Total revenue (sum of successful payments)
+    - Total enrollments count
+    - View count and lessons count
+
+    **Date Filtering** (based on course created_at):
+    - **year**: Filter by year (e.g., 2024)
+    - **month**: Filter by month (1-12)
+    - **week**: Filter by week of year (1-53)
+    - **day**: Filter by day of month (1-31)
+
+    **Search & Filter**:
+    - **search**: Search in course title or description
+    - **filter**: Filter by course tags
+
+    **Pagination**:
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 10, max: 100)
+
+    Accessible to users with instructor or admin role.
+    The instructor will only see analytics for their own courses.
+    """
+    instructor_id = decoded_token.get("id")
+
+    return course_service.get_instructor_courses_analytics(
+        instructor_id=str(instructor_id),
+        year=params.year,
+        month=params.month,
+        week=params.week,
+        day=params.day,
+        page=params.page,
+        page_size=params.page_size,
+        search=params.search,
+        filter=params.filter
+    )
+
+
+@analysis_router.get(
     "/instructor/{instructor_id}",
     # response_model=CourseListResponse,
     status_code=status.HTTP_200_OK,
@@ -344,12 +398,61 @@ async def get_courses_by_instructor(
         instructor_id,
     )
 
+
+@analysis_router.get(
+    "/courses",
+    status_code=status.HTTP_200_OK,
+    summary="Get all courses analytics (Admin only)",
+    description="Retrieve analytics for all courses in the system with date filtering and pagination.",
+    dependencies=[Depends(is_admin)]
+)
+async def get_all_courses_analytics(
+    params: DateFilterParams = Depends(),
+    course_service: CourseService = Depends(get_course_service),
+    decoded_token: dict = Depends(is_admin)
+):
+    """
+    Retrieve analytics for all courses in the system (Admin only).
+
+    This endpoint returns analytics data for all courses including:
+    - Course details (id, title, instructor info)
+    - Total revenue (sum of successful payments)
+    - Total enrollments count
+    - View count and lessons count
+
+    **Date Filtering** (based on course updated_at):
+    - **year**: Filter by year (e.g., 2024)
+    - **month**: Filter by month (1-12)
+    - **week**: Filter by week of year (1-53)
+    - **day**: Filter by day of month (1-31)
+
+    **Search & Filter**:
+    - **search**: Search in course title or description
+    - **filter**: Filter by course tags
+
+    **Pagination**:
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 10, max: 100)
+
+    Only accessible to users with admin role.
+    """
+    return course_service.get_all_courses_analytics(
+        year=params.year,
+        month=params.month,
+        week=params.week,
+        day=params.day,
+        page=params.page,
+        page_size=params.page_size,
+        search=params.search,
+        filter=params.filter
+    )
+
 @analysis_router.get(
     "/{course_id}",
     # response_model=Dict[str, Any],
     status_code=status.HTTP_200_OK,
     summary="Get course analysis",
-    description="Retrieve analytics and statistics for a specific course.",
+    description="Retrieve analytics and statistics for a specific course with optional time filtering.",
     # responses={
     #     200: {
     #         "description": "Course analysis retrieved successfully",
@@ -386,14 +489,27 @@ async def get_courses_by_instructor(
 )
 async def get_courses_analysis(
     course_id: str,
+    params: DateFilterParams = Depends(),
     course_service: CourseService = Depends(get_course_service)
 ):
     """
-    Retrieve analytics and statistics for a specific course.
+    Retrieve analytics and statistics for a specific course with optional time filtering.
 
     This endpoint returns detailed analytics about a course, including enrollment statistics,
     completion rates, revenue data, and other metrics useful for instructors and administrators.
 
+    **Date Filtering** (affects enrollment and payment calculations):
+    - **year**: Filter by year (e.g., 2024)
+    - **month**: Filter by month (1-12)
+    - **week**: Filter by week of year (1-53)
+    - **day**: Filter by day of month (1-31)
+
     - **course_id**: UUID of the course to analyze
     """
-    return course_service.get_courses_analysis(course_id)
+    return course_service.get_courses_analysis(
+        course_id=course_id,
+        year=params.year,
+        month=params.month,
+        week=params.week,
+        day=params.day
+    )

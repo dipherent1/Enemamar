@@ -434,12 +434,20 @@ class CourseService:
 
         return result
 
-    def get_courses_analysis(self, course_id: str):
+    def get_courses_analysis(
+        self,
+        course_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None
+    ):
         """
-        Retrieve analysis data for a course.
+        Retrieve analysis data for a course with optional time filtering.
 
         Args:
             course_id (str): ID of the course.
+            year, month, week, day: Date filters for enrollment and payment calculations.
 
         Returns:
             dict: Response containing course analysis data.
@@ -450,7 +458,13 @@ class CourseService:
         if not course_id:
             raise ValidationError(detail="Course ID is required")
 
-        analysis_data, err = self.course_repo.course_analysis(course_id)
+        analysis_data, err = self.course_repo.course_analysis(
+            course_id=course_id,
+            year=year,
+            month=month,
+            week=week,
+            day=day
+        )
         if err:
             raise ValidationError(detail="Failed to retrieve course analysis", data=str(err))
         if not analysis_data:
@@ -463,6 +477,129 @@ class CourseService:
             "detail": "Course analysis fetched successfully",
             "data": analysis_data
         }
+
+    def get_all_courses_analytics(
+        self,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        search: Optional[str] = None,
+        filter: Optional[str] = None
+    ):
+        """
+        Retrieve analytics for all courses (admin only).
+
+        Args:
+            year, month, week, day: Date filters
+            page, page_size: Pagination parameters
+            search: Search term for course title or description
+            filter: Filter term for course tags
+
+        Returns:
+            dict: Response containing course analytics data with pagination
+        """
+        analytics_data, err = self.course_repo.get_all_courses_analytics(
+            year=year, month=month, week=week, day=day,
+            page=page, page_size=page_size, search=search, filter=filter
+        )
+        if err:
+            raise ValidationError(detail="Failed to retrieve courses analytics", data=str(err))
+
+        if not analytics_data:
+            return {
+                "detail": "No courses found matching the criteria",
+                "data": [],
+                "pagination": None
+            }
+
+        result = {
+            "detail": "Courses analytics fetched successfully",
+            "data": analytics_data
+        }
+
+        # Add pagination info if requested
+        if page is not None and page_size is not None:
+            total_count, err = self.course_repo.get_all_courses_analytics_count(
+                year=year, month=month, week=week, day=day, search=search, filter=filter
+            )
+            if err:
+                raise ValidationError(detail="Failed to retrieve courses count", data=str(err))
+
+            result["pagination"] = {
+                "page": page,
+                "page_size": page_size,
+                "total_items": total_count
+            }
+
+        return result
+
+    def get_instructor_courses_analytics(
+        self,
+        instructor_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        search: Optional[str] = None,
+        filter: Optional[str] = None
+    ):
+        """
+        Retrieve analytics for courses assigned to a specific instructor.
+
+        Args:
+            instructor_id: ID of the instructor
+            year, month, week, day: Date filters
+            page, page_size: Pagination parameters
+            search: Search term for course title or description
+            filter: Filter term for course tags
+
+        Returns:
+            dict: Response containing course analytics data with pagination
+        """
+        if not instructor_id:
+            raise ValidationError(detail="Instructor ID is required")
+
+        analytics_data, err = self.course_repo.get_instructor_courses_analytics(
+            instructor_id=instructor_id,
+            year=year, month=month, week=week, day=day,
+            page=page, page_size=page_size, search=search, filter=filter
+        )
+        if err:
+            raise ValidationError(detail="Failed to retrieve instructor courses analytics", data=str(err))
+
+        if not analytics_data:
+            return {
+                "detail": "No courses found for this instructor matching the criteria",
+                "data": [],
+                "pagination": None
+            }
+
+        result = {
+            "detail": "Instructor courses analytics fetched successfully",
+            "data": analytics_data
+        }
+
+        # Add pagination info if requested
+        if page is not None and page_size is not None:
+            total_count, err = self.course_repo.get_instructor_courses_analytics_count(
+                instructor_id=instructor_id,
+                year=year, month=month, week=week, day=day, search=search, filter=filter
+            )
+            if err:
+                raise ValidationError(detail="Failed to retrieve instructor courses count", data=str(err))
+
+            result["pagination"] = {
+                "page": page,
+                "page_size": page_size,
+                "total_items": total_count
+            }
+
+        return result
 
     def get_intructor_course(self, instructor_id: str):
         """

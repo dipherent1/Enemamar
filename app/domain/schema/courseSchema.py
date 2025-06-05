@@ -158,6 +158,11 @@ class CourseAnalysisResponse(BaseModel):
     revenue: float
     course: Optional[CourseResponse] = Field(default=None)
 
+class CourseAnalyticsListResponse(BaseModel):
+    detail: str
+    data: List[CourseAnalysisResponse]
+    pagination: Optional[dict] = Field(default=None)
+
 
 class CreateCourseResponse(BaseModel):
     detail: str
