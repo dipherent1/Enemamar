@@ -408,7 +408,8 @@ async def get_courses_by_instructor(
 )
 async def get_all_courses_analytics(
     params: DateFilterParams = Depends(),
-    course_service: CourseService = Depends(get_course_service)
+    course_service: CourseService = Depends(get_course_service),
+    decoded_token: dict = Depends(is_admin)
 ):
     """
     Retrieve analytics for all courses in the system (Admin only).
