@@ -64,7 +64,7 @@ class AuthService:
         
         user_response = UserResponse.model_validate(user)
         if not user.is_active:
-            raise ValidationError(detail="User is not active")
+            raise ValidationError(detail="User is not active", data={"is_active": False})
 
         if not verify_password(login_data.password, user.password):
             raise ValidationError(detail="Incorrect password")
