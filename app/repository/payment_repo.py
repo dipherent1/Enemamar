@@ -274,3 +274,43 @@ class PaymentRepository:
             return _wrap_return(total_revenue)
         except Exception as e:
             return _wrap_error(e)
+
+    def get_course_revenue_with_date_filter(
+        self,
+        course_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None
+    ):
+        """
+        Get the total revenue for a course with date filtering.
+
+        Args:
+            course_id (str): The course ID.
+            year, month, week, day: Date filters based on payment updated_at.
+
+        Returns:
+            float: The total revenue.
+        """
+        try:
+            query = (
+                self.db.query(func.sum(Payment.amount))
+                .filter(Payment.course_id == course_id)
+                .filter(Payment.status == "success")
+            )
+
+            # Apply date filters on updated_at field
+            if year is not None:
+                query = query.filter(func.extract('year', Payment.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Payment.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Payment.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Payment.updated_at) == day)
+
+            total_revenue = query.scalar() or 0.0
+            return _wrap_return(total_revenue)
+        except Exception as e:
+            return _wrap_error(e)

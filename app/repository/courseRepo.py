@@ -287,6 +287,7 @@ class CourseRepository:
             courses = self.db.query(Course).filter(Course.instructor_id == instructor_id).all()
             analyses = []
             for c in courses:
+                # Call without date filters for backward compatibility
                 analysis, err = self.course_analysis(c.id)
                 if err:
                     return None, err
@@ -295,12 +296,20 @@ class CourseRepository:
         except Exception as e:
             return _wrap_error(e)
 
-    def course_analysis(self, course_id: str):
+    def course_analysis(
+        self,
+        course_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None
+    ):
         """
-        Perform analysis on a course.
+        Perform analysis on a course with optional time filtering.
 
         Args:
             course_id (str): The ID of the course.
+            year, month, week, day: Date filters for enrollment and payment calculations.
 
         Returns:
             CourseAnalysisResponse: The course analysis response.
@@ -315,14 +324,32 @@ class CourseRepository:
             lessons_count, err = self.get_lessons_count(course_id)
             if err:
                 return None, err
-            enrolled_count, err = self.get_enrolled_users_count(course_id)
+
+            # Get enrollment count with date filtering
+            enrolled_count, err = self.get_enrolled_users_count_with_date_filter(
+                course_id=course_id,
+                year=year,
+                month=month,
+                week=week,
+                day=day
+            )
             if err:
                 return None, err
+
             for lesson in course.lessons:
                 lesson.video = None
-            revenue, err = self.get_course_revenue(course_id)
+
+            # Get revenue with date filtering
+            revenue, err = self.get_course_revenue_with_date_filter(
+                course_id=course_id,
+                year=year,
+                month=month,
+                week=week,
+                day=day
+            )
             if err:
                 return None, err
+
             analysis = CourseAnalysisResponse(
                 course=course, view_count=course.view_count,
                 no_of_enrollments=enrolled_count, no_of_lessons=lessons_count,
@@ -398,6 +425,54 @@ class CourseRepository:
 
     def get_course_revenue(self, course_id: str):
         return self.payment_repo.get_course_revenue(course_id)
+
+    def get_course_revenue_with_date_filter(
+        self,
+        course_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None
+    ):
+        """
+        Get course revenue with date filtering.
+        """
+        return self.payment_repo.get_course_revenue_with_date_filter(
+            course_id=course_id,
+            year=year,
+            month=month,
+            week=week,
+            day=day
+        )
+
+    def get_enrolled_users_count_with_date_filter(
+        self,
+        course_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None
+    ):
+        """
+        Get enrollment count with date filtering.
+        """
+        try:
+            query = self.db.query(Enrollment).filter(Enrollment.course_id == course_id)
+
+            # Apply date filters on enrolled_at field
+            if year is not None:
+                query = query.filter(func.extract('year', Enrollment.enrolled_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Enrollment.enrolled_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Enrollment.enrolled_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Enrollment.enrolled_at) == day)
+
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
 
     def get_lessons_count(self, course_id: str) -> int:
         return self.lesson_repo.get_lessons_count(course_id)
@@ -480,5 +555,240 @@ class CourseRepository:
             return _wrap_return(course)
         except Exception as e:
             self.db.rollback()
+            return _wrap_error(e)
+
+    def get_all_courses_analytics(
+        self,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        search: Optional[str] = None,
+        filter: Optional[str] = None
+    ):
+        """
+        Get analytics for all courses with date filtering and pagination.
+
+        Args:
+            year, month, week, day: Date filters based on course updated_at
+            page, page_size: Pagination parameters
+            search: Search term for course title or description
+            filter: Filter term for course tags
+
+        Returns:
+            Tuple[List[CourseAnalysisResponse], Exception]: List of course analytics or error
+        """
+        try:
+            query = (
+                self.db.query(Course)
+                .options(joinedload(Course.instructor))
+            )
+
+            # Apply date filters on updated_at field
+            if year is not None:
+                query = query.filter(func.extract('year', Course.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Course.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Course.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Course.updated_at) == day)
+
+            # Apply search filters
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        Course.title.ilike(search_term),
+                        Course.description.ilike(search_term)
+                    )
+                )
+
+            if filter:
+                query = query.filter(func.array_to_string(Course.tags, ' ').ilike(f"%{filter}%"))
+
+            # Apply pagination if provided
+            if page is not None and page_size is not None:
+                query = query.offset((page - 1) * page_size).limit(page_size)
+
+            courses = query.all()
+
+            # Generate analytics for each course
+            analytics_list = []
+            for course in courses:
+                # Call without date filters since this method handles its own date filtering
+                analysis, err = self.course_analysis(course.id)
+                if err:
+                    return None, err
+                analytics_list.append(analysis)
+
+            return _wrap_return(analytics_list)
+        except Exception as e:
+            return _wrap_error(e)
+
+    def get_instructor_courses_analytics(
+        self,
+        instructor_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        search: Optional[str] = None,
+        filter: Optional[str] = None
+    ):
+        """
+        Get analytics for courses assigned to a specific instructor with date filtering and pagination.
+
+        Args:
+            instructor_id: ID of the instructor
+            year, month, week, day: Date filters based on course created_at
+            page, page_size: Pagination parameters
+            search: Search term for course title or description
+            filter: Filter term for course tags
+
+        Returns:
+            Tuple[List[CourseAnalysisResponse], Exception]: List of course analytics or error
+        """
+        try:
+            query = (
+                self.db.query(Course)
+                .options(joinedload(Course.instructor))
+                .filter(Course.instructor_id == instructor_id)
+            )
+
+            # Apply date filters on created_at field
+            if year is not None:
+                query = query.filter(func.extract('year', Course.created_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Course.created_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Course.created_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Course.created_at) == day)
+
+            # Apply search filters
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        Course.title.ilike(search_term),
+                        Course.description.ilike(search_term)
+                    )
+                )
+
+            if filter:
+                query = query.filter(func.array_to_string(Course.tags, ' ').ilike(f"%{filter}%"))
+
+            # Apply pagination if provided
+            if page is not None and page_size is not None:
+                query = query.offset((page - 1) * page_size).limit(page_size)
+
+            courses = query.all()
+
+            # Generate analytics for each course
+            analytics_list = []
+            for course in courses:
+                # Call without date filters since this method handles its own date filtering
+                analysis, err = self.course_analysis(course.id)
+                if err:
+                    return None, err
+                analytics_list.append(analysis)
+
+            return _wrap_return(analytics_list)
+        except Exception as e:
+            return _wrap_error(e)
+
+    def get_all_courses_analytics_count(
+        self,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None,
+        search: Optional[str] = None,
+        filter: Optional[str] = None
+    ):
+        """
+        Get total count of courses for admin analytics with filters.
+        """
+        try:
+            query = self.db.query(Course)
+
+            # Apply date filters on updated_at field
+            if year is not None:
+                query = query.filter(func.extract('year', Course.updated_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Course.updated_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Course.updated_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Course.updated_at) == day)
+
+            # Apply search filters
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        Course.title.ilike(search_term),
+                        Course.description.ilike(search_term)
+                    )
+                )
+
+            if filter:
+                query = query.filter(func.array_to_string(Course.tags, ' ').ilike(f"%{filter}%"))
+
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
+            return _wrap_error(e)
+
+    def get_instructor_courses_analytics_count(
+        self,
+        instructor_id: str,
+        year: Optional[int] = None,
+        month: Optional[int] = None,
+        week: Optional[int] = None,
+        day: Optional[int] = None,
+        search: Optional[str] = None,
+        filter: Optional[str] = None
+    ):
+        """
+        Get total count of courses for instructor analytics with filters.
+        """
+        try:
+            query = (
+                self.db.query(Course)
+                .filter(Course.instructor_id == instructor_id)
+            )
+
+            # Apply date filters on created_at field
+            if year is not None:
+                query = query.filter(func.extract('year', Course.created_at) == year)
+            if month is not None:
+                query = query.filter(func.extract('month', Course.created_at) == month)
+            if week is not None:
+                query = query.filter(func.extract('week', Course.created_at) == week)
+            if day is not None:
+                query = query.filter(func.extract('day', Course.created_at) == day)
+
+            # Apply search filters
+            if search:
+                search_term = f"%{search}%"
+                query = query.filter(
+                    or_(
+                        Course.title.ilike(search_term),
+                        Course.description.ilike(search_term)
+                    )
+                )
+
+            if filter:
+                query = query.filter(func.array_to_string(Course.tags, ' ').ilike(f"%{filter}%"))
+
+            count = query.count()
+            return _wrap_return(count)
+        except Exception as e:
             return _wrap_error(e)
 
