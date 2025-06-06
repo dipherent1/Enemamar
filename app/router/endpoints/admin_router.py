@@ -4,7 +4,8 @@ from app.domain.schema.courseSchema import (
     CourseInput,
     CourseEditInput,
     SearchParams,
-    DateFilterParams
+    DateFilterParams,
+    InstructorEnrollmentsResponse
 )
 from app.service.userService import UserService, get_user_service
 from app.service.courseService import CourseService, get_course_service
@@ -434,3 +435,22 @@ async def get_course_payments(
         search_params.week,
         search_params.day
     )
+
+@inst_admin_router.get("/instructor/{instructor_id}/enrollments", response_model=InstructorEnrollmentsResponse)
+async def fetch_instructor_enrollments(
+    instructor_id: str,
+    days: int = 7,
+    course_service: CourseService = Depends(get_course_service)
+):
+    """
+    Fetch user enrollments for all courses assigned to the instructor within the past `days` days, sorted by enrollment date descending.
+
+    Args:
+        instructor_id (str): The instructor ID.
+        days (int): Number of days to look back (default: 7).
+        course_service (CourseService): The course service.
+
+    Returns:
+        InstructorEnrollmentsResponse: List of enrollments with user and course info.
+    """
+    return course_service.getInstructorEnrollments(instructor_id, days)
