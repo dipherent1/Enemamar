@@ -436,9 +436,9 @@ async def get_course_payments(
         search_params.day
     )
 
-@inst_admin_router.get("/instructor/{instructor_id}/enrollments", response_model=InstructorEnrollmentsResponse)
+@inst_admin_router.get("/instructor/latest/enrollments")
 async def fetch_instructor_enrollments(
-    instructor_id: str,
+    decoded_token: dict = Depends(is_admin_or_instructor),
     days: int = 7,
     course_service: CourseService = Depends(get_course_service)
 ):
@@ -452,5 +452,9 @@ async def fetch_instructor_enrollments(
 
     Returns:
         InstructorEnrollmentsResponse: List of enrollments with user and course info.
+        
     """
+
+    instructor_id = decoded_token.get("id")
+
     return course_service.getInstructorEnrollments(instructor_id, days)
