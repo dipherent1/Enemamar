@@ -84,3 +84,27 @@ def verify_otp_sms(phone_number: str, code: str):
     
     return (status_code, result.content)
                                 
+def send_sms(phone_number: str, message: str):
+    # session configuration
+    session = requests.Session()
+    # base url
+    base_url = 'https://api.afromessage.com/api/send'
+    # api token
+    token = setting.SMS_TOKEN
+    # header
+    headers = {'Authorization': 'Bearer ' + token}
+    # request parameters
+    to = phone_number
+    text = message
+    # final url
+    url = '%s?from=%s&sender=%s,to=%s&message=%s&callback=%s' % (base_url,to, message)
+    # make request
+    try:
+        result = session.get(url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        # Handle the exception (e.g., log it, raise a custom error, etc.)
+        print(f"Request failed: {e}")
+        return (500, str(e))
+    
+    return (result.status_code, result.content)
+

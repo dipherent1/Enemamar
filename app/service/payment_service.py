@@ -15,6 +15,7 @@ from typing import Optional
 from app.utils.chapa.chapa import pay_course, verify_payment, generete_tx_ref
 from app.domain.schema.courseSchema import EnrollmentResponse
 from app.core.config.env import get_settings
+from app.utils.otp.sms import send_sms
 settings = get_settings()
 class PaymentService:
     def __init__(self, db: Session):
@@ -147,6 +148,7 @@ class PaymentService:
             raise ValidationError(detail="Payment failed")
 
         # Update payment status
+
         payment, err = self.payment_repo.update_payment(payload.trx_ref, "success", ref_id=response["data"]["reference"])
         if err:
             raise ValidationError(detail="Error updating payment status to success", data=str(err))
@@ -169,6 +171,9 @@ class PaymentService:
 
         # Enroll course
         enrollment, err = self.course_repo.enroll_course(user.id, course.id)
+        
+        send_sms(user.phone_number, f"Dear {user.first_name}, you have successfully enrolled in {course.title}. Your payment of {payment.amount} was successful. Thank you for choosing our platform!")
+        
         if err:
             raise ValidationError(detail="Error enrolling course", data=str(err))
         if not enrollment:
