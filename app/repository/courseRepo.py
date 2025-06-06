@@ -796,3 +796,25 @@ class CourseRepository:
         except Exception as e:
             return _wrap_error(e)
 
+    def get_instructor_enrollments(self, instructor_id: str, days: int = 7):
+        """
+        Get all enrollments for courses taught by the given instructor within the past `days` days, sorted by enrollment date descending.
+        """
+        from datetime import datetime, timezone, timedelta
+        # build query joining Enrollment to Course and filtering by instructor
+        query = (
+            self.db.query(Enrollment)
+            .join(Course, Enrollment.course)
+            .options(joinedload(Enrollment.user), joinedload(Enrollment.course))
+            .filter(Course.instructor_id == instructor_id)
+        )
+        # calculate cutoff timestamp
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        # apply date filter and ordering
+        query = query.filter(Enrollment.enrolled_at >= cutoff).order_by(Enrollment.enrolled_at.desc())
+        try:
+            results = query.all()
+            return _wrap_return(results)
+        except Exception as e:
+            return _wrap_error(e)
+

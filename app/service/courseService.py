@@ -6,6 +6,7 @@ from app.domain.schema.courseSchema import (
     EnrollmentResponse,
     UserResponse,
     CourseAnalysisResponse,
+    InstructorEnrollmentItem,
 )
 from app.domain.model.course import Course, Enrollment
 from app.repository.courseRepo import CourseRepository
@@ -751,6 +752,20 @@ class CourseService:
             "detail": "Course deleted successfully",
             "data": course_response
         }
+
+    def getInstructorEnrollments(self, instructor_id: str, days: int = 7):
+        """
+        Get all enrollments for courses taught by the given instructor within the past `days` days, including user and course info.
+        """
+        enrollments, err = self.course_repo.get_instructor_enrollments(instructor_id, days)
+        if err:
+            raise ValidationError(detail="Failed to fetch instructor enrollments", data=str(err))
+        items = []
+        for enrollment in enrollments:
+            user_schema = UserResponse.model_validate(enrollment.user)
+            course_schema = CourseResponse.model_validate(enrollment.course)
+            items.append(InstructorEnrollmentItem(user=user_schema, course=course_schema, enrolled_at=enrollment.enrolled_at))
+        return {"detail": "Instructor enrollments fetched successfully", "data": items}
 
 
 def get_course_service(db: Session = Depends(get_db)):

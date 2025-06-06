@@ -245,3 +245,20 @@ class ModuleResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class InstructorEnrollmentItem(BaseModel):
+    user: UserResponse
+    course: CourseResponse
+    enrolled_at: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class InstructorEnrollmentsResponse(BaseModel):
+    detail: str
+    data: List[InstructorEnrollmentItem]
+
+    model_config = {
+        "from_attributes": True
+    }
+
