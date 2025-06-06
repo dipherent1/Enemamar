@@ -6,6 +6,7 @@ from sqlalchemy import or_, func
 from typing import Tuple, Optional, Any, List
 from app.repository.payment_repo import PaymentRepository
 from app.repository.lesson_repo import LessonRepository
+from app.repository.updateRepo import UpdateRepository
 
 def _wrap_return(result: Any) -> Tuple[Any, None]:
     return result, None
@@ -27,6 +28,7 @@ class CourseRepository:
         self.db = db
         self.payment_repo = PaymentRepository(db)
         self.lesson_repo = LessonRepository(db)
+        self.update_repo = UpdateRepository(db)
 
     def create_course(self, course: Course):
         """
@@ -151,10 +153,12 @@ class CourseRepository:
             course = self.db.query(Course).filter(Course.id == course_id).first()
             if not course:
                 return None, NotFoundError(detail="Course not found")
+            
             enrollment = Enrollment(user_id=user_id, course_id=course_id)
             self.db.add(enrollment)
             self.db.commit()
             self.db.refresh(enrollment)
+            self.update_repo.create_or_increment_update(course.instructor_id)
             return _wrap_return(enrollment)
         except Exception as e:
             self.db.rollback()
