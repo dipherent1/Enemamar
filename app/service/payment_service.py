@@ -175,8 +175,16 @@ class PaymentService:
         # Enroll course
         enrollment, err = self.course_repo.enroll_course(user.id, course.id)
         
-        send_sms(user.phone_number, f"Dear {user.first_name}, you have successfully enrolled in {course.title}. Your payment of {payment.amount} was successful. Thank you for choosing our platform!")
-        
+
+        try:
+            message = f"You have successfully enrolled in {course.title}. Thank you for choosing our platform!"
+            phone_number = f"0{user.phone_number}"
+            print("Sending SMS to:", phone_number)
+            print("Message:", message)
+            send_sms(phone_number, message)
+        except Exception as e:
+            print("Error sending SMS:", e)
+
         if err:
             raise ValidationError(detail="Error enrolling course", data=str(err))
         if not enrollment:

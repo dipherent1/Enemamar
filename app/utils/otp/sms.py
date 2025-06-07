@@ -97,7 +97,7 @@ def send_sms(phone_number: str, message: str):
     to = phone_number
     text = message
     # final url
-    url = '%s?from=%s&sender=%s,to=%s&message=%s&callback=%s' % (base_url,to, message)
+    url = f"{base_url}?to={to}&message={text}"
     # make request
     try:
         result = session.get(url, headers=headers)
