@@ -47,7 +47,21 @@ class LessonService:
         enrollment, err = self.course_repo.get_enrollment(user_id, course_id)
         if err:
             raise ValidationError(detail="Failed to check enrollment", data=str(err))
-        if not enrollment and user.role not in ["instructor", "admin"]:
+        # Allow access if user is admin
+        if user.role == "admin":
+            return True
+
+        # Allow access if user is instructor and owns the course
+        if user.role == "instructor":
+            course_instructor_id, err = self.course_repo.course_instructor(course_id)
+            print(f"Course Instructor ID: {course_instructor_id}, User ID: {user.id}")
+            if str(course_instructor_id) == str(user.id):
+                return True
+            else:
+                raise ValidationError(detail="Instructor does not own this course")
+
+        # For students, check enrollment
+        if not enrollment:
             raise ValidationError(detail="User not enrolled in course")
         return True
 
@@ -64,7 +78,7 @@ class LessonService:
         Returns:
             dict: The lessons response.
         """
-        self.check_lesson_access(course_id, user_id)
+        self.check_lesson_access(course_id, user_id )
 
         lessons, err = self.lesson_repo.get_lessons(course_id, page, page_size)
         if err:
@@ -110,9 +124,11 @@ class LessonService:
         if not lesson_id:
             raise ValidationError(detail="Lesson ID is required")
 
-        self.check_lesson_access(course_id, user_id)
-
         lesson, err = self.lesson_repo.get_lesson_by_id(course_id, lesson_id)
+        print(f"Lesson order: {lesson.order}, Error: {err}")
+        if lesson.order != 1:
+            self.check_lesson_access(course_id, user_id)
+
         if err:
             if isinstance(err, NotFoundError):
                 raise ValidationError(detail="Lesson not found")

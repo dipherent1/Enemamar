@@ -814,4 +814,24 @@ class CourseRepository:
             return _wrap_return(results)
         except Exception as e:
             return _wrap_error(e)
+    
+    def course_instructor(self, course_id: str):
+        """
+        Get the instructor of a course by course ID.
 
+        Args:
+            course_id (str): The ID of the course.
+
+        Returns:
+            Instructor: The instructor object associated with the course.
+
+        Raises:
+            NotFoundError: If the course or instructor is not found.
+        """
+        try:
+            course = self.db.query(Course).filter(Course.id == course_id).first()
+            if not course or not course.instructor_id:
+                return None, NotFoundError(detail="Course or instructor not found")
+            return _wrap_return(course.instructor_id)
+        except Exception as e:
+            return _wrap_error(e)
