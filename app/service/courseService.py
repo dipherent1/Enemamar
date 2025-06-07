@@ -280,7 +280,10 @@ class CourseService:
         Returns:
             dict: Response from the payment service.
         """
-        self.payment_service.initiate_payment(user_id, course_id)
+        try:
+            self.payment_service.initiate_payment(user_id, course_id)
+        except ValidationError as e:
+            raise ValidationError(detail="Failed to initiate payment", data=str(e))
 
     # def enrollCourseCallback(self, payload):
     #     """
