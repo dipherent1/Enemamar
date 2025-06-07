@@ -20,7 +20,7 @@ def pay_course(payment_data):
         'first_name': payment_data.first_name,  # Use attribute-style access
         'last_name': payment_data.last_name,  # Use attribute-style access
         'tx_ref': payment_data.tx_ref,  # Use attribute-style access
-        
+        'email': "bini.blue.1996@gmail.com",  # Use attribute-style access
         # Optional fields
         'callback_url': payment_data.callback_url,  # Use attribute-style access
         'customization': {
@@ -29,12 +29,20 @@ def pay_course(payment_data):
         }
     }
 
-    
-    
-    chapa = Chapa(settings.CHAPA_SECRET_KEY)
-    response = chapa.initialize(**data)
 
-    return response
+
+    headers = {
+        'Authorization': f'Bearer {settings.CHAPA_SECRET_KEY}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(
+        'https://api.chapa.co/v1/transaction/initialize',
+        json=data,
+        headers=headers
+    )
+    
+    return response.json()
 
 def verify_payment(transaction_id):
     
