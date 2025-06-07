@@ -85,7 +85,7 @@ class PaymentService:
             try:
                 response = pay_course(data)
             except Exception as e:
-                raise ValidationError(detail="Payment initiation failed", error=str(e))
+                raise ValidationError(detail="Payment initiation failed", data=str(e))
 
             if response.get("status") != "success":
                 raise ValidationError(detail=response['message'])
