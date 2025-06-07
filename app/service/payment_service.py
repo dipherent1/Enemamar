@@ -44,6 +44,9 @@ class PaymentService:
         if not user:
             raise NotFoundError(detail="User not found")
 
+        # validate if user is not admin
+        if user.role == "admin":
+            raise ValidationError(detail="Admins cannot enroll in courses")
         # Validate course exists
         course, err = self.course_repo.get_course(course_id)
         if err:

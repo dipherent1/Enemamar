@@ -120,7 +120,7 @@ class AuthService:
             print("OTP sent successfully to:", phone_number)
             return {"detail": "OTP sent successfully", "status_code": status_code}
         else:
-            raise ValidationError(detail="Failed to send OTP", data=str(e))
+            raise ValidationError(detail="Failed to send OTP", data=str(content))
 
     def verify_otp(self, phone_number: str, code: str):
         print("Verifying OTP for phone number:", phone_number)
