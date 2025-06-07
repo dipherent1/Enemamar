@@ -29,6 +29,8 @@ class AuthService:
         # Convert sign_up_data to User ORM object
         user_obj = User(**sign_up_data.model_dump(exclude_none=True))
 
+        user_obj.role = "user"  # Default role for new users
+
         # Hash the password
         user_obj.password = hash_password(user_obj.password)
 

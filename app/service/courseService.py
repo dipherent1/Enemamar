@@ -280,7 +280,7 @@ class CourseService:
         Returns:
             dict: Response from the payment service.
         """
-        return self.payment_service.initiate_payment(user_id, course_id)
+        self.payment_service.initiate_payment(user_id, course_id)
 
     # def enrollCourseCallback(self, payload):
     #     """
