@@ -149,7 +149,7 @@ class AuthService:
             return {"detail": "OTP verified successfully", "status_code": status_code}
         
         else:
-            raise ValidationError(detail=f"Failed to verify OTP: {str(content)}")
+            raise ValidationError(detail=f"Failed to verify OTP", data=str(content))
 
     def forget_password(self, forget_password_data: ForgetPasswordRequest):
         """Initiate password reset by sending OTP to user's phone"""
@@ -173,7 +173,7 @@ class AuthService:
         if status_code == 200:
             return {"detail": "OTP sent to your phone number for password reset"}
         else:
-            raise ValidationError(detail=f"Failed to send OTP for password reset: {str(content)}")
+            raise ValidationError(detail=f"Failed to send OTP for password reset", data= str(content))
 
     def verify_otp_for_password_reset(self, verify_data: VerifyOTPForPasswordReset):
         """Verify OTP for password reset and return one-time use token"""
@@ -205,7 +205,7 @@ class AuthService:
                 "reset_token": reset_token
             }
         else:
-            raise ValidationError(detail=f"Failed to verify OTP for password reset: {str(content)}")
+            raise ValidationError(detail=f"Failed to verify OTP for password reset", data= {str(content)})
 
     def reset_password(self, reset_data: ResetPassword):
         """Reset user password using reset token"""
