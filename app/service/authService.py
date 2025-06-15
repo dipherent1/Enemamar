@@ -1,5 +1,6 @@
 from app.utils.exceptions.exceptions import ValidationError, DuplicatedError, NotFoundError, AuthError
 import re
+import json
 from app.domain.schema.authSchema import signUp, UserResponse, login,loginResponse, signUpResponse, tokenLoginData, ForgetPasswordRequest, VerifyOTPForPasswordReset, ResetPassword
 from app.domain.model.user import User
 from app.repository.userRepo import UserRepository
@@ -122,7 +123,15 @@ class AuthService:
             print("OTP sent successfully to:", phone_number)
             return {"detail": "OTP sent successfully", "status_code": status_code}
         else:
-            raise ValidationError(detail="Failed to send OTP", data=str(content))
+            # decode bytes→JSON or utf-8, else leave as is
+            content_decoded = content
+            if isinstance(content, (bytes, bytearray)):
+                try:
+                    content_decoded = json.loads(content)
+                except Exception:
+                    content_decoded = content.decode("utf-8", errors="ignore")
+            raise ValidationError(detail="Failed to send OTP", data=content_decoded)
+
 
     def verify_otp(self, phone_number: str, code: str):
         print("Verifying OTP for phone number:", phone_number)
@@ -149,7 +158,15 @@ class AuthService:
             return {"detail": "OTP verified successfully", "status_code": status_code}
         
         else:
-            raise ValidationError(detail=f"Failed to verify OTP", data=str(content))
+            # decode bytes→JSON or utf-8, else leave as is
+            content_decoded = content
+            if isinstance(content, (bytes, bytearray)):
+                try:
+                    content_decoded = json.loads(content)
+                except Exception:
+                    content_decoded = content.decode("utf-8", errors="ignore")
+            raise ValidationError(detail="Failed to verify OTP", data=content_decoded)
+
 
     def forget_password(self, forget_password_data: ForgetPasswordRequest):
         """Initiate password reset by sending OTP to user's phone"""
@@ -173,7 +190,15 @@ class AuthService:
         if status_code == 200:
             return {"detail": "OTP sent to your phone number for password reset"}
         else:
-            raise ValidationError(detail=f"Failed to send OTP for password reset", data= str(content))
+            # decode bytes→JSON or utf-8, else leave as is
+            content_decoded = content
+            if isinstance(content, (bytes, bytearray)):
+                try:
+                    content_decoded = json.loads(content)
+                except Exception:
+                    content_decoded = content.decode("utf-8", errors="ignore")
+            raise ValidationError(detail="Failed to send OTP for password reset", data=content_decoded)
+
 
     def verify_otp_for_password_reset(self, verify_data: VerifyOTPForPasswordReset):
         """Verify OTP for password reset and return one-time use token"""
@@ -205,7 +230,14 @@ class AuthService:
                 "reset_token": reset_token
             }
         else:
-            raise ValidationError(detail=f"Failed to verify OTP for password reset", data= {str(content)})
+            # decode bytes→JSON or utf-8, else leave as is
+            content_decoded = content
+            if isinstance(content, (bytes, bytearray)):
+                try:
+                    content_decoded = json.loads(content)
+                except Exception:
+                    content_decoded = content.decode("utf-8", errors="ignore")
+            raise ValidationError(detail="Failed to verify OTP for password reset", data=content_decoded)
 
     def reset_password(self, reset_data: ResetPassword):
         """Reset user password using reset token"""
