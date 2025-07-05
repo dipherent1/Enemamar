@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SENTRY_DNS: str
     BASE_URL: str
+    BASE_EMAIL: str
 
     ACCESS_SECRET_KEY: str
     REFRESH_SECRET_KEY: str
